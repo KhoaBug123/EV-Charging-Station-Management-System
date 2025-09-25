@@ -1,0 +1,417 @@
+import React, { useState } from "react";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Avatar,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Divider,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import {
+  History,
+  ElectricCar,
+  AccessTime,
+  LocationOn,
+  Receipt,
+  Visibility,
+  Download,
+} from "@mui/icons-material";
+import { formatCurrency, formatDate } from "../../utils/helpers";
+import { mockData } from "../../data/mockData";
+import useAuthStore from "../../store/authStore";
+import useBookingStore from "../../store/bookingStore";
+
+const BookingHistory = () => {
+  const { user } = useAuthStore();
+  const { bookingHistory, getBookingStats, initializeMockData } =
+    useBookingStore();
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+
+  // Initialize mock data if no bookings exist
+  React.useEffect(() => {
+    if (bookingHistory.length === 0) {
+      initializeMockData();
+    }
+  }, [bookingHistory.length, initializeMockData]);
+
+  // Use bookings from store
+  const userBookings = bookingHistory;
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "completed":
+        return "success";
+      case "active":
+        return "primary";
+      case "cancelled":
+        return "error";
+      case "pending":
+        return "warning";
+      default:
+        return "default";
+    }
+  };
+
+  const handleViewDetails = (booking) => {
+    setSelectedBooking(booking);
+    setDetailDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedBooking(null);
+    setDetailDialogOpen(false);
+  };
+
+  const calculateDuration = (startTime, endTime) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffMinutes = Math.floor((end - start) / (1000 * 60));
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  return (
+    <Box>
+      {/* Header */}
+      <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
+        <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
+          <History />
+        </Avatar>
+        <Box>
+          <Typography variant="h4" fontWeight="bold">
+            Booking History
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            View and manage your charging session history
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" fontWeight="bold" color="primary.main">
+                {userBookings.length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Sessions
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" fontWeight="bold" color="success.main">
+                {userBookings.filter((b) => b.status === "completed").length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Completed
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" fontWeight="bold" color="info.main">
+                {formatCurrency(
+                  userBookings.reduce((sum, b) => sum + b.cost, 0)
+                )}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Spent
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" fontWeight="bold" color="warning.main">
+                {userBookings
+                  .reduce((sum, b) => sum + (b.energyDelivered || 0), 0)
+                  .toFixed(1)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                kWh Charged
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Bookings Table */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Recent Charging Sessions
+          </Typography>
+
+          {userBookings.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <ElectricCar sx={{ fontSize: 60, color: "grey.400", mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">
+                No booking history found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Start charging to see your session history here
+              </Typography>
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Station</TableCell>
+                    <TableCell>Date & Time</TableCell>
+                    <TableCell>Duration</TableCell>
+                    <TableCell>Energy</TableCell>
+                    <TableCell>Cost</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="center">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {userBookings.map((booking) => (
+                    <TableRow key={booking.id} hover>
+                      <TableCell>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <Avatar
+                            sx={{
+                              bgcolor: "primary.main",
+                              width: 32,
+                              height: 32,
+                            }}
+                          >
+                            <ElectricCar sx={{ fontSize: 18 }} />
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle2" fontWeight="medium">
+                              {mockData.stations.find(
+                                (s) => s.id === booking.stationId
+                              )?.name || "Unknown Station"}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Port {booking.portNumber || "N/A"}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {formatDate(booking.startTime)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(booking.startTime).toLocaleTimeString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {booking.endTime
+                            ? calculateDuration(
+                                booking.startTime,
+                                booking.endTime
+                              )
+                            : "In Progress"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {booking.energyDelivered
+                            ? `${booking.energyDelivered} kWh`
+                            : "N/A"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="medium">
+                          {formatCurrency(booking.cost)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={booking.status}
+                          color={getStatusColor(booking.status)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="View Details">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleViewDetails(booking)}
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Download Receipt">
+                          <IconButton size="small">
+                            <Download />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Booking Details Dialog */}
+      <Dialog
+        open={detailDialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Booking Details</DialogTitle>
+        <DialogContent dividers>
+          {selectedBooking && (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" gutterBottom>
+                  Session Information
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Booking ID
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    #{selectedBooking.id}
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Station
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {
+                      mockData.stations.find(
+                        (s) => s.id === selectedBooking.stationId
+                      )?.name
+                    }
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Port Number
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {selectedBooking.portNumber || "N/A"}
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Chip
+                    label={selectedBooking.status}
+                    color={getStatusColor(selectedBooking.status)}
+                    size="small"
+                  />
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" gutterBottom>
+                  Charging Details
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Start Time
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatDate(selectedBooking.startTime)} at{" "}
+                    {new Date(selectedBooking.startTime).toLocaleTimeString()}
+                  </Typography>
+                </Box>
+                {selectedBooking.endTime && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      End Time
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {formatDate(selectedBooking.endTime)} at{" "}
+                      {new Date(selectedBooking.endTime).toLocaleTimeString()}
+                    </Typography>
+                  </Box>
+                )}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Duration
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {selectedBooking.endTime
+                      ? calculateDuration(
+                          selectedBooking.startTime,
+                          selectedBooking.endTime
+                        )
+                      : "In Progress"}
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Energy Delivered
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {selectedBooking.energyDelivered
+                      ? `${selectedBooking.energyDelivered} kWh`
+                      : "N/A"}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 2 }} />
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Cost
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    color="primary.main"
+                  >
+                    {formatCurrency(selectedBooking.cost)}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Close</Button>
+          <Button variant="contained" startIcon={<Download />}>
+            Download Receipt
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default BookingHistory;

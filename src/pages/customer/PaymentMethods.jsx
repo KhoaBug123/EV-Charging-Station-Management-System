@@ -1,0 +1,448 @@
+import React, { useState } from "react";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  Grid,
+  Avatar,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  Divider,
+  Alert,
+} from "@mui/material";
+import {
+  CreditCard,
+  AccountBalanceWallet,
+  Add,
+  Edit,
+  Delete,
+  Security,
+  CheckCircle,
+  Warning,
+} from "@mui/icons-material";
+import useAuthStore from "../../store/authStore";
+
+const PaymentMethods = () => {
+  const { user } = useAuthStore();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [formData, setFormData] = useState({
+    type: "credit_card",
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    cardholderName: "",
+    isDefault: false,
+  });
+
+  // Mock payment methods data
+  const [paymentMethods, setPaymentMethods] = useState([
+    {
+      id: "1",
+      type: "credit_card",
+      brand: "Visa",
+      lastFour: "4532",
+      expiryDate: "12/25",
+      cardholderName: "John Doe",
+      isDefault: true,
+      isExpired: false,
+    },
+    {
+      id: "2",
+      type: "credit_card",
+      brand: "Mastercard",
+      lastFour: "8765",
+      expiryDate: "08/24",
+      cardholderName: "John Doe",
+      isDefault: false,
+      isExpired: true,
+    },
+    {
+      id: "3",
+      type: "wallet",
+      provider: "MoMo",
+      accountNumber: "***789",
+      isDefault: false,
+      isExpired: false,
+    },
+  ]);
+
+  const handleAddNew = () => {
+    setSelectedMethod(null);
+    setFormData({
+      type: "credit_card",
+      cardNumber: "",
+      expiryDate: "",
+      cvv: "",
+      cardholderName: "",
+      isDefault: false,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (method) => {
+    setSelectedMethod(method);
+    setFormData({
+      type: method.type,
+      cardNumber:
+        method.type === "credit_card"
+          ? `****-****-****-${method.lastFour}`
+          : "",
+      expiryDate: method.expiryDate || "",
+      cvv: "",
+      cardholderName: method.cardholderName || "",
+      isDefault: method.isDefault,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (methodId) => {
+    setPaymentMethods((prev) =>
+      prev.filter((method) => method.id !== methodId)
+    );
+  };
+
+  const handleSetDefault = (methodId) => {
+    setPaymentMethods((prev) =>
+      prev.map((method) => ({
+        ...method,
+        isDefault: method.id === methodId,
+      }))
+    );
+  };
+
+  const handleSave = () => {
+    if (selectedMethod) {
+      // Update existing method
+      setPaymentMethods((prev) =>
+        prev.map((method) =>
+          method.id === selectedMethod.id ? { ...method, ...formData } : method
+        )
+      );
+    } else {
+      // Add new method
+      const newMethod = {
+        id: Date.now().toString(),
+        ...formData,
+        lastFour: formData.cardNumber.slice(-4),
+        brand: formData.cardNumber.startsWith("4") ? "Visa" : "Mastercard",
+        isExpired: false,
+      };
+      setPaymentMethods((prev) => [...prev, newMethod]);
+    }
+    setDialogOpen(false);
+  };
+
+  const getMethodIcon = (method) => {
+    if (method.type === "credit_card") {
+      return <CreditCard />;
+    } else if (method.type === "wallet") {
+      return <AccountBalanceWallet />;
+    }
+    return <CreditCard />;
+  };
+
+  const getMethodTitle = (method) => {
+    if (method.type === "credit_card") {
+      return `${method.brand} •••• ${method.lastFour}`;
+    } else if (method.type === "wallet") {
+      return `${method.provider} ${method.accountNumber}`;
+    }
+    return "Payment Method";
+  };
+
+  const getMethodSubtitle = (method) => {
+    if (method.type === "credit_card") {
+      return `Expires ${method.expiryDate} • ${method.cardholderName}`;
+    } else if (method.type === "wallet") {
+      return "Digital Wallet";
+    }
+    return "";
+  };
+
+  return (
+    <Box>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 4,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
+            <CreditCard />
+          </Avatar>
+          <Box>
+            <Typography variant="h4" fontWeight="bold">
+              Payment Methods
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage your payment methods for charging sessions
+            </Typography>
+          </Box>
+        </Box>
+        <Button variant="contained" startIcon={<Add />} onClick={handleAddNew}>
+          Add Payment Method
+        </Button>
+      </Box>
+
+      {/* Security Notice */}
+      <Alert severity="info" sx={{ mb: 4 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Security />
+          <Typography variant="body2">
+            Your payment information is encrypted and secure. We never store
+            your full card details.
+          </Typography>
+        </Box>
+      </Alert>
+
+      {/* Payment Methods List */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Saved Payment Methods
+          </Typography>
+
+          {paymentMethods.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <CreditCard sx={{ fontSize: 60, color: "grey.400", mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">
+                No payment methods added
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Add a payment method to make charging payments easier
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={handleAddNew}
+              >
+                Add Your First Payment Method
+              </Button>
+            </Box>
+          ) : (
+            <List>
+              {paymentMethods.map((method, index) => (
+                <React.Fragment key={method.id}>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemIcon>
+                      <Avatar
+                        sx={{
+                          bgcolor: method.isDefault
+                            ? "primary.main"
+                            : "grey.300",
+                        }}
+                      >
+                        {getMethodIcon(method)}
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          <Typography variant="subtitle1" fontWeight="medium">
+                            {getMethodTitle(method)}
+                          </Typography>
+                          {method.isDefault && (
+                            <Chip
+                              label="Default"
+                              size="small"
+                              color="primary"
+                            />
+                          )}
+                          {method.isExpired && (
+                            <Chip label="Expired" size="small" color="error" />
+                          )}
+                        </Box>
+                      }
+                      secondary={getMethodSubtitle(method)}
+                    />
+                    <ListItemSecondaryAction>
+                      <Box sx={{ display: "flex", gap: 1 }}>
+                        {!method.isDefault && (
+                          <Button
+                            size="small"
+                            onClick={() => handleSetDefault(method.id)}
+                          >
+                            Set Default
+                          </Button>
+                        )}
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEdit(method)}
+                        >
+                          <Edit />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(method.id)}
+                          disabled={method.isDefault}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                  {index < paymentMethods.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Statistics */}
+      <Grid container spacing={3} sx={{ mt: 4 }}>
+        <Grid item xs={12} sm={4}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" fontWeight="bold" color="primary.main">
+                {paymentMethods.length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Payment Methods
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" fontWeight="bold" color="success.main">
+                {paymentMethods.filter((m) => !m.isExpired).length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Active Methods
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" fontWeight="bold" color="warning.main">
+                {paymentMethods.filter((m) => m.isExpired).length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Need Update
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Add/Edit Payment Method Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedMethod ? "Edit Payment Method" : "Add Payment Method"}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Payment Type</InputLabel>
+                <Select
+                  value={formData.type}
+                  label="Payment Type"
+                  onChange={(e) =>
+                    setFormData({ ...formData, type: e.target.value })
+                  }
+                >
+                  <MenuItem value="credit_card">Credit/Debit Card</MenuItem>
+                  <MenuItem value="wallet">Digital Wallet</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {formData.type === "credit_card" && (
+              <>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Card Number"
+                    value={formData.cardNumber}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cardNumber: e.target.value })
+                    }
+                    placeholder="1234 5678 9012 3456"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Expiry Date"
+                    value={formData.expiryDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, expiryDate: e.target.value })
+                    }
+                    placeholder="MM/YY"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="CVV"
+                    value={formData.cvv}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cvv: e.target.value })
+                    }
+                    placeholder="123"
+                    type="password"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Cardholder Name"
+                    value={formData.cardholderName}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        cardholderName: e.target.value,
+                      })
+                    }
+                  />
+                </Grid>
+              </>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave}>
+            {selectedMethod ? "Update" : "Add"} Payment Method
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default PaymentMethods;
