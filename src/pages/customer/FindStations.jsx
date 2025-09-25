@@ -39,7 +39,7 @@ import {
   getStatusColor,
 } from "../../utils/helpers";
 import { getStationImage } from "../../utils/imageAssets";
-import { CONNECTOR_TYPES, AMENITIES } from "../../utils/constants";
+import { CONNECTOR_TYPES } from "../../utils/constants";
 import BookingModal from "../../components/customer/BookingModal";
 
 const FindStations = () => {
@@ -217,31 +217,6 @@ const FindStations = () => {
               </Button>
             </Grid>
           </Grid>
-
-          {/* Amenities Filter */}
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" gutterBottom>
-              Amenities:
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {Object.values(AMENITIES).map((amenity) => (
-                <Chip
-                  key={amenity}
-                  label={amenity}
-                  variant={
-                    filters.amenities.includes(amenity) ? "filled" : "outlined"
-                  }
-                  onClick={() => {
-                    const newAmenities = filters.amenities.includes(amenity)
-                      ? filters.amenities.filter((a) => a !== amenity)
-                      : [...filters.amenities, amenity];
-                    updateFilters({ amenities: newAmenities });
-                  }}
-                  size="small"
-                />
-              ))}
-            </Box>
-          </Box>
         </CardContent>
       </Card>
 
@@ -392,29 +367,6 @@ const FindStations = () => {
                                 {station.ratings.overall} (
                                 {station.ratings.totalReviews} reviews)
                               </span>
-                            </span>
-
-                            <span
-                              style={{ marginTop: "4px", display: "block" }}
-                            >
-                              {station.amenities.slice(0, 3).map((amenity) => (
-                                <Chip
-                                  key={amenity}
-                                  label={amenity}
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ mr: 0.5, mb: 0.5 }}
-                                />
-                              ))}
-                              {station.amenities.length > 3 && (
-                                <Chip
-                                  label={`+${
-                                    station.amenities.length - 3
-                                  } more`}
-                                  size="small"
-                                  variant="outlined"
-                                />
-                              )}
                             </span>
                           </span>
                         }

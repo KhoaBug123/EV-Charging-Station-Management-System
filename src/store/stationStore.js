@@ -12,7 +12,6 @@ const useStationStore = create((set, get) => ({
     maxDistance: 20, // km
     connectorTypes: [],
     maxPrice: null,
-    amenities: [],
   },
 
   // Actions
@@ -33,7 +32,6 @@ const useStationStore = create((set, get) => ({
         maxDistance: 20,
         connectorTypes: [],
         maxPrice: null,
-        amenities: [],
       },
     }),
 
@@ -87,14 +85,6 @@ const useStationStore = create((set, get) => ({
           station.charging.pricing.dcRate || 0
         );
         if (maxStationPrice > filters.maxPrice) return false;
-      }
-
-      // Filter by amenities
-      if (filters.amenities.length > 0) {
-        const hasMatchingAmenity = filters.amenities.some((amenity) =>
-          station.amenities.includes(amenity)
-        );
-        if (!hasMatchingAmenity) return false;
       }
 
       return true;

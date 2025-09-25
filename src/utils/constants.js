@@ -75,18 +75,6 @@ export const PAYMENT_METHODS = {
   SUBSCRIPTION: "subscription",
 };
 
-// Amenities
-export const AMENITIES = {
-  WIFI: "WiFi",
-  RESTROOM: "Restroom",
-  CAFE: "Cafe",
-  SHOPPING: "Shopping",
-  RESTAURANT: "Restaurant",
-  PARKING: "Parking",
-  SECURITY: "Security",
-  COVERED: "Covered",
-};
-
 // Currency
 export const CURRENCY = {
   VND: "VND",
@@ -138,7 +126,6 @@ export default {
   CONNECTOR_TYPES,
   POWER_LEVELS,
   PAYMENT_METHODS,
-  AMENITIES,
   CURRENCY,
   DEFAULTS,
   STORAGE_KEYS,

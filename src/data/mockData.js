@@ -154,7 +154,7 @@ export const mockStations = [
       coordinates: { lat: 10.7769, lng: 106.7009 },
       landmarks: ["Nguyen Hue Walking Street", "Saigon Centre"],
     },
-    amenities: ["WiFi", "Restroom", "Cafe", "Shopping"],
+
     operatingHours: {
       open: "06:00",
       close: "22:00",
@@ -194,7 +194,7 @@ export const mockStations = [
       coordinates: { lat: 10.7837, lng: 106.6956 },
       landmarks: ["Bitexco Financial Tower", "Nguyen Hue Boulevard"],
     },
-    amenities: ["WiFi", "Restroom", "Vending Machine"],
+
     operatingHours: {
       open: "05:30",
       close: "23:30",
@@ -233,7 +233,7 @@ export const mockStations = [
       coordinates: { lat: 10.7892, lng: 106.6844 },
       landmarks: ["Tao Dan Park", "War Remnants Museum"],
     },
-    amenities: ["WiFi", "Restroom", "Park View", "Security"],
+
     operatingHours: {
       open: "24/7",
       timezone: "Asia/Ho_Chi_Minh",
