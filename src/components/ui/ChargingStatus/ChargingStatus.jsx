@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useBookingStore from '../../../store/bookingStore';
+import { mockAPI } from '../../../data/mockAPI';
 import './ChargingStatus.css';
 
 const ChargingStatus = ({ bookingId, compact = false }) => {
@@ -14,9 +15,59 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
   const [chargingSession, setChargingSession] = useState(null);
   const [currentBooking, setCurrentBooking] = useState(null);
 
-  // Mock real-time updates (in real app, this would be WebSocket or API polling)
+  // Real-time SOC updates using Mock API
   useEffect(() => {
-    const updateData = () => {
+    if (!bookingId) return;
+
+    let simulationInterval = null;
+
+    const initializeSOCWithAPI = async () => {
+      try {
+        // Initialize SOC session via API
+        await mockAPI.soc.initializeSOCSession(bookingId, {
+          initialSOC: 25 + Math.random() * 40, // 25-65%
+          targetSOC: 80,
+          batteryCapacity: 60,
+          vehicleId: `vehicle-${bookingId}`
+        });
+
+        // Start charging if this is an active session
+        const session = getChargingSession();
+        if (session?.bookingId === bookingId && session?.status === 'active') {
+          await mockAPI.soc.startCharging(bookingId);
+          
+          // Start real-time simulation
+          simulationInterval = mockAPI.soc.simulateRealTimeUpdates(bookingId, (updatedSession) => {
+            setSocData({
+              initialSOC: updatedSession.initialSOC,
+              currentSOC: updatedSession.currentSOC,
+              targetSOC: updatedSession.targetSOC,
+              chargingRate: updatedSession.chargingRate,
+              estimatedTimeToTarget: updatedSession.estimatedTimeToTarget,
+              lastUpdated: updatedSession.lastUpdated,
+            });
+            
+            setChargingSession({
+              ...session,
+              currentSOC: updatedSession.currentSOC,
+              powerDelivered: updatedSession.chargingHistory[updatedSession.chargingHistory.length - 1]?.power || 0,
+              energyDelivered: (updatedSession.currentSOC - updatedSession.initialSOC) * 0.6, // Rough calculation
+              voltage: updatedSession.chargingHistory[updatedSession.chargingHistory.length - 1]?.voltage || 0,
+              current: updatedSession.chargingHistory[updatedSession.chargingHistory.length - 1]?.current || 0,
+              temperature: updatedSession.chargingHistory[updatedSession.chargingHistory.length - 1]?.temperature || 25,
+              lastUpdated: updatedSession.lastUpdated,
+            });
+          });
+        }
+
+      } catch (error) {
+        console.error('Failed to initialize SOC with API:', error);
+        // Fallback to store data
+        updateDataFromStore();
+      }
+    };
+
+    const updateDataFromStore = () => {
       const progress = getSOCProgress(bookingId);
       const session = getChargingSession();
       const booking = getCurrentBooking();
@@ -26,39 +77,15 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
       setCurrentBooking(booking);
     };
 
-    updateData();
-    
-    // Simulate real-time updates for active charging sessions
-    const interval = setInterval(() => {
-      const progress = getSOCProgress(bookingId);
-      const session = getChargingSession();
-      
-      if (session?.bookingId === bookingId && session?.status === 'active') {
-        // Simulate charging progress
-        if (progress && progress.currentSOC < progress.targetSOC) {
-          const newSOC = Math.min(
-            progress.currentSOC + Math.random() * 0.5, // Random increment
-            progress.targetSOC
-          );
-          
-          const mockChargingData = {
-            currentSOC: parseFloat(newSOC.toFixed(1)),
-            chargingRate: 25 + Math.random() * 15, // 25-40 %/hour
-            powerDelivered: 45 + Math.random() * 10, // 45-55 kW
-            energyDelivered: progress.energyDelivered || 0 + Math.random() * 0.5,
-            voltage: 380 + Math.random() * 20, // 380-400V
-            current: 110 + Math.random() * 20, // 110-130A
-            temperature: 35 + Math.random() * 10, // 35-45°C
-          };
-          
-          updateChargingProgress(bookingId, mockChargingData);
-          updateData();
-        }
-      }
-    }, 3000); // Update every 3 seconds during active charging
+    // Try API first, fallback to store
+    initializeSOCWithAPI();
 
-    return () => clearInterval(interval);
-  }, [bookingId, getSOCProgress, getChargingSession, updateChargingProgress, getCurrentBooking]);
+    return () => {
+      if (simulationInterval) {
+        clearInterval(simulationInterval);
+      }
+    };
+  }, [bookingId, getSOCProgress, getChargingSession, getCurrentBooking]);
 
   if (!socData && !currentBooking) {
     return null;

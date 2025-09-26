@@ -159,13 +159,94 @@ export const mockStations = [
       timezone: "Asia/Ho_Chi_Minh",
     },
     charging: {
-      connectorTypes: ["AC Type 2", "DC CCS", "CHAdeMO"],
-      totalPorts: 8,
-      availablePorts: 3,
-      maxPower: 150, // kW
+      // Trụ sạc (Charging Posts) với các công suất khác nhau
+      chargingPosts: [
+        {
+          id: "post-A",
+          name: "Trụ AC Tiêu chuẩn",
+          type: "AC",
+          power: 7, // kW
+          voltage: 230, // V
+          totalSlots: 3,
+          availableSlots: 2,
+          slots: [
+            { 
+              id: "A1", 
+              connectorType: "Type 2", 
+              status: "available",
+              lastUsed: "2024-12-25T14:30:00Z"
+            },
+            { 
+              id: "A2", 
+              connectorType: "Type 2", 
+              status: "occupied",
+              currentBooking: "booking-123",
+              lastUsed: "2024-12-26T08:15:00Z"
+            },
+            { 
+              id: "A3", 
+              connectorType: "Type 2", 
+              status: "available",
+              lastUsed: "2024-12-25T16:45:00Z"
+            }
+          ]
+        },
+        {
+          id: "post-B",
+          name: "Trụ DC Nhanh",
+          type: "DC",
+          power: 50, // kW
+          voltage: 400, // V
+          totalSlots: 2,
+          availableSlots: 2,
+          slots: [
+            { 
+              id: "B1", 
+              connectorType: "CCS2", 
+              status: "available",
+              lastUsed: "2024-12-25T12:20:00Z"
+            },
+            { 
+              id: "B2", 
+              connectorType: "CCS2", 
+              status: "available",
+              lastUsed: "2024-12-25T18:10:00Z"
+            }
+          ]
+        },
+        {
+          id: "post-C",
+          name: "Trụ DC Siêu nhanh",
+          type: "DC",
+          power: 150, // kW
+          voltage: 800, // V
+          totalSlots: 2,
+          availableSlots: 1,
+          slots: [
+            { 
+              id: "C1", 
+              connectorType: "CCS2", 
+              status: "available",
+              lastUsed: "2024-12-25T10:05:00Z"
+            },
+            { 
+              id: "C2", 
+              connectorType: "CHAdeMO", 
+              status: "maintenance",
+              lastMaintenance: "2024-12-26T06:00:00Z"
+            }
+          ]
+        }
+      ],
+      // Thống kê tổng quan
+      totalPorts: 7, // Tổng tất cả slots
+      availablePorts: 5, // Tổng slots available
+      maxPower: 150, // Công suất cao nhất
+      connectorTypes: ["Type 2", "CCS2", "CHAdeMO"], // Tất cả loại connector
       pricing: {
-        acRate: 8500, // VND per kWh
-        dcRate: 12000,
+        acRate: 8500, // VND per kWh cho AC
+        dcRate: 12000, // VND per kWh cho DC
+        dcFastRate: 15000, // VND per kWh cho DC siêu nhanh
         parkingFee: 5000, // per hour
       },
     },
@@ -199,12 +280,75 @@ export const mockStations = [
       timezone: "Asia/Ho_Chi_Minh",
     },
     charging: {
-      connectorTypes: ["DC CCS", "CHAdeMO"],
+      // Trụ sạc (Charging Posts) - Tech Park focus on DC Fast
+      chargingPosts: [
+        {
+          id: "post-D",
+          name: "Trụ DC Ultra",
+          type: "DC",
+          power: 250, // kW
+          voltage: 800, // V
+          totalSlots: 3,
+          availableSlots: 3,
+          slots: [
+            { 
+              id: "D1", 
+              connectorType: "CCS2", 
+              status: "available",
+              lastUsed: "2024-12-25T20:30:00Z"
+            },
+            { 
+              id: "D2", 
+              connectorType: "CCS2", 
+              status: "available",
+              lastUsed: "2024-12-25T19:15:00Z"
+            },
+            { 
+              id: "D3", 
+              connectorType: "CHAdeMO", 
+              status: "available",
+              lastUsed: "2024-12-25T17:45:00Z"
+            }
+          ]
+        },
+        {
+          id: "post-E",
+          name: "Trụ DC Nhanh+",
+          type: "DC",
+          power: 120, // kW
+          voltage: 400, // V
+          totalSlots: 3,
+          availableSlots: 3,
+          slots: [
+            { 
+              id: "E1", 
+              connectorType: "CCS2", 
+              status: "available",
+              lastUsed: "2024-12-25T21:00:00Z"
+            },
+            { 
+              id: "E2", 
+              connectorType: "CCS2", 
+              status: "available",
+              lastUsed: "2024-12-25T22:30:00Z"
+            },
+            { 
+              id: "E3", 
+              connectorType: "CHAdeMO", 
+              status: "available",
+              lastUsed: "2024-12-25T16:20:00Z"
+            }
+          ]
+        }
+      ],
+      // Thống kê tổng quan
       totalPorts: 6,
       availablePorts: 6,
       maxPower: 250,
+      connectorTypes: ["CCS2", "CHAdeMO"],
       pricing: {
-        dcRate: 15000,
+        dcRate: 15000, // Unified DC rate
+        dcUltraRate: 18000, // Ultra fast DC rate
         parkingFee: 0,
       },
     },
@@ -237,10 +381,63 @@ export const mockStations = [
       timezone: "Asia/Ho_Chi_Minh",
     },
     charging: {
-      connectorTypes: ["AC Type 2", "DC CCS"],
+      // Trụ sạc (Charging Posts) - EcoPark with mixed AC/DC
+      chargingPosts: [
+        {
+          id: "post-F",
+          name: "Trụ AC Eco",
+          type: "AC",
+          power: 11, // kW
+          voltage: 400, // V (3-phase)
+          totalSlots: 2,
+          availableSlots: 1,
+          slots: [
+            { 
+              id: "F1", 
+              connectorType: "Type 2", 
+              status: "available",
+              lastUsed: "2024-12-25T13:15:00Z"
+            },
+            { 
+              id: "F2", 
+              connectorType: "Type 2", 
+              status: "occupied",
+              currentBooking: "booking-456",
+              lastUsed: "2024-12-26T07:30:00Z"
+            }
+          ]
+        },
+        {
+          id: "post-G",
+          name: "Trụ DC Eco+",
+          type: "DC",
+          power: 100, // kW
+          voltage: 500, // V
+          totalSlots: 2,
+          availableSlots: 0, // Fully occupied
+          slots: [
+            { 
+              id: "G1", 
+              connectorType: "CCS2", 
+              status: "occupied",
+              currentBooking: "booking-789",
+              lastUsed: "2024-12-26T09:00:00Z"
+            },
+            { 
+              id: "G2", 
+              connectorType: "CCS2", 
+              status: "occupied",
+              currentBooking: "booking-101",
+              lastUsed: "2024-12-26T08:45:00Z"
+            }
+          ]
+        }
+      ],
+      // Thống kê tổng quan
       totalPorts: 4,
       availablePorts: 1,
       maxPower: 100,
+      connectorTypes: ["Type 2", "CCS2"],
       pricing: {
         acRate: 7500,
         dcRate: 11000,

@@ -20,6 +20,7 @@ import HomePage from "./pages/public/Home";
 import TestPage from "./pages/TestPage";
 import QRScannerDemo from "./pages/QRScannerDemo";
 import DateTimePickerDemo from "./pages/DateTimePickerDemo";
+import MockAPIDemo from "./pages/MockAPIDemo";
 
 // Customer Pages
 import FindStations from "./pages/customer/FindStations";
@@ -98,6 +99,7 @@ function App() {
             <Route path="/test" element={<TestPage />} />
             <Route path="/qr-demo" element={<QRScannerDemo />} />
             <Route path="/datetime-demo" element={<DateTimePickerDemo />} />
+            <Route path="/api-demo" element={<MockAPIDemo />} />
             <Route
               path="/login"
               element={

@@ -388,6 +388,356 @@ export const usersAPI = {
 };
 
 // =================================
+// SOC TRACKING API MOCK
+// =================================
+
+export const socAPI = {
+  // Mock SOC data storage
+  _socSessions: new Map(),
+  
+  async initializeSOCSession(bookingId, vehicleData) {
+    await delay(200);
+    
+    const initialSOC = vehicleData.initialSOC || (20 + Math.random() * 50); // 20-70%
+    const targetSOC = vehicleData.targetSOC || 80;
+    const batteryCapacity = vehicleData.batteryCapacity || 60; // kWh
+    
+    const session = {
+      bookingId,
+      vehicleId: vehicleData.vehicleId || `vehicle-${Date.now()}`,
+      batteryCapacity,
+      initialSOC: parseFloat(initialSOC.toFixed(1)),
+      currentSOC: parseFloat(initialSOC.toFixed(1)),
+      targetSOC,
+      startTime: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      chargingRate: 0,
+      estimatedTimeToTarget: null,
+      status: 'connected',
+      chargingHistory: []
+    };
+    
+    this._socSessions.set(bookingId, session);
+    
+    return {
+      success: true,
+      data: session,
+      message: 'SOC tracking initialized'
+    };
+  },
+
+  async getSOCStatus(bookingId) {
+    await delay(150);
+    
+    const session = this._socSessions.get(bookingId);
+    if (!session) {
+      throw new Error('SOC session not found');
+    }
+    
+    return {
+      success: true,
+      data: session
+    };
+  },
+
+  async updateSOC(bookingId, chargingData) {
+    await delay(100);
+    
+    const session = this._socSessions.get(bookingId);
+    if (!session) {
+      throw new Error('SOC session not found');
+    }
+    
+    // Simulate realistic charging curve
+    const timeDiff = (new Date() - new Date(session.lastUpdated)) / (1000 * 60); // minutes
+    let socIncrease = 0;
+    
+    if (session.status === 'charging' && chargingData.powerDelivered) {
+      // Calculate SOC increase based on power and time
+      const energyAdded = (chargingData.powerDelivered * timeDiff) / 60; // kWh
+      socIncrease = (energyAdded / session.batteryCapacity) * 100;
+      
+      // Apply charging curve (slower at high SOC)
+      if (session.currentSOC > 80) {
+        socIncrease *= 0.3; // Much slower above 80%
+      } else if (session.currentSOC > 60) {
+        socIncrease *= 0.7; // Slower above 60%
+      }
+    }
+    
+    const newSOC = Math.min(session.currentSOC + socIncrease, session.targetSOC);
+    const chargingRate = socIncrease > 0 ? (socIncrease / timeDiff) * 60 : 0; // %/hour
+    
+    // Calculate estimated time to target
+    let estimatedTime = null;
+    if (chargingRate > 0 && newSOC < session.targetSOC) {
+      estimatedTime = ((session.targetSOC - newSOC) / chargingRate) * 60; // minutes
+    }
+    
+    // Update session
+    session.currentSOC = parseFloat(newSOC.toFixed(1));
+    session.chargingRate = parseFloat(chargingRate.toFixed(1));
+    session.estimatedTimeToTarget = estimatedTime ? Math.round(estimatedTime) : null;
+    session.lastUpdated = new Date().toISOString();
+    
+    // Add to history
+    session.chargingHistory.push({
+      timestamp: new Date().toISOString(),
+      soc: session.currentSOC,
+      power: chargingData.powerDelivered || 0,
+      voltage: chargingData.voltage || 0,
+      current: chargingData.current || 0,
+      temperature: chargingData.temperature || 25
+    });
+    
+    // Auto-complete if target reached
+    if (session.currentSOC >= session.targetSOC) {
+      session.status = 'completed';
+      session.completedAt = new Date().toISOString();
+    }
+    
+    return {
+      success: true,
+      data: session,
+      message: 'SOC updated successfully'
+    };
+  },
+
+  async startCharging(bookingId) {
+    await delay(200);
+    
+    const session = this._socSessions.get(bookingId);
+    if (!session) {
+      throw new Error('SOC session not found');
+    }
+    
+    session.status = 'charging';
+    session.chargingStartedAt = new Date().toISOString();
+    
+    return {
+      success: true,
+      data: session,
+      message: 'Charging started'
+    };
+  },
+
+  async stopCharging(bookingId) {
+    await delay(200);
+    
+    const session = this._socSessions.get(bookingId);
+    if (!session) {
+      throw new Error('SOC session not found');
+    }
+    
+    session.status = 'stopped';
+    session.chargingStoppedAt = new Date().toISOString();
+    session.finalSOC = session.currentSOC;
+    
+    return {
+      success: true,
+      data: session,
+      message: 'Charging stopped'
+    };
+  },
+
+  // Simulate real-time SOC updates
+  simulateRealTimeUpdates(bookingId, callback) {
+    const interval = setInterval(async () => {
+      try {
+        const session = this._socSessions.get(bookingId);
+        if (!session || session.status !== 'charging') {
+          clearInterval(interval);
+          return;
+        }
+        
+        // Mock charging data
+        const mockChargingData = {
+          powerDelivered: 45 + Math.random() * 15, // 45-60 kW
+          voltage: 380 + Math.random() * 20, // 380-400V
+          current: 110 + Math.random() * 30, // 110-140A
+          temperature: 30 + Math.random() * 15 // 30-45°C
+        };
+        
+        const result = await this.updateSOC(bookingId, mockChargingData);
+        callback(result.data);
+        
+      } catch (error) {
+        console.error('SOC simulation error:', error);
+        clearInterval(interval);
+      }
+    }, 3000); // Update every 3 seconds
+    
+    return interval;
+  }
+};
+
+// =================================
+// QR SCANNER API MOCK
+// =================================
+
+export const qrAPI = {
+  // Mock QR code database
+  _qrCodes: new Map(),
+  
+  async validateQRCode(qrData) {
+    await delay(300);
+    
+    // Expected format: "SKAEV:STATION:{stationId}:{portId}"
+    if (!qrData.startsWith('SKAEV:STATION:')) {
+      throw new Error('Invalid QR code format');
+    }
+    
+    const parts = qrData.split(':');
+    if (parts.length < 3) {
+      throw new Error('Incomplete QR code data');
+    }
+    
+    const stationId = parts[2];
+    const portId = parts[3] || 'default';
+    
+    // Find station
+    const station = mockData.stations.find(s => s.id === stationId);
+    if (!station) {
+      throw new Error('Station not found');
+    }
+    
+    // Check station status
+    if (station.status !== 'active') {
+      throw new Error('Station is not operational');
+    }
+    
+    // Check port availability
+    if (station.charging.availablePorts <= 0) {
+      throw new Error('No available charging ports');
+    }
+    
+    // Validate specific port
+    const portInfo = await this.getPortStatus(stationId, portId);
+    if (!portInfo.available) {
+      throw new Error('Selected charging port is not available');
+    }
+    
+    return {
+      success: true,
+      data: {
+        stationId,
+        station,
+        portId,
+        portInfo,
+        timestamp: new Date().toISOString()
+      },
+      message: 'QR code validated successfully'
+    };
+  },
+
+  async getPortStatus(stationId, portId) {
+    await delay(150);
+    
+    // Mock port status
+    const isOccupied = Math.random() < 0.3; // 30% chance port is occupied
+    
+    return {
+      success: true,
+      data: {
+        portId,
+        stationId,
+        available: !isOccupied,
+        status: isOccupied ? 'occupied' : 'available',
+        connector: {
+          type: ['Type 2', 'CCS2', 'CHAdeMO'][Math.floor(Math.random() * 3)],
+          maxPower: 50 + Math.random() * 100, // 50-150kW
+        },
+        lastUsed: isOccupied ? null : new Date(Date.now() - Math.random() * 86400000).toISOString(),
+        maintenanceStatus: 'operational'
+      }
+    };
+  },
+
+  async createQRBooking(qrData, userPreferences = {}) {
+    await delay(400);
+    
+    // First validate QR code
+    const validation = await this.validateQRCode(qrData);
+    const { station, portId } = validation.data;
+    
+    // Create automatic booking
+    const bookingData = {
+      stationId: station.id,
+      stationName: station.name,
+      portId,
+      userId: userPreferences.userId || 'guest',
+      chargerType: {
+        id: 'auto',
+        name: 'Auto-selected',
+        power: `${station.charging.maxPower} kW`,
+        price: `${station.charging.pricing.dcRate || station.charging.pricing.acRate} VNĐ/kWh`,
+      },
+      connector: {
+        id: 'auto',
+        name: 'Auto-detected',
+        compatible: 'Universal',
+      },
+      slot: {
+        id: portId,
+        location: `Port ${portId}`,
+      },
+      bookingTime: new Date().toISOString(),
+      scannedAt: new Date().toISOString(),
+      autoStart: true,
+      schedulingType: 'immediate',
+      source: 'qr_scan'
+    };
+    
+    // Create booking through existing API
+    const booking = await bookingsAPI.create(bookingData);
+    
+    return {
+      success: true,
+      data: {
+        booking: booking.data,
+        station,
+        portId,
+        autoInitiated: true
+      },
+      message: 'QR booking created successfully'
+    };
+  },
+
+  // Generate QR codes for stations
+  async generateStationQR(stationId, portId = null) {
+    await delay(200);
+    
+    const station = mockData.stations.find(s => s.id === stationId);
+    if (!station) {
+      throw new Error('Station not found');
+    }
+    
+    const ports = portId ? [portId] : ['A01', 'A02', 'B01', 'B02', 'C01'];
+    const qrCodes = [];
+    
+    for (const port of ports) {
+      const qrData = `SKAEV:STATION:${stationId}:${port}`;
+      qrCodes.push({
+        portId: port,
+        qrData,
+        qrImage: `data:image/svg+xml;base64,${btoa(`<svg>QR-${stationId}-${port}</svg>`)}`, // Mock QR image
+        generatedAt: new Date().toISOString()
+      });
+    }
+    
+    return {
+      success: true,
+      data: {
+        stationId,
+        stationName: station.name,
+        qrCodes
+      },
+      message: 'QR codes generated successfully'
+    };
+  }
+};
+
+// =================================
 // ANALYTICS API MOCK
 // =================================
 
@@ -440,6 +790,8 @@ export const mockAPI = {
   bookings: bookingsAPI,
   users: usersAPI,
   analytics: analyticsAPI,
+  soc: socAPI,
+  qr: qrAPI,
 };
 
 export default mockAPI;

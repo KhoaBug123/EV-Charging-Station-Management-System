@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { QrReader } from 'react-qr-reader';
 import useStationStore from '../../../store/stationStore';
 import useBookingStore from '../../../store/bookingStore';
+import { mockAPI } from '../../../data/mockAPI';
 import './QRCodeScanner.css';
 
 const QRCodeScanner = ({ onScanSuccess, onClose }) => {
@@ -29,41 +30,67 @@ const QRCodeScanner = ({ onScanSuccess, onClose }) => {
     requestCameraPermission();
   }, []);
 
-  const handleScan = (result, error) => {
+  const handleScan = async (result, error) => {
     if (result) {
       try {
-        // Parse QR code data - expected format: "SKAEV:STATION:{stationId}:{portId}"
         const qrData = result?.text || result;
         console.log('QR Code scanned:', qrData);
         
-        if (qrData.startsWith('SKAEV:STATION:')) {
-          const parts = qrData.split(':');
-          if (parts.length >= 3) {
-            const stationId = parts[2];
-            const portId = parts[3] || 'default';
-            
-            // Find station by ID
-            const station = getStationById(stationId);
-            if (station) {
-              handleStationFound(station, portId);
-            } else {
-              setError('Trạm sạc không tồn tại hoặc không khả dụng.');
-            }
-          } else {
-            setError('Mã QR không đúng định dạng.');
+        // Use Mock API for QR validation and booking creation
+        const apiResult = await mockAPI.qr.createQRBooking(qrData, {
+          userId: 'current-user-id', // In real app, get from auth context
+          targetSOC: 80,
+          batteryCapacity: 60
+        });
+
+        if (apiResult.success) {
+          const { booking, station, portId } = apiResult.data;
+          
+          // Also create booking in local store for immediate UI update
+          const localBooking = createBooking({
+            stationId: station.id,
+            stationName: station.name,
+            chargerType: {
+              id: 'auto',
+              name: 'Auto-selected',
+              power: `${station.charging.maxPower} kW`,
+              price: `${station.charging.pricing.dcRate || station.charging.pricing.acRate} VNĐ/kWh`,
+            },
+            connector: {
+              id: 'auto',
+              name: 'Auto-detected',
+              compatible: 'Universal',
+            },
+            slot: {
+              id: portId,
+              location: `Port ${portId}`,
+            },
+            bookingTime: new Date().toISOString(),
+            scannedAt: new Date().toISOString(),
+            autoStart: true,
+            schedulingType: 'immediate',
+            source: 'qr_scan'
+          });
+
+          if (onScanSuccess) {
+            onScanSuccess({
+              station,
+              booking: localBooking,
+              portId,
+              message: apiResult.message,
+              apiData: apiResult.data
+            });
           }
-        } else {
-          setError('Mã QR không phải của hệ thống SkaEV.');
         }
       } catch (err) {
-        setError('Không thể đọc mã QR. Vui lòng thử lại.');
+        console.error('QR API Error:', err);
+        setError(err.message || 'Không thể xử lý mã QR. Vui lòng thử lại.');
       }
       setScanning(false);
     }
 
     if (error) {
       console.warn('QR Scanner error:', error);
-      // Don't show every scan error to avoid spam
     }
   };
 
