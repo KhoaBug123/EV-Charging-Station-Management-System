@@ -31,6 +31,7 @@ import {
   LocationOn,
 } from "@mui/icons-material";
 import useBookingStore from "../../store/bookingStore";
+import ChargingDateTimePicker from "../ui/ChargingDateTimePicker/ChargingDateTimePicker";
 
 const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
   const { createBooking } = useBookingStore();
@@ -38,6 +39,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
   const [selectedChargerType, setSelectedChargerType] = useState(null);
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedDateTime, setSelectedDateTime] = useState(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bookingResult, setBookingResult] = useState(null); // 'success', 'error', null
@@ -45,7 +47,8 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
 
   const steps = [
     "Chọn loại máy sạc",
-    "Chọn đầu sạc",
+    "Chọn đầu sạc", 
+    "Chọn ngày giờ sạc",
     "Chọn slot trống",
     "Xác nhận đặt",
   ];
@@ -155,7 +158,13 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
 
   const handleConnectorSelect = (connector) => {
     setSelectedConnector(connector);
+    setSelectedDateTime(null);
     setSelectedSlot(null);
+  };
+
+  const handleDateTimeChange = (dateTimeData) => {
+    setSelectedDateTime(dateTimeData);
+    setSelectedSlot(null); // Reset slot when date/time changes
   };
 
   const handleSlotSelect = (slot) => {
@@ -192,6 +201,10 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
         connector: selectedConnector,
         slot: selectedSlot,
         bookingTime: new Date().toISOString(),
+        schedulingType: selectedDateTime?.schedulingType || 'immediate',
+        scheduledDateTime: selectedDateTime?.scheduledDateTime || null,
+        scheduledDate: selectedDateTime?.scheduledDate ? selectedDateTime.scheduledDate.toISOString().split('T')[0] : null,
+        scheduledTime: selectedDateTime?.scheduledTime ? selectedDateTime.scheduledTime.toISOString() : null,
       };
 
       // Create booking using store
@@ -224,6 +237,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
     setSelectedChargerType(null);
     setSelectedConnector(null);
     setSelectedSlot(null);
+    setSelectedDateTime(null);
     setAgreeTerms(false);
     setLoading(false);
     setBookingResult(null);
@@ -367,6 +381,112 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
+              Chọn ngày và giờ sạc
+            </Typography>
+            {selectedConnector && (
+              <>
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  Đã chọn: {selectedConnector.name}
+                </Alert>
+                <ChargingDateTimePicker
+                  station={station}
+                  onDateTimeChange={handleDateTimeChange}
+                  initialDateTime={selectedDateTime}
+                />
+              </>
+            )}
+          </Box>
+        );
+
+      case 3:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Chọn slot trống phù hợp
+            </Typography>
+            {selectedDateTime && (selectedDateTime.schedulingType === 'immediate' || selectedDateTime.isValid) && (
+              <>
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {selectedDateTime.schedulingType === 'immediate' 
+                    ? "Sạc ngay khi đến trạm"
+                    : `Đã lên lịch: ${selectedDateTime.scheduledDateTime?.toLocaleString('vi-VN')}`
+                  }
+                </Alert>
+                <Grid container spacing={2}>
+                  {getAvailableSlots(
+                    selectedChargerType,
+                    selectedConnector
+                  ).map((slot) => (
+                    <Grid item xs={12} sm={6} key={slot.id}>
+                      <ButtonBase
+                        onClick={() => handleSlotSelect(slot)}
+                        sx={{ width: "100%", borderRadius: 1 }}
+                      >
+                        <Card
+                          sx={{
+                            width: "100%",
+                            cursor: "pointer",
+                            border: selectedSlot?.id === slot.id ? 2 : 1,
+                            borderColor:
+                              selectedSlot?.id === slot.id
+                                ? "primary.main"
+                                : "divider",
+                            "&:hover": {
+                              boxShadow: 2,
+                            },
+                          }}
+                        >
+                          <CardContent>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                              }}
+                            >
+                              <Box>
+                                <Typography variant="h6" fontWeight="bold">
+                                  {slot.id}
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    color: "text.secondary",
+                                    fontSize: "0.875rem",
+                                  }}
+                                >
+                                  <LocationOn sx={{ fontSize: 16, mr: 0.5 }} />
+                                  {slot.location}
+                                </Box>
+                              </Box>
+                              <Chip
+                                label="Sẵn sàng"
+                                color="success"
+                                size="small"
+                                icon={<CheckCircle />}
+                              />
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </ButtonBase>
+                    </Grid>
+                  ))}
+                </Grid>
+              </>
+            )}
+            {selectedDateTime && !selectedDateTime.isValid && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                Vui lòng chọn ngày và giờ hợp lệ trước khi tiếp tục
+              </Alert>
+            )}
+          </Box>
+        );
+
+      case 4:
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
               Chọn slot trống phù hợp
             </Typography>
             {selectedConnector && (
@@ -486,6 +606,17 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
                       {selectedSlot?.id} - {selectedSlot?.location}
                     </Typography>
                   </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Lịch sạc:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {selectedDateTime?.schedulingType === 'immediate' 
+                        ? "Sạc ngay" 
+                        : selectedDateTime?.scheduledDateTime?.toLocaleString('vi-VN') || 'Chưa chọn'
+                      }
+                    </Typography>
+                  </Grid>
                   <Grid item xs={12}>
                     <Typography variant="body2" color="text.secondary">
                       Giá dự kiến:
@@ -575,8 +706,10 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
       case 1:
         return selectedConnector !== null;
       case 2:
-        return selectedSlot !== null;
+        return selectedDateTime !== null && (selectedDateTime.schedulingType === 'immediate' || selectedDateTime.isValid);
       case 3:
+        return selectedSlot !== null;
+      case 4:
         return agreeTerms;
       default:
         return false;

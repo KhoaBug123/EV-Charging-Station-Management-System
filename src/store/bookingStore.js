@@ -8,6 +8,8 @@ const useBookingStore = create(
       bookings: [],
       currentBooking: null,
       bookingHistory: [],
+      chargingSession: null, // Current active charging session
+      socTracking: {}, // SOC tracking by booking ID
       loading: false,
       error: null,
 
@@ -39,20 +41,42 @@ const useBookingStore = create(
               }
             : null,
           bookingTime: bookingData.bookingTime,
+          scannedAt: bookingData.scannedAt,
+          autoStart: bookingData.autoStart,
+          bookingDate: new Date().toISOString().split('T')[0], // Add booking date
+          // Scheduling information
+          schedulingType: bookingData.schedulingType || 'immediate',
+          scheduledDateTime: bookingData.scheduledDateTime,
+          scheduledDate: bookingData.scheduledDate,
+          scheduledTime: bookingData.scheduledTime,
         };
 
         const booking = {
           ...cleanData,
           id: `BOOK${Date.now()}`,
-          status: "confirmed",
+          status: cleanData.schedulingType === 'scheduled' ? "scheduled" : "confirmed",
           createdAt: new Date().toISOString(),
-          estimatedArrival: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes from now
+          estimatedArrival: cleanData.schedulingType === 'scheduled' 
+            ? cleanData.scheduledDateTime 
+            : new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes from now for immediate
         };
 
+        // Initialize SOC tracking for this booking
         set((state) => ({
           bookings: [...state.bookings, booking],
           bookingHistory: [...state.bookingHistory, booking],
           currentBooking: booking,
+          socTracking: {
+            ...state.socTracking,
+            [booking.id]: {
+              initialSOC: null,
+              currentSOC: null,
+              targetSOC: null,
+              lastUpdated: null,
+              chargingRate: null,
+              estimatedTimeToTarget: null,
+            }
+          }
         }));
 
         return booking;
@@ -110,14 +134,126 @@ const useBookingStore = create(
       },
 
       startCharging: (bookingId) => {
+        const chargingSession = {
+          bookingId,
+          startTime: new Date().toISOString(),
+          status: "active",
+          sessionId: `SESSION${Date.now()}`,
+        };
+
+        set((state) => ({
+          ...state,
+          chargingSession,
+        }));
+
         get().updateBookingStatus(bookingId, "charging", {
           chargingStartedAt: new Date().toISOString(),
+          sessionId: chargingSession.sessionId,
         });
       },
 
+      // New SOC tracking methods
+      updateSOC: (bookingId, socData) => {
+        set((state) => ({
+          socTracking: {
+            ...state.socTracking,
+            [bookingId]: {
+              ...state.socTracking[bookingId],
+              ...socData,
+              lastUpdated: new Date().toISOString(),
+            }
+          }
+        }));
+      },
+
+      initializeSOCTracking: (bookingId, initialSOC, targetSOC = 80) => {
+        set((state) => ({
+          socTracking: {
+            ...state.socTracking,
+            [bookingId]: {
+              initialSOC,
+              currentSOC: initialSOC,
+              targetSOC,
+              lastUpdated: new Date().toISOString(),
+              chargingRate: null,
+              estimatedTimeToTarget: null,
+            }
+          }
+        }));
+      },
+
+      updateChargingProgress: (bookingId, progressData) => {
+        const {
+          currentSOC,
+          chargingRate,
+          powerDelivered,
+          energyDelivered,
+          voltage,
+          current,
+          temperature
+        } = progressData;
+
+        const socData = get().socTracking[bookingId];
+        let estimatedTimeToTarget = null;
+
+        if (socData && chargingRate && socData.targetSOC) {
+          const remainingSOC = socData.targetSOC - currentSOC;
+          estimatedTimeToTarget = Math.max(0, Math.round((remainingSOC / chargingRate) * 60)); // minutes
+        }
+
+        set((state) => ({
+          socTracking: {
+            ...state.socTracking,
+            [bookingId]: {
+              ...state.socTracking[bookingId],
+              currentSOC,
+              chargingRate,
+              estimatedTimeToTarget,
+              lastUpdated: new Date().toISOString(),
+            }
+          },
+          chargingSession: state.chargingSession?.bookingId === bookingId ? {
+            ...state.chargingSession,
+            currentSOC,
+            powerDelivered,
+            energyDelivered,
+            voltage,
+            current,
+            temperature,
+            lastUpdated: new Date().toISOString(),
+          } : state.chargingSession
+        }));
+
+        // Update booking with latest charging data
+        get().updateBookingStatus(bookingId, "charging", {
+          currentSOC,
+          energyDelivered,
+          powerDelivered,
+          chargingRate,
+          lastUpdated: new Date().toISOString(),
+        });
+      },
+
+      getSOCProgress: (bookingId) => {
+        const { socTracking } = get();
+        return socTracking[bookingId] || null;
+      },
+
+      getChargingSession: () => {
+        return get().chargingSession;
+      },
+
       stopCharging: (bookingId, chargingData) => {
+        const socData = get().socTracking[bookingId];
+        const finalSOC = chargingData.finalSOC || socData?.currentSOC;
+
+        set((state) => ({
+          chargingSession: null,
+        }));
+
         get().updateBookingStatus(bookingId, "completed", {
           chargingEndedAt: new Date().toISOString(),
+          finalSOC,
           ...chargingData,
         });
       },
@@ -143,13 +279,18 @@ const useBookingStore = create(
         return bookings
           .filter(
             (booking) =>
-              booking.status === "confirmed" &&
-              new Date(booking.estimatedArrival) > now
+              (booking.status === "confirmed" || booking.status === "scheduled") &&
+              new Date(booking.scheduledDateTime || booking.estimatedArrival) > now
           )
           .sort(
             (a, b) =>
-              new Date(a.estimatedArrival) - new Date(b.estimatedArrival)
+              new Date(a.scheduledDateTime || a.estimatedArrival) - new Date(b.scheduledDateTime || b.estimatedArrival)
           );
+      },
+
+      getScheduledBookings: () => {
+        const { bookings } = get();
+        return bookings.filter(booking => booking.schedulingType === 'scheduled');
       },
 
       getPastBookings: () => {
@@ -233,6 +374,9 @@ const useBookingStore = create(
             status: "completed",
             createdAt: "2024-11-24T08:30:00.000Z",
             completedAt: "2024-11-24T10:15:00.000Z",
+            bookingDate: "2024-11-24",
+            initialSOC: 15,
+            finalSOC: 85,
             energyDelivered: 45.5,
             totalAmount: 364000,
             chargingDuration: 105, // minutes
@@ -259,11 +403,27 @@ const useBookingStore = create(
             status: "cancelled",
             createdAt: "2024-11-23T14:20:00.000Z",
             cancelledAt: "2024-11-23T14:35:00.000Z",
+            bookingDate: "2024-11-23",
             cancellationReason: "User cancelled - Change of plans",
           },
         ];
 
-        set({ bookingHistory: mockBookings });
+        // Initialize SOC tracking for mock data
+        const mockSOCTracking = {
+          "BOOK1732457890123": {
+            initialSOC: 15,
+            currentSOC: 85,
+            targetSOC: 80,
+            lastUpdated: "2024-11-24T10:15:00.000Z",
+            chargingRate: 35.2, // %/hour
+            estimatedTimeToTarget: 0,
+          }
+        };
+
+        set({ 
+          bookingHistory: mockBookings,
+          socTracking: mockSOCTracking
+        });
       },
     }),
     {
@@ -272,6 +432,8 @@ const useBookingStore = create(
         bookings: state.bookings,
         bookingHistory: state.bookingHistory,
         currentBooking: state.currentBooking,
+        socTracking: state.socTracking,
+        chargingSession: state.chargingSession,
       }),
     }
   )

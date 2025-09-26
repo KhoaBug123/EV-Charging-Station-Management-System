@@ -1,0 +1,352 @@
+.charging-status {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+}
+
+.charging-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.charging-status-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.live-indicator {
+  background: #ef4444;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* SOC Section */
+.soc-section {
+  margin-bottom: 24px;
+}
+
+.soc-main {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.soc-circle-large {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.soc-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.soc-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.soc-percentage-large {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--soc-color);
+  line-height: 1;
+}
+
+.soc-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.soc-details {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.soc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Charging Session Info */
+.charging-session-info {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.charging-session-info h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.session-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.session-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.stat-icon {
+  font-size: 16px;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.session-stat .stat-label {
+  font-size: 11px;
+}
+
+.session-stat .stat-value {
+  font-size: 14px;
+}
+
+.session-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.time-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.time-value {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+/* Booking Info */
+.booking-info {
+  background: #fef3c7;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.booking-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.booking-stat .stat-content {
+  gap: 4px;
+}
+
+/* Last Updated */
+.last-updated {
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+/* Compact Version */
+.charging-status-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.soc-display-compact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.soc-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--soc-color);
+  color: white;
+}
+
+.soc-percentage {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.charging-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #22c55e;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.charging-icon {
+  font-size: 10px;
+}
+
+.charging-text {
+  white-space: nowrap;
+}
+
+.booking-date-compact {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .charging-status {
+    padding: 16px;
+  }
+  
+  .soc-main {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .soc-circle-large {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .soc-percentage-large {
+    font-size: 26px;
+  }
+  
+  .soc-details {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    text-align: left;
+  }
+  
+  .session-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .charging-session-info {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .charging-status-header h3 {
+    font-size: 18px;
+  }
+  
+  .soc-circle-large {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .soc-percentage-large {
+    font-size: 22px;
+  }
+  
+  .session-stat {
+    padding: 8px;
+  }
+  
+  .session-stat .stat-value {
+    font-size: 13px;
+  }
+}
+
+/* Animation for charging state */
+.charging-status[data-charging="true"] .soc-progress circle:last-child {
+  animation: charging-pulse 3s ease-in-out infinite;
+}
+
+@keyframes charging-pulse {
+  0%, 100% {
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-opacity: 0.7;
+  }
+}

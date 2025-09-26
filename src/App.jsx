@@ -18,6 +18,8 @@ import RegisterPage from "./pages/auth/Register";
 import HomePage from "./pages/public/Home";
 // Test and Demo Pages
 import TestPage from "./pages/TestPage";
+import QRScannerDemo from "./pages/QRScannerDemo";
+import DateTimePickerDemo from "./pages/DateTimePickerDemo";
 
 // Customer Pages
 import FindStations from "./pages/customer/FindStations";
@@ -95,6 +97,8 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/test" element={<TestPage />} />
+            <Route path="/qr-demo" element={<QRScannerDemo />} />
+            <Route path="/datetime-demo" element={<DateTimePickerDemo />} />
             <Route
               path="/login"
               element={

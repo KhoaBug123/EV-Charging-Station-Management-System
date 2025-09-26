@@ -104,6 +104,20 @@ const useStationStore = create((set, get) => ({
     const { stations } = get();
     return stations.find((station) => station.id === stationId);
   },
+
+  // QR Code generation helper
+  generateQRCode: (stationId, portId = 'A01') => {
+    return `SKAEV:STATION:${stationId}:${portId}`;
+  },
+
+  // Mock QR codes for demo
+  getMockQRCodes: () => {
+    return {
+      'station-001': 'SKAEV:STATION:station-001:A01',
+      'station-002': 'SKAEV:STATION:station-002:B02', 
+      'station-003': 'SKAEV:STATION:station-003:C01',
+    };
+  },
 }));
 
 export default useStationStore;

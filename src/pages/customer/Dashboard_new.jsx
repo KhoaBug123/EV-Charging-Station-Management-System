@@ -42,10 +42,14 @@ import {
   LocalGasStation,
   Eco,
   BatteryChargingFull,
+  QrCodeScanner,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import useStationStore from "../../store/stationStore";
+import useBookingStore from "../../store/bookingStore";
+import QRCodeScanner from "../../components/ui/QRCodeScanner/QRCodeScanner";
+import ChargingStatus from "../../components/ui/ChargingStatus/ChargingStatus";
 import { mockData } from "../../data/mockData";
 import {
   formatCurrency,
@@ -59,10 +63,28 @@ const CustomerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { stations, nearbyStations, fetchNearbyStations } = useStationStore();
+  const { 
+    getCurrentBooking, 
+    getChargingSession, 
+    initializeSOCTracking, 
+    startCharging,
+    updateChargingProgress,
+    getUpcomingBookings,
+    getScheduledBookings
+  } = useBookingStore();
+  
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [scanSuccess, setScanSuccess] = useState(null);
+
+  // Get current booking and charging session
+  const currentBooking = getCurrentBooking();
+  const chargingSession = getChargingSession();
+  const upcomingBookings = getUpcomingBookings();
+  const scheduledBookings = getScheduledBookings();
 
   // Get user's booking data
   const userBookings = mockData.bookings.filter(
@@ -71,7 +93,7 @@ const CustomerDashboard = () => {
   const recentBookings = userBookings.slice(0, 4);
   const activeBooking = userBookings.find(
     (booking) => booking.status === "in_progress"
-  );
+  ) || currentBooking;
 
   // Enhanced stats
   const totalSessions = userBookings.length;
@@ -146,6 +168,47 @@ const CustomerDashboard = () => {
 
   const handleNotificationClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleQRScanSuccess = (result) => {
+    console.log('QR Scan successful:', result);
+    setScanSuccess(result);
+    setShowQRScanner(false);
+    
+    // Initialize SOC tracking for the new booking
+    if (result.booking) {
+      // Simulate initial SOC (in real app, this would come from vehicle API)
+      const initialSOC = 25 + Math.random() * 40; // Random between 25-65%
+      const targetSOC = 80; // Default target
+      
+      initializeSOCTracking(result.booking.id, initialSOC, targetSOC);
+      
+      // Start charging session after a short delay
+      setTimeout(() => {
+        startCharging(result.booking.id);
+        
+        // Simulate initial charging progress
+        const initialProgress = {
+          currentSOC: initialSOC,
+          chargingRate: 20 + Math.random() * 15, // 20-35 %/hour
+          powerDelivered: 40 + Math.random() * 20, // 40-60 kW
+          energyDelivered: 0,
+          voltage: 380 + Math.random() * 20,
+          current: 100 + Math.random() * 30,
+          temperature: 30 + Math.random() * 10,
+        };
+        
+        updateChargingProgress(result.booking.id, initialProgress);
+      }, 2000);
+    }
+    
+    // Show success message
+    setNotifications(prev => [{
+      id: Date.now(),
+      type: "success",
+      message: result.message || "QR scan successful! Charging session initiated.",
+      time: "Now",
+    }, ...prev]);
   };
 
   const getStatusIcon = (status) => {
@@ -265,21 +328,59 @@ const CustomerDashboard = () => {
         </Box>
       </Box>
 
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <QRCodeScanner
+          onScanSuccess={handleQRScanSuccess}
+          onClose={() => setShowQRScanner(false)}
+        />
+      )}
+
       {/* Active Session Alert */}
       {activeBooking && (
         <Alert
-          severity="info"
+          severity={activeBooking.status === "charging" ? "info" : "success"}
           sx={{ mb: 3 }}
           action={
-            <Button color="inherit" size="small">
+            <Button 
+              color="inherit" 
+              size="small"
+              onClick={() => navigate(`/customer/booking/${activeBooking.id}`)}
+            >
               View Details
             </Button>
           }
         >
           <Typography variant="body2">
-            <strong>Active Charging Session:</strong>{" "}
-            {activeBooking.stationName} -{activeBooking.duration} minutes
-            remaining
+            <strong>
+              {activeBooking.status === "charging" ? "Active Charging Session" : "Booking Confirmed"}:
+            </strong>{" "}
+            {activeBooking.stationName} 
+            {activeBooking.status === "charging" 
+              ? " - Charging in progress" 
+              : ` - ${activeBooking.duration || 15} minutes until arrival`}
+          </Typography>
+        </Alert>
+      )}
+
+      {/* Charging Status */}
+      {(activeBooking || chargingSession) && (
+        <Box sx={{ mb: 4 }}>
+          <ChargingStatus 
+            bookingId={activeBooking?.id || chargingSession?.bookingId} 
+          />
+        </Box>
+      )}
+
+      {/* Scan Success Alert */}
+      {scanSuccess && (
+        <Alert 
+          severity="success" 
+          sx={{ mb: 3 }}
+          onClose={() => setScanSuccess(null)}
+        >
+          <Typography variant="body2">
+            <strong>QR Scan Successful!</strong> Started charging at {scanSuccess.station?.name}
           </Typography>
         </Alert>
       )}
@@ -493,9 +594,15 @@ const CustomerDashboard = () => {
                         secondary={
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="body2" color="text.secondary">
-                              {formatDate(booking.date)} • {booking.duration}{" "}
+                              {formatDate(booking.date || booking.createdAt)} • {booking.duration || 'N/A'}{" "}
                               minutes
                             </Typography>
+                            {/* Show scheduled time for scheduled bookings */}
+                            {booking.schedulingType === 'scheduled' && booking.scheduledDateTime && (
+                              <Typography variant="body2" color="primary.main" sx={{ fontWeight: 'medium' }}>
+                                📅 Lịch sạc: {new Date(booking.scheduledDateTime).toLocaleString('vi-VN')}
+                              </Typography>
+                            )}
                             <Box
                               sx={{
                                 display: "flex",
@@ -504,8 +611,8 @@ const CustomerDashboard = () => {
                               }}
                             >
                               <Typography variant="body2" fontWeight="medium">
-                                {booking.energyDelivered?.toFixed(1)} kWh •{" "}
-                                {formatCurrency(booking.cost)}
+                                {booking.energyDelivered?.toFixed(1) || 'N/A'} kWh •{" "}
+                                {formatCurrency(booking.cost || 0)}
                               </Typography>
                               {booking.status === "completed" && (
                                 <Box
@@ -552,6 +659,19 @@ const CustomerDashboard = () => {
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Button
                   variant="contained"
+                  startIcon={<QrCodeScanner />}
+                  fullWidth
+                  size="large"
+                  onClick={() => setShowQRScanner(true)}
+                  sx={{ 
+                    background: "linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%)",
+                    fontWeight: "bold"
+                  }}
+                >
+                  Quét QR để sạc ngay
+                </Button>
+                <Button
+                  variant="contained"
                   startIcon={<LocationOn />}
                   fullWidth
                   size="large"
@@ -586,6 +706,54 @@ const CustomerDashboard = () => {
               </Box>
             </CardContent>
           </Card>
+
+          {/* Upcoming Scheduled Sessions */}
+          {scheduledBookings.length > 0 && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  📅 Lịch sạc sắp tới
+                </Typography>
+                {scheduledBookings.slice(0, 2).map((booking) => (
+                  <Paper
+                    key={booking.id}
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      bgcolor: 'warning.50',
+                      border: '1px solid',
+                      borderColor: 'warning.200'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight="medium">
+                          {booking.stationName}
+                        </Typography>
+                        <Typography variant="body2" color="primary.main" sx={{ fontWeight: 'medium' }}>
+                          📅 {new Date(booking.scheduledDateTime).toLocaleString('vi-VN')}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {booking.chargerType?.name} • {booking.slot?.id}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label="Đã lên lịch"
+                        color="warning"
+                        size="small"
+                        icon={<Schedule />}
+                      />
+                    </Box>
+                  </Paper>
+                ))}
+                {scheduledBookings.length > 2 && (
+                  <Button variant="text" size="small" fullWidth>
+                    Xem thêm {scheduledBookings.length - 2} lịch khác
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Nearby Stations */}
           <Card sx={{ mb: 3 }}>
