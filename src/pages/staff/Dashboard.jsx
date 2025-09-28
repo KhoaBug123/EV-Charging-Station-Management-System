@@ -16,6 +16,10 @@ import {
   Alert,
   LinearProgress,
   Avatar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -30,43 +34,46 @@ import {
   Edit,
 } from "@mui/icons-material";
 
-// Mock data
+// Mock data với chargingPosts structure
 const mockStationData = [
   {
     id: 1,
     name: "Vincom Royal City",
     location: "Thanh Xuân, Hà Nội",
-    totalChargers: 8,
-    activeChargers: 6,
-    maintenanceChargers: 1,
-    offlineChargers: 1,
     status: "operational",
     dailyRevenue: 2850000,
     dailySessions: 24,
+    chargingPosts: [
+      { id: "A", name: "AC Charger A", type: "AC", power: 22, totalSlots: 2, availableSlots: 1, status: "active" },
+      { id: "B", name: "DC Fast B", type: "DC", power: 50, totalSlots: 1, availableSlots: 0, status: "occupied" },
+      { id: "C", name: "DC Ultra C", type: "DC", power: 150, totalSlots: 2, availableSlots: 2, status: "active" },
+    ],
   },
   {
     id: 2,
     name: "AEON Mall Long Biên",
     location: "Long Biên, Hà Nội",
-    totalChargers: 12,
-    activeChargers: 10,
-    maintenanceChargers: 2,
-    offlineChargers: 0,
     status: "operational",
     dailyRevenue: 3200000,
     dailySessions: 31,
+    chargingPosts: [
+      { id: "A", name: "AC Charger A", type: "AC", power: 22, totalSlots: 4, availableSlots: 2, status: "active" },
+      { id: "B", name: "DC Fast B", type: "DC", power: 75, totalSlots: 2, availableSlots: 1, status: "active" },
+      { id: "C", name: "DC Ultra C", type: "DC", power: 200, totalSlots: 2, availableSlots: 2, status: "active" },
+    ],
   },
   {
     id: 3,
     name: "Lotte Center",
     location: "Ba Đình, Hà Nội",
-    totalChargers: 6,
-    activeChargers: 4,
-    maintenanceChargers: 0,
-    offlineChargers: 2,
     status: "warning",
     dailyRevenue: 1850000,
     dailySessions: 18,
+    chargingPosts: [
+      { id: "A", name: "AC Charger A", type: "AC", power: 22, totalSlots: 2, availableSlots: 1, status: "active" },
+      { id: "B", name: "DC Fast B", type: "DC", power: 50, totalSlots: 1, availableSlots: 0, status: "maintenance" },
+      { id: "C", name: "DC Ultra C", type: "DC", power: 150, totalSlots: 1, availableSlots: 0, status: "offline" },
+    ],
   },
 ];
 
@@ -75,8 +82,9 @@ const mockAlerts = [
     id: 1,
     type: "maintenance",
     station: "Vincom Royal City",
-    charger: "Charger #3",
-    message: "Scheduled maintenance required",
+    chargingPost: "AC Charger A",
+    slot: "Slot 2",
+    message: "Scheduled maintenance required for connector",
     priority: "medium",
     time: "2 hours ago",
   },
@@ -84,8 +92,9 @@ const mockAlerts = [
     id: 2,
     type: "error",
     station: "Lotte Center",
-    charger: "Charger #5",
-    message: "Connection error detected",
+    chargingPost: "DC Fast B",
+    slot: "Slot 1",
+    message: "Connection error detected - charging stopped",
     priority: "high",
     time: "30 minutes ago",
   },
@@ -93,10 +102,21 @@ const mockAlerts = [
     id: 3,
     type: "info",
     station: "AEON Mall Long Biên",
-    charger: "Charger #8",
-    message: "Maintenance completed successfully",
+    chargingPost: "DC Ultra C",
+    slot: "Slot 1",
+    message: "Charging session completed successfully",
     priority: "low",
     time: "1 hour ago",
+  },
+  {
+    id: 4,
+    type: "warning",
+    station: "Vincom Royal City",
+    chargingPost: "DC Ultra C",
+    slot: "All slots",
+    message: "High temperature detected - reduced power",
+    priority: "medium",
+    time: "45 minutes ago",
   },
 ];
 
@@ -107,28 +127,54 @@ const StaffDashboard = () => {
   const [detailsDialog, setDetailsDialog] = useState(false);
   const [maintenanceDialog, setMaintenanceDialog] = useState(false);
   const [maintenanceForm, setMaintenanceForm] = useState({
-    charger: "",
+    chargingPost: "",
+    slot: "",
     issue: "",
     notes: "",
   });
 
-  // Calculate overall statistics
-  const totalChargers = stations.reduce(
-    (sum, station) => sum + station.totalChargers,
-    0
-  );
-  const activeChargers = stations.reduce(
-    (sum, station) => sum + station.activeChargers,
-    0
-  );
-  const maintenanceChargers = stations.reduce(
-    (sum, station) => sum + station.maintenanceChargers,
-    0
-  );
-  const offlineChargers = stations.reduce(
-    (sum, station) => sum + station.offlineChargers,
-    0
-  );
+  // Calculate overall statistics từ chargingPosts
+  const calculateStationStats = (stations) => {
+    let totalPosts = 0;
+    let activePosts = 0;
+    let maintenancePosts = 0;
+    let offlinePosts = 0;
+    let totalSlots = 0;
+    let occupiedSlots = 0;
+
+    stations.forEach(station => {
+      station.chargingPosts.forEach(post => {
+        totalPosts++;
+        totalSlots += post.totalSlots;
+        occupiedSlots += (post.totalSlots - post.availableSlots);
+
+        switch(post.status) {
+          case 'active':
+          case 'occupied':
+            activePosts++;
+            break;
+          case 'maintenance':
+            maintenancePosts++;
+            break;
+          case 'offline':
+            offlinePosts++;
+            break;
+        }
+      });
+    });
+
+    return {
+      totalPosts,
+      activePosts,
+      maintenancePosts,
+      offlinePosts,
+      totalSlots,
+      occupiedSlots,
+      availableSlots: totalSlots - occupiedSlots,
+    };
+  };
+
+  const stats = calculateStationStats(stations);
   const totalRevenue = stations.reduce(
     (sum, station) => sum + station.dailyRevenue,
     0
@@ -177,7 +223,7 @@ const StaffDashboard = () => {
     // Here you would typically send the maintenance request to your backend
     console.log("Maintenance request:", maintenanceForm);
     setMaintenanceDialog(false);
-    setMaintenanceForm({ charger: "", issue: "", notes: "" });
+    setMaintenanceForm({ chargingPost: "", slot: "", issue: "", notes: "" });
     // Show success message
   };
 
@@ -193,10 +239,10 @@ const StaffDashboard = () => {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Staff Dashboard
+          Staff Dashboard ⚡
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Monitor and manage charging stations
+          Monitor and manage charging stations, posts, and slots
         </Typography>
       </Box>
 
@@ -211,16 +257,16 @@ const StaffDashboard = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h4" fontWeight="bold">
-                    {totalChargers}
+                    {stats.totalPosts}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Total Chargers
+                    Charging Posts
                   </Typography>
                 </Box>
               </Box>
               <LinearProgress
                 variant="determinate"
-                value={(activeChargers / totalChargers) * 100}
+                value={(stats.activePosts / stats.totalPosts) * 100}
                 sx={{ height: 8, borderRadius: 4 }}
               />
               <Typography
@@ -228,8 +274,8 @@ const StaffDashboard = () => {
                 color="text.secondary"
                 sx={{ mt: 1 }}
               >
-                {activeChargers} active, {maintenanceChargers} maintenance,{" "}
-                {offlineChargers} offline
+                {stats.activePosts} active, {stats.maintenancePosts} maintenance,{" "}
+                {stats.offlinePosts} offline • {stats.totalSlots} total slots
               </Typography>
             </CardContent>
           </Card>
@@ -248,17 +294,17 @@ const StaffDashboard = () => {
                     fontWeight="bold"
                     color="success.main"
                   >
-                    {activeChargers}
+                    {stats.availableSlots}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Active Chargers
+                    Available Slots
                   </Typography>
                 </Box>
               </Box>
               <Chip
-                label={`${((activeChargers / totalChargers) * 100).toFixed(
+                label={`${((stats.availableSlots / stats.totalSlots) * 100).toFixed(
                   1
-                )}% Operational`}
+                )}% Available`}
                 color="success"
                 size="small"
               />
@@ -372,14 +418,18 @@ const StaffDashboard = () => {
 
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="body2" gutterBottom>
-                            Chargers: {station.activeChargers}/
-                            {station.totalChargers} active
+                            Charging Posts: {station.chargingPosts.length} posts,{" "}
+                            {station.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)} total slots
+                          </Typography>
+                          <Typography variant="body2" gutterBottom>
+                            Available Slots: {station.chargingPosts.reduce((sum, post) => sum + post.availableSlots, 0)}/
+                            {station.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)}
                           </Typography>
                           <LinearProgress
                             variant="determinate"
                             value={
-                              (station.activeChargers / station.totalChargers) *
-                              100
+                              ((station.chargingPosts.reduce((sum, post) => sum + (post.totalSlots - post.availableSlots), 0)) /
+                              station.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)) * 100
                             }
                             sx={{ height: 6, borderRadius: 3, mb: 1 }}
                           />
@@ -457,9 +507,12 @@ const StaffDashboard = () => {
                 >
                   <Box>
                     <Typography variant="body2" fontWeight="bold">
-                      {alert.station} - {alert.charger}
+                      {alert.station} - {alert.chargingPost}
                     </Typography>
-                    <Typography variant="body2">{alert.message}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {alert.slot} • {alert.message}
+                    </Typography>
+                    <br />
                     <Typography variant="caption" color="text.secondary">
                       {alert.time}
                     </Typography>
@@ -502,18 +555,26 @@ const StaffDashboard = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Total Chargers
+                  Charging Posts
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {selectedStation.totalChargers}
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {selectedStation.chargingPosts.length} posts
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Active Chargers
+                  Total Slots
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedStation.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)} slots
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Available Slots
                 </Typography>
                 <Typography variant="body2" color="success.main">
-                  {selectedStation.activeChargers}
+                  {selectedStation.chargingPosts.reduce((sum, post) => sum + post.availableSlots, 0)} available
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -550,17 +611,51 @@ const StaffDashboard = () => {
         <DialogTitle>Schedule Maintenance</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Station</InputLabel>
+              <Select
+                value={maintenanceForm.stationId}
+                onChange={(e) =>
+                  setMaintenanceForm({
+                    ...maintenanceForm,
+                    stationId: e.target.value,
+                    chargingPost: '', // Reset when station changes
+                    slot: '', // Reset when station changes
+                  })
+                }
+              >
+                {mockStationData.map((station) => (
+                  <MenuItem key={station.id} value={station.id}>
+                    {station.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <TextField
               fullWidth
-              label="Charger ID"
-              value={maintenanceForm.charger}
+              label="Charging Post ID"
+              value={maintenanceForm.chargingPost}
               onChange={(e) =>
                 setMaintenanceForm({
                   ...maintenanceForm,
-                  charger: e.target.value,
+                  chargingPost: e.target.value,
                 })
               }
               sx={{ mb: 2 }}
+              placeholder="e.g., AC Charger A, DC Fast B"
+            />
+            <TextField
+              fullWidth
+              label="Slot ID"
+              value={maintenanceForm.slot}
+              onChange={(e) =>
+                setMaintenanceForm({
+                  ...maintenanceForm,
+                  slot: e.target.value,
+                })
+              }
+              sx={{ mb: 2 }}
+              placeholder="e.g., Slot 1, Slot 2, All slots"
             />
             <TextField
               fullWidth

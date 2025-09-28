@@ -86,42 +86,52 @@ const AdminDashboard = () => {
     (b) => b.status === "in_progress"
   ).length;
 
-  // Station Performance
+  // Station Performance với chargingPosts structure
   const stationPerformance = stations
     .map((station) => {
       const stationBookings = mockData.bookings.filter(
         (b) => b.stationId === station.id
       );
       const revenue = stationBookings.reduce((sum, b) => sum + b.cost, 0);
-      const utilization =
-        station.charging.totalPorts > 0
-          ? ((station.charging.totalPorts - station.charging.availablePorts) /
-              station.charging.totalPorts) *
-            100
-          : 0;
+      
+      // Tính utilization từ chargingPosts
+      let totalSlots = 0;
+      let occupiedSlots = 0;
+      
+      if (station.charging?.chargingPosts) {
+        station.charging.chargingPosts.forEach(post => {
+          totalSlots += post.totalSlots;
+          occupiedSlots += (post.totalSlots - post.availableSlots);
+        });
+      }
+      
+      const utilization = totalSlots > 0 ? (occupiedSlots / totalSlots) * 100 : 0;
 
       return {
         ...station,
         bookingsCount: stationBookings.length,
         revenue,
         utilization,
+        totalSlots,
+        occupiedSlots,
+        chargingPostsCount: station.charging?.chargingPosts?.length || 0,
       };
     })
     .sort((a, b) => b.revenue - a.revenue);
 
-  // Recent Activities
+  // Recent Activities với chargingPosts context
   const recentActivities = [
     {
       id: 1,
       type: "booking",
-      message: "New booking at Tech Park SuperCharger",
+      message: "New booking at Tech Park SuperCharger - Charging Post A",
       time: "5 minutes ago",
       severity: "info",
     },
     {
       id: 2,
       type: "station",
-      message: 'Station "Green Mall Hub" went offline',
+      message: 'Charging Post B at "Green Mall Hub" went offline',
       time: "15 minutes ago",
       severity: "warning",
     },
@@ -135,16 +145,23 @@ const AdminDashboard = () => {
     {
       id: 4,
       type: "payment",
-      message: "Payment completed: ₫125,000",
+      message: "DC Fast Charging completed: ₫125,000",
       time: "1 hour ago",
       severity: "success",
     },
     {
       id: 5,
       type: "maintenance",
-      message: "Maintenance scheduled for EcoPark Station",
+      message: "Maintenance scheduled for EcoPark Station - All Charging Posts",
       time: "2 hours ago",
       severity: "info",
+    },
+    {
+      id: 6,
+      type: "slot",
+      message: "Slot 1 at Tech Park SuperCharger - Post C is now available",
+      time: "3 hours ago",
+      severity: "success",
     },
   ];
 
@@ -375,6 +392,7 @@ const AdminDashboard = () => {
                     <TableRow>
                       <TableCell>Station</TableCell>
                       <TableCell align="center">Status</TableCell>
+                      <TableCell align="center">Charging Posts</TableCell>
                       <TableCell align="center">Utilization</TableCell>
                       <TableCell align="center">Sessions</TableCell>
                       <TableCell align="center">Revenue</TableCell>
@@ -419,6 +437,16 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell align="center">
                           {getStatusChip(station.status)}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium">
+                              {station.chargingPostsCount} Posts
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {station.occupiedSlots}/{station.totalSlots} slots
+                            </Typography>
+                          </Box>
                         </TableCell>
                         <TableCell align="center">
                           <Box sx={{ minWidth: 60 }}>
@@ -617,26 +645,26 @@ const AdminDashboard = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" gutterBottom>
-                    Total Ports
+                    Charging Posts
                   </Typography>
                   <Typography variant="body2">
-                    {selectedStation.charging.totalPorts}
+                    {selectedStation.chargingPostsCount} posts, {selectedStation.totalSlots} total slots
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" gutterBottom>
-                    Available Ports
+                    Available Slots
                   </Typography>
                   <Typography variant="body2">
-                    {selectedStation.charging.availablePorts}
+                    {selectedStation.totalSlots - selectedStation.occupiedSlots} available
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" gutterBottom>
-                    Max Power
+                    Max Power (per post)
                   </Typography>
                   <Typography variant="body2">
-                    {selectedStation.charging.maxPower}kW
+                    {selectedStation.charging?.chargingPosts?.[0]?.power || 'N/A'}kW
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
