@@ -25,6 +25,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import useAuthStore from "../../../store/authStore";
+import { getText } from "../../../utils/vietnameseTexts";
 
 const drawerWidth = 260;
 
@@ -37,60 +38,60 @@ const Sidebar = ({ open, onClose }) => {
     switch (user?.role) {
       case "admin":
         return [
-          { text: "Dashboard", icon: <Dashboard />, path: "/admin/dashboard" },
+          { text: getText("nav.dashboard"), icon: <Dashboard />, path: "/admin/dashboard" },
           {
-            text: "Advanced Analytics",
+            text: getText("nav.advancedAnalytics"),
             icon: <Analytics />,
             path: "/admin/analytics",
           },
           {
-            text: "Station Management",
+            text: getText("nav.stationManagement"),
             icon: <LocationOn />,
             path: "/admin/stations",
           },
           {
-            text: "Notifications",
+            text: getText("nav.notifications"),
             icon: <Notifications />,
             path: "/admin/notifications",
           },
-          { text: "User Management", icon: <People />, path: "/admin/users" },
+          { text: getText("nav.userManagement"), icon: <People />, path: "/admin/users" },
           {
-            text: "System Reports",
+            text: getText("nav.systemReports"),
             icon: <Analytics />,
             path: "/admin/reports",
           },
-          { text: "Settings", icon: <Settings />, path: "/admin/settings" },
+          { text: getText("nav.settings"), icon: <Settings />, path: "/admin/settings" },
         ];
 
       case "staff":
         return [
-          { text: "Dashboard", icon: <Dashboard />, path: "/staff/dashboard" },
+          { text: getText("nav.dashboard"), icon: <Dashboard />, path: "/staff/dashboard" },
           {
-            text: "Station Management",
+            text: getText("nav.stationManagement"),
             icon: <LocationOn />,
             path: "/staff/stations",
           },
-          { text: "Profile", icon: <Person />, path: "/staff/profile" },
+          { text: getText("nav.profile"), icon: <Person />, path: "/staff/profile" },
         ];
 
       case "customer":
         return [
           {
-            text: "Find Stations",
+            text: getText("nav.findStations"),
             icon: <LocationOn />,
             path: "/customer/find-stations",
           },
           {
-            text: "Booking History",
+            text: getText("nav.bookingHistory"),
             icon: <History />,
             path: "/customer/history",
           },
           {
-            text: "Payment Methods",
+            text: getText("nav.paymentMethods"),
             icon: <Payment />,
             path: "/customer/payment",
           },
-          { text: "Profile", icon: <Person />, path: "/customer/profile" },
+          { text: getText("nav.profile"), icon: <Person />, path: "/customer/profile" },
         ];
 
       default:
@@ -123,7 +124,7 @@ const Sidebar = ({ open, onClose }) => {
         </Box>
         {user && (
           <Typography variant="body2" color="text.secondary">
-            Welcome, {user.profile?.firstName}
+            {getText("nav.welcome")}, {user.profile?.firstName}
           </Typography>
         )}
       </Box>

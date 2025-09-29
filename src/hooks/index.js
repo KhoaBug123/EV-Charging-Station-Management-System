@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 
+// Export Vietnamese text hook
+export { useVietnameseText } from "./useVietnameseText";
+
 /**
  * Custom hook for local storage
  */
@@ -93,7 +96,7 @@ export const useGeolocation = () => {
           errorMessage = "The request to get user location timed out.";
           break;
         default:
-          errorMessage = "An unknown error occurred.";
+          errorMessage = "Đã xảy ra lỗi không xác định.";
           break;
       }
 
@@ -230,6 +233,7 @@ export const useAsync = (asyncFunction, immediate = true) => {
     if (immediate) {
       execute();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [immediate]);
 
   return {
@@ -260,7 +264,7 @@ export const useFormValidation = (initialValues, validationRules) => {
     }
 
     if (rule.pattern && !rule.pattern.test(value)) {
-      return rule.message || `${name} is invalid`;
+      return rule.message || `${name} không hợp lệ`;
     }
 
     if (rule.minLength && value.length < rule.minLength) {

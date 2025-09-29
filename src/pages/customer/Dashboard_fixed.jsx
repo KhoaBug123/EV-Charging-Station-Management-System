@@ -89,9 +89,9 @@ const CustomerDashboard = () => {
   const avgSessionDuration =
     userBookings.length > 0
       ? Math.round(
-          userBookings.reduce((sum, booking) => sum + booking.duration, 0) /
-            userBookings.length
-        )
+        userBookings.reduce((sum, booking) => sum + booking.duration, 0) /
+        userBookings.length
+      )
       : 0;
 
   // Environmental impact
@@ -272,7 +272,7 @@ const CustomerDashboard = () => {
           sx={{ mb: 3 }}
           action={
             <Button color="inherit" size="small">
-              View Details
+              Xem chi tiết
             </Button>
           }
         >
@@ -519,7 +519,7 @@ const CustomerDashboard = () => {
                                     sx={{ fontSize: 14, color: "warning.main" }}
                                   />
                                   <Typography variant="caption">
-                                    {booking.rating || "Rate this session"}
+                                    {booking.rating || "Đánh giá phiên này"}
                                   </Typography>
                                 </Box>
                               )}

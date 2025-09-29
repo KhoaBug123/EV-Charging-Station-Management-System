@@ -22,7 +22,7 @@ const useAuthStore = create(
           );
 
           if (!user) {
-            throw new Error("Invalid email or password");
+            throw new Error("Email hoặc mật khẩu không đúng");
           }
 
           // Simulate API delay

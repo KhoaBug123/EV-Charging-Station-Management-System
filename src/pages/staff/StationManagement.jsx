@@ -258,10 +258,10 @@ const StaffStationManagement = () => {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Station Management
+          Quản lý trạm sạc
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Monitor and control charging stations and equipment
+          Giám sát và điều khiển các trạm sạc và thiết bị
         </Typography>
       </Box>
 
@@ -385,7 +385,7 @@ const StaffStationManagement = () => {
                       )}
 
                       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        <Tooltip title="View Details">
+                        <Tooltip title="Xem chi tiết">
                           <IconButton
                             size="small"
                             onClick={() => handleViewDetails(charger)}

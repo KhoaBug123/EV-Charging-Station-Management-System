@@ -32,7 +32,7 @@ const TestPage = () => {
               <CheckCircle
                 sx={{ color: "success.main", mr: 1, fontSize: 18 }}
               />
-              Station Management System
+              Hệ thống quản lý trạm sạc
             </Typography>
 
             <Typography

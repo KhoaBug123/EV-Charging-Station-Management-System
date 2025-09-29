@@ -327,7 +327,7 @@ const AdminSettings = () => {
                     }
                   >
                     <MenuItem value="vi">Tiếng Việt</MenuItem>
-                    <MenuItem value="en">English</MenuItem>
+                    <MenuItem value="en">Tiếng Anh</MenuItem>
                     <MenuItem value="zh">中文</MenuItem>
                   </Select>
                 </FormControl>

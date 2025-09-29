@@ -36,15 +36,14 @@ import useStationStore from "../../store/stationStore";
 import {
   formatCurrency,
   calculateDistance,
-  getStatusColor,
 } from "../../utils/helpers";
 import { getStationImage } from "../../utils/imageAssets";
 import { CONNECTOR_TYPES } from "../../utils/constants";
 import BookingModal from "../../components/customer/BookingModal";
+import { getText, formatText } from "../../utils/vietnameseTexts";
 
 const FindStations = () => {
   const {
-    stations,
     filters,
     updateFilters,
     getFilteredStations,
@@ -69,19 +68,20 @@ const FindStations = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
+          const newLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          });
+          };
+          setUserLocation(newLocation);
           fetchNearbyStations(position.coords, filters.maxDistance);
         },
-        (error) => {
+        () => {
           console.warn("Location access denied, using default location");
           fetchNearbyStations(userLocation, filters.maxDistance);
         }
       );
     }
-  }, []);
+  }, [fetchNearbyStations, filters.maxDistance, userLocation]);
 
   const handleSearch = () => {
     // Mock search functionality
@@ -95,7 +95,10 @@ const FindStations = () => {
 
   const handleBookingComplete = (bookingData) => {
     setBookingMessage(
-      `Đặt chỗ thành công tại ${bookingData.stationName}! Mã đặt chỗ: ${bookingData.id}`
+      formatText("stations.bookingSuccess", {
+        stationName: bookingData.stationName,
+        bookingId: bookingData.id
+      })
     );
     setBookingSuccess(true);
     setBookingModalOpen(false);
@@ -121,20 +124,20 @@ const FindStations = () => {
     const totalPorts = station.charging.totalPorts;
 
     if (station.status !== "active") {
-      return <Chip label="Offline" color="error" size="small" />;
+      return <Chip label={getText("stations.offline")} color="error" size="small" />;
     }
 
     if (availablePorts === 0) {
-      return <Chip label="Full" color="warning" size="small" />;
+      return <Chip label={getText("stations.full")} color="warning" size="small" />;
     }
 
     if (availablePorts === totalPorts) {
-      return <Chip label="Available" color="success" size="small" />;
+      return <Chip label={getText("stations.available")} color="success" size="small" />;
     }
 
     return (
       <Chip
-        label={`${availablePorts}/${totalPorts} Available`}
+        label={`${availablePorts}/${totalPorts} Có sẵn`}
         color="info"
         size="small"
       />
@@ -145,10 +148,10 @@ const FindStations = () => {
     <Box>
       {/* Header */}
       <Typography variant="h4" fontWeight="bold" gutterBottom>
-        Find Charging Stations ⚡
+        {getText("stations.title")} ⚡
       </Typography>
       <Typography variant="body1" color="text.secondary" gutterBottom>
-        Discover nearby charging stations and book your charging session
+        {getText("stations.subtitle")}
       </Typography>
 
       {/* Search & Filters */}
@@ -159,7 +162,7 @@ const FindStations = () => {
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                placeholder="Search by location, station name..."
+                placeholder={getText("stations.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 InputProps={{
@@ -173,7 +176,7 @@ const FindStations = () => {
             {/* Connector Type Filter */}
             <Grid item xs={12} md={3}>
               <FormControl fullWidth>
-                <InputLabel>Connector Type</InputLabel>
+                <InputLabel>{getText("stations.connectorType")}</InputLabel>
                 <Select
                   value={filters.connectorTypes}
                   multiple
@@ -193,7 +196,7 @@ const FindStations = () => {
             {/* Distance Filter */}
             <Grid item xs={12} md={3}>
               <Typography variant="body2" gutterBottom>
-                Max Distance: {filters.maxDistance}km
+                {getText("stations.maxDistance")}: {filters.maxDistance}{getText("units.km")}
               </Typography>
               <Slider
                 value={filters.maxDistance}
@@ -213,7 +216,7 @@ const FindStations = () => {
                 onClick={handleSearch}
                 startIcon={<Search />}
               >
-                Search
+                {getText("common.search")}
               </Button>
             </Grid>
           </Grid>
@@ -226,7 +229,7 @@ const FindStations = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {filteredStations.length} Stations Found
+                {filteredStations.length} {getText("stations.stationsFound")}
               </Typography>
 
               <List>
@@ -292,7 +295,7 @@ const FindStations = () => {
                                 }}
                               >
                                 {station.location.address} •{" "}
-                                {getDistanceToStation(station)}km away
+                                {getDistanceToStation(station)}{getText("units.km")} {getText("stations.away")}
                               </span>
                             </span>
 
@@ -315,7 +318,7 @@ const FindStations = () => {
                                   sx={{ fontSize: 16, color: "primary.main" }}
                                 />
                                 <span style={{ fontSize: "0.875rem" }}>
-                                  Up to {station.charging.maxPower}kW
+                                  {getText("stations.upTo")} {station.charging.maxPower}{getText("units.kw")}
                                 </span>
                               </span>
 
@@ -333,14 +336,14 @@ const FindStations = () => {
                                     fontWeight: "bold",
                                   }}
                                 >
-                                  ₫
+                                  {getText("units.vnd")}
                                 </span>
                                 <span style={{ fontSize: "0.875rem" }}>
-                                  From{" "}
+                                  {getText("stations.from")}{" "}
                                   {formatCurrency(
                                     station.charging.pricing.acRate
                                   )}
-                                  /kWh
+                                  {getText("units.perKwh")}
                                 </span>
                               </span>
                             </span>
@@ -365,7 +368,7 @@ const FindStations = () => {
                                 }}
                               >
                                 {station.ratings.overall} (
-                                {station.ratings.totalReviews} reviews)
+                                {station.ratings.totalReviews} {getText("stations.reviews")})
                               </span>
                             </span>
                           </span>
@@ -380,7 +383,7 @@ const FindStations = () => {
                         }}
                         sx={{ ml: 2 }}
                       >
-                        Book Now
+                        {getText("stations.bookNow")}
                       </Button>
                     </ListItem>
 
@@ -428,49 +431,49 @@ const FindStations = () => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Distance: {getDistanceToStation(selectedStation)}km
+                  {getText("stations.distance")}: {getDistanceToStation(selectedStation)}{getText("units.km")}
                 </Typography>
 
                 <Divider sx={{ my: 2 }} />
 
                 <Typography variant="subtitle2" gutterBottom>
-                  Charging Information
+                  {getText("stations.chargingInfo")}
                 </Typography>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • Max Power: {selectedStation.charging.maxPower}kW
+                  • {getText("stations.maxPower")}: {selectedStation.charging.maxPower}{getText("units.kw")}
                 </Box>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • Available Ports: {selectedStation.charging.availablePorts}/
+                  • {getText("stations.availablePorts")}: {selectedStation.charging.availablePorts}/
                   {selectedStation.charging.totalPorts}
                 </Box>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • Connector Types:{" "}
+                  • {getText("stations.connectorTypes")}:{" "}
                   {selectedStation.charging.connectorTypes.join(", ")}
                 </Box>
 
                 <Divider sx={{ my: 2 }} />
 
                 <Typography variant="subtitle2" gutterBottom>
-                  Pricing
+                  {getText("stations.pricing")}
                 </Typography>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • AC Charging:{" "}
-                  {formatCurrency(selectedStation.charging.pricing.acRate)}/kWh
+                  • {getText("stations.acCharging")}:{" "}
+                  {formatCurrency(selectedStation.charging.pricing.acRate)}{getText("units.perKwh")}
                 </Box>
                 {selectedStation.charging.pricing.dcRate && (
                   <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                    • DC Charging:{" "}
+                    • {getText("stations.dcCharging")}:{" "}
                     {formatCurrency(selectedStation.charging.pricing.dcRate)}
-                    /kWh
+                    {getText("units.perKwh")}
                   </Box>
                 )}
                 {selectedStation.charging.pricing.parkingFee > 0 && (
                   <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                    • Parking:{" "}
+                    • {getText("stations.parking")}:{" "}
                     {formatCurrency(
                       selectedStation.charging.pricing.parkingFee
                     )}
-                    /hour
+                    {getText("units.perHour")}
                   </Box>
                 )}
 
@@ -481,7 +484,7 @@ const FindStations = () => {
                   onClick={() => handleBookStation(selectedStation)}
                   sx={{ mt: 2 }}
                 >
-                  Book This Station
+                  {getText("stations.bookThisStation")}
                 </Button>
               </CardContent>
             </Card>
@@ -489,11 +492,10 @@ const FindStations = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Select a Station
+                  {getText("stations.selectStation")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Choose a charging station from the list to see detailed
-                  information and book your session.
+                  {getText("stations.selectStationDescription")}
                 </Typography>
               </CardContent>
             </Card>

@@ -36,6 +36,7 @@ import {
   Verified,
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
+import { getText } from "../../utils/vietnameseTexts";
 
 const CustomerProfile = () => {
   const { user, updateUser } = useAuthStore();
@@ -72,14 +73,14 @@ const CustomerProfile = () => {
   };
 
   const profileStats = [
-    { label: "Member Since", value: "Jan 2024", icon: <Person /> },
-    { label: "Total Sessions", value: "24", icon: <Verified /> },
+    { label: "Thành viên từ", value: "Tháng 1/2024", icon: <Person /> },
+    { label: "Tổng số phiên", value: "24", icon: <Verified /> },
     {
-      label: "Favorite Station",
-      value: "SkaEV Downtown",
+      label: "Trạm yêu thích",
+      value: "SkaEV Trung tâm",
       icon: <LocationOn />,
     },
-    { label: "Account Status", value: "Verified", icon: <Security /> },
+    { label: "Trạng thái tài khoản", value: "Đã xác thực", icon: <Security /> },
   ];
 
   return (
@@ -107,10 +108,10 @@ const CustomerProfile = () => {
           </Avatar>
           <Box>
             <Typography variant="h4" fontWeight="bold">
-              {user?.name || "User Profile"}
+              {user?.name || getText("profile.title")}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Manage your account settings and preferences
+              {getText("profile.subtitle")}
             </Typography>
           </Box>
         </Box>
@@ -119,7 +120,7 @@ const CustomerProfile = () => {
           startIcon={editMode ? <Save /> : <Edit />}
           onClick={editMode ? handleSave : () => setEditMode(true)}
         >
-          {editMode ? "Save Changes" : "Edit Profile"}
+          {editMode ? getText("profile.saveChanges") : "Chỉnh sửa hồ sơ"}
         </Button>
       </Box>
 
@@ -129,14 +130,14 @@ const CustomerProfile = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Personal Information
+                {getText("profile.personalInfo")}
               </Typography>
 
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Full Name"
+                    label="Họ và tên"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
@@ -153,7 +154,7 @@ const CustomerProfile = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Email Address"
+                    label="Địa chỉ email"
                     value={formData.email}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
@@ -170,7 +171,7 @@ const CustomerProfile = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Phone Number"
+                    label="Số điện thoại"
                     value={formData.phone}
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
@@ -186,10 +187,10 @@ const CustomerProfile = () => {
 
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth disabled={!editMode}>
-                    <InputLabel>Language</InputLabel>
+                    <InputLabel>Ngôn ngữ</InputLabel>
                     <Select
                       value={formData.language}
-                      label="Language"
+                      label="Ngôn ngữ"
                       onChange={(e) =>
                         setFormData({ ...formData, language: e.target.value })
                       }
@@ -198,7 +199,7 @@ const CustomerProfile = () => {
                       }
                     >
                       <MenuItem value="vi">Tiếng Việt</MenuItem>
-                      <MenuItem value="en">English</MenuItem>
+                      <MenuItem value="en">Tiếng Anh</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -206,7 +207,7 @@ const CustomerProfile = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Address"
+                    label="Địa chỉ"
                     value={formData.address}
                     onChange={(e) =>
                       setFormData({ ...formData, address: e.target.value })
@@ -232,7 +233,7 @@ const CustomerProfile = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="City"
+                    label="Thành phố"
                     value={formData.city}
                     onChange={(e) =>
                       setFormData({ ...formData, city: e.target.value })
@@ -244,7 +245,7 @@ const CustomerProfile = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Province"
+                    label="Tỉnh/Thành phố"
                     value={formData.province}
                     onChange={(e) =>
                       setFormData({ ...formData, province: e.target.value })
@@ -260,7 +261,7 @@ const CustomerProfile = () => {
           <Card sx={{ mt: 3 }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Notification Preferences
+                Tùy chọn thông báo
               </Typography>
 
               <List>
@@ -269,8 +270,8 @@ const CustomerProfile = () => {
                     <Email />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Email Notifications"
-                    secondary="Receive booking confirmations and updates via email"
+                    primary="Thông báo qua Email"
+                    secondary="Nhận xác nhận đặt chỗ và cập nhật qua email"
                   />
                   <ListItemSecondaryAction>
                     <Switch
@@ -286,8 +287,8 @@ const CustomerProfile = () => {
                     <Phone />
                   </ListItemIcon>
                   <ListItemText
-                    primary="SMS Notifications"
-                    secondary="Get text messages for important updates"
+                    primary="Thông báo SMS"
+                    secondary="Nhận tin nhắn cho các cập nhật quan trọng"
                   />
                   <ListItemSecondaryAction>
                     <Switch
@@ -303,8 +304,8 @@ const CustomerProfile = () => {
                     <Notifications />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Push Notifications"
-                    secondary="Receive browser notifications for real-time updates"
+                    primary="Thông báo đẩy"
+                    secondary="Nhận thông báo trên trình duyệt theo thời gian thực"
                   />
                   <ListItemSecondaryAction>
                     <Switch
@@ -320,8 +321,8 @@ const CustomerProfile = () => {
                     <Notifications />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Marketing Communications"
-                    secondary="Receive promotional offers and news"
+                    primary="Thông tin marketing"
+                    secondary="Nhận ưu đãi khuyến mãi và tin tức"
                   />
                   <ListItemSecondaryAction>
                     <Switch
@@ -341,7 +342,7 @@ const CustomerProfile = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Account Overview
+                Tổng quan tài khoản
               </Typography>
 
               {profileStats.map((stat, index) => (
@@ -375,42 +376,42 @@ const CustomerProfile = () => {
           <Card sx={{ mt: 3 }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Account Security
+                Bảo mật tài khoản
               </Typography>
 
               <Alert severity="success" sx={{ mb: 2 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Verified />
                   <Typography variant="body2">
-                    Your account is verified and secure
+                    Tài khoản của bạn đã được xác thực và bảo mật
                   </Typography>
                 </Box>
               </Alert>
 
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Password
+                  Mật khẩu
                 </Typography>
                 <Typography variant="body2">
-                  Last changed 30 days ago
+                  Thay đổi lần cuối 30 ngày trước
                 </Typography>
                 <Button size="small" sx={{ mt: 1 }}>
-                  Change Password
+                  {getText("profile.changePassword")}
                 </Button>
               </Box>
 
               <Box>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Two-Factor Authentication
+                  Xác thực hai yếu tố
                 </Typography>
                 <Chip
-                  label="Enabled"
+                  label="Đã bật"
                   color="success"
                   size="small"
                   icon={<Security />}
                 />
                 <Button size="small" sx={{ ml: 1 }}>
-                  Manage
+                  Quản lý
                 </Button>
               </Box>
             </CardContent>

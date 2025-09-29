@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -31,6 +31,7 @@ import {
   Select,
   Tooltip,
 } from "@mui/material";
+
 import {
   Dashboard as DashboardIcon,
   ElectricCar,
@@ -59,16 +60,14 @@ import useStationStore from "../../store/stationStore";
 import { mockData } from "../../data/mockData";
 import {
   formatCurrency,
-  formatDate,
-  getStatusColor,
 } from "../../utils/helpers";
 import { STATION_STATUS, USER_ROLES } from "../../utils/constants";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { stations } = useStationStore();
-  const [selectedPeriod, setSelectedPeriod] = useState("today");
+  useState("today");
   const [anchorEl, setAnchorEl] = useState(null);
   const [openStationDialog, setOpenStationDialog] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
@@ -77,7 +76,7 @@ const AdminDashboard = () => {
   const totalStations = stations.length;
   const activeStations = stations.filter((s) => s.status === "active").length;
   const totalUsers = mockData.users.length;
-  const totalBookings = mockData.bookings.length;
+  mockData.bookings.length;
   const todayBookings = mockData.bookings.filter(
     (b) => new Date(b.date).toDateString() === new Date().toDateString()
   ).length;
@@ -93,18 +92,18 @@ const AdminDashboard = () => {
         (b) => b.stationId === station.id
       );
       const revenue = stationBookings.reduce((sum, b) => sum + b.cost, 0);
-      
+
       // Tính utilization từ chargingPosts
       let totalSlots = 0;
       let occupiedSlots = 0;
-      
+
       if (station.charging?.chargingPosts) {
         station.charging.chargingPosts.forEach(post => {
           totalSlots += post.totalSlots;
           occupiedSlots += (post.totalSlots - post.availableSlots);
         });
       }
-      
+
       const utilization = totalSlots > 0 ? (occupiedSlots / totalSlots) * 100 : 0;
 
       return {
@@ -175,9 +174,9 @@ const AdminDashboard = () => {
 
   const getStatusChip = (status) => {
     const configs = {
-      active: { label: "Active", color: "success" },
-      inactive: { label: "Inactive", color: "error" },
-      maintenance: { label: "Maintenance", color: "warning" },
+      active: { label: "Hoạt động", color: "success" },
+      inactive: { label: "Không hoạt động", color: "error" },
+      maintenance: { label: "Bảo trì", color: "warning" },
       construction: { label: "Construction", color: "info" },
     };
 
@@ -211,10 +210,10 @@ const AdminDashboard = () => {
       >
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            System Administration 🔧
+            Quản trị hệ thống 🔧
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Monitor and manage the SkaEV charging network
+            Giám sát và quản lý mạng lưới sạc SkaEV
           </Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 2 }}>
@@ -223,14 +222,14 @@ const AdminDashboard = () => {
             startIcon={<Download />}
             onClick={() => console.log("Export report")}
           >
-            Export Report
+            Xuất báo cáo
           </Button>
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={() => navigate("/admin/stations/new")}
           >
-            Add Station
+            Thêm trạm sạc
           </Button>
         </Box>
       </Box>
@@ -238,9 +237,9 @@ const AdminDashboard = () => {
       {/* Alert for Critical Issues */}
       <Alert severity="warning" sx={{ mb: 3 }}>
         <Typography variant="body2">
-          <strong>System Alert:</strong> 2 stations require immediate attention.
+          <strong>Cảnh báo hệ thống:</strong> 2 trạm sạc cần được chú ý ngay lập tức.
           <Button size="small" sx={{ ml: 1 }}>
-            View Details
+            Xem chi tiết
           </Button>
         </Typography>
       </Alert>
@@ -267,7 +266,7 @@ const AdminDashboard = () => {
                     Total Stations
                   </Typography>
                   <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    {activeStations} active
+                    {activeStations} hoạt động
                   </Typography>
                 </Box>
               </Box>
@@ -320,7 +319,7 @@ const AdminDashboard = () => {
                     {activeChargingSessions}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Active Sessions
+                    Phiên hoạt động
                   </Typography>
                   <Typography variant="caption" sx={{ opacity: 0.8 }}>
                     {todayBookings} today
@@ -499,7 +498,7 @@ const AdminDashboard = () => {
                   }}
                 >
                   <Visibility sx={{ mr: 1 }} />
-                  View Details
+                  Xem chi tiết
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
@@ -653,10 +652,10 @@ const AdminDashboard = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" gutterBottom>
-                    Available Slots
+                    Slot có sẵn
                   </Typography>
                   <Typography variant="body2">
-                    {selectedStation.totalSlots - selectedStation.occupiedSlots} available
+                    {selectedStation.totalSlots - selectedStation.occupiedSlots} có sẵn
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -664,7 +663,7 @@ const AdminDashboard = () => {
                     Max Power (per post)
                   </Typography>
                   <Typography variant="body2">
-                    {selectedStation.charging?.chargingPosts?.[0]?.power || 'N/A'}kW
+                    {selectedStation.charging?.chargingPosts?.[0]?.power || 'Không có'}kW
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>

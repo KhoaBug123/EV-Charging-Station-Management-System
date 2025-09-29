@@ -169,7 +169,7 @@ function App() {
             {/* Fallback Routes */}
             <Route
               path="/unauthorized"
-              element={<div>Unauthorized Access</div>}
+              element={<div>Bạn không có quyền truy cập trang này</div>}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

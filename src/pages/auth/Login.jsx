@@ -16,6 +16,7 @@ import {
 import { ElectricCar, Login } from "@mui/icons-material";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
+import { getText } from "../../utils/vietnameseTexts";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -49,19 +50,19 @@ const LoginPage = () => {
     {
       email: "admin@skaev.com",
       password: "Admin123!",
-      role: "Admin",
+      role: getText("users.admin"),
       color: "error",
     },
     {
       email: "staff@skaev.com",
       password: "Staff123!",
-      role: "Staff",
+      role: getText("users.staff"),
       color: "info",
     },
     {
       email: "john.doe@gmail.com",
       password: "Customer123!",
-      role: "Customer",
+      role: getText("users.customer"),
       color: "success",
     },
   ];
@@ -136,7 +137,7 @@ const LoginPage = () => {
               SkaEV
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Electric Vehicle Charging Management
+              {getText("auth.loginSubtitle")}
             </Typography>
           </Box>
 
@@ -145,7 +146,7 @@ const LoginPage = () => {
             <Box sx={{ mb: 3 }}>
               <TextField
                 fullWidth
-                label="Email Address"
+                label={getText("auth.email")}
                 name="email"
                 type="email"
                 value={formData.email}
@@ -158,7 +159,7 @@ const LoginPage = () => {
             <Box sx={{ mb: 3 }}>
               <TextField
                 fullWidth
-                label="Password"
+                label={getText("auth.password")}
                 name="password"
                 type="password"
                 value={formData.password}
@@ -183,26 +184,26 @@ const LoginPage = () => {
               startIcon={loading ? <CircularProgress size={20} /> : <Login />}
               sx={{ mb: 2 }}
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? getText("auth.signingIn") : getText("auth.login")}
             </Button>
           </form>
 
           <Box sx={{ textAlign: "center", mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              Don't have an account?{" "}
+              {getText("auth.dontHaveAccount")}{" "}
               <Link
                 component={RouterLink}
                 to="/register"
                 sx={{ textDecoration: "none", fontWeight: "medium" }}
               >
-                Sign up here
+                {getText("auth.registerHere")}
               </Link>
             </Typography>
           </Box>
 
           <Divider sx={{ my: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              Demo Accounts
+              {getText("auth.demoAccounts")}
             </Typography>
           </Divider>
 
@@ -241,7 +242,7 @@ const LoginPage = () => {
 
           <Box sx={{ textAlign: "center", mt: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              Click any demo account to auto-fill credentials
+              {getText("auth.clickToFill")}
             </Typography>
           </Box>
         </CardContent>

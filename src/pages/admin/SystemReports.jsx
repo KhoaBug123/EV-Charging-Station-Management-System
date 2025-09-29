@@ -472,21 +472,21 @@ const AdminSystemReports = () => {
                                 station.usage > 80
                                   ? "High Usage"
                                   : station.usage > 60
-                                  ? "Normal"
-                                  : "Low Usage"
+                                    ? "Normal"
+                                    : "Low Usage"
                               }
                               color={
                                 station.usage > 80
                                   ? "success"
                                   : station.usage > 60
-                                  ? "info"
-                                  : "warning"
+                                    ? "info"
+                                    : "warning"
                               }
                               size="small"
                             />
                           </TableCell>
                           <TableCell align="center">
-                            <Tooltip title="View Details">
+                            <Tooltip title="Xem chi tiết">
                               <IconButton size="small">
                                 <Visibility />
                               </IconButton>

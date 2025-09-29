@@ -8,7 +8,6 @@ import {
   Card,
   CardContent,
   Chip,
-  useTheme,
 } from "@mui/material";
 import {
   ElectricCar,
@@ -20,40 +19,40 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
+import { getText } from "../../utils/vietnameseTexts";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
   const { isAuthenticated, user } = useAuthStore();
 
   const features = [
     {
       icon: <Speed sx={{ fontSize: 40, color: "primary.main" }} />,
-      title: "Fast Charging",
-      description: "Ultra-fast DC charging up to 250kW for quick top-ups",
+      title: getText("home.features.fastCharging.title"),
+      description: getText("home.features.fastCharging.description"),
     },
     {
       icon: <LocationOn sx={{ fontSize: 40, color: "success.main" }} />,
-      title: "Wide Network",
-      description: "Extensive network of charging stations across the city",
+      title: getText("home.features.wideNetwork.title"),
+      description: getText("home.features.wideNetwork.description"),
     },
     {
       icon: <Nature sx={{ fontSize: 40, color: "secondary.main" }} />,
-      title: "Green Energy",
-      description: "100% renewable energy sources for sustainable charging",
+      title: getText("home.features.greenEnergy.title"),
+      description: getText("home.features.greenEnergy.description"),
     },
     {
       icon: <Security sx={{ fontSize: 40, color: "info.main" }} />,
-      title: "Secure Payments",
-      description: "Safe and secure payment processing with multiple options",
+      title: getText("home.features.securePayments.title"),
+      description: getText("home.features.securePayments.description"),
     },
   ];
 
   const stats = [
-    { label: "Active Stations", value: "50+", color: "primary" },
-    { label: "Happy Customers", value: "1,200+", color: "success" },
-    { label: "Charging Sessions", value: "25,000+", color: "warning" },
-    { label: "CO₂ Saved", value: "150T+", color: "secondary" },
+    { label: getText("home.stats.activeStations"), value: "50+", color: "primary" },
+    { label: getText("home.stats.happyCustomers"), value: "1,200+", color: "success" },
+    { label: getText("home.stats.chargingSessions"), value: "25,000+", color: "warning" },
+    { label: getText("home.stats.co2Saved"), value: "150T+", color: "secondary" },
   ];
 
   const handleGetStarted = () => {
@@ -123,7 +122,7 @@ const HomePage = () => {
                     },
                   }}
                 >
-                  Đăng nhập
+                  {getText("auth.login")}
                 </Button>
                 <Button
                   variant="contained"
@@ -142,7 +141,7 @@ const HomePage = () => {
                     },
                   }}
                 >
-                  Đăng ký
+                  {getText("auth.register")}
                 </Button>
               </Box>
             )}
@@ -159,12 +158,10 @@ const HomePage = () => {
                 gutterBottom
                 sx={{ fontSize: { xs: "2.5rem", md: "3.5rem" } }}
               >
-                Smart EV Charging Network
+                {getText("home.title")}
               </Typography>
               <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
-                Manage your electric vehicle charging stations efficiently with
-                our comprehensive platform. Real-time monitoring, smart booking,
-                and seamless payments.
+                {getText("home.subtitle")}
               </Typography>
 
               <Box
@@ -196,9 +193,9 @@ const HomePage = () => {
                 >
                   {isAuthenticated
                     ? user?.role === "customer"
-                      ? "Tìm trạm sạc"
-                      : "Vào Dashboard"
-                    : "Bắt đầu ngay"}
+                      ? getText("home.findStations")
+                      : getText("home.goToDashboard")
+                    : getText("auth.getStarted")}
                 </Button>
 
                 {!isAuthenticated && (
@@ -224,7 +221,7 @@ const HomePage = () => {
                       boxShadow: "0 4px 15px rgba(255, 107, 53, 0.3)",
                     }}
                   >
-                    Đăng ký miễn phí
+                    {getText("auth.signUpFree")}
                   </Button>
                 )}
               </Box>
@@ -297,10 +294,10 @@ const HomePage = () => {
         <Container maxWidth="lg">
           <Box sx={{ textAlign: "center", mb: 6 }}>
             <Typography variant="h3" fontWeight="bold" gutterBottom>
-              Why Choose SkaEV?
+              {getText("home.whyChoose")}
             </Typography>
             <Typography variant="h6" color="text.secondary">
-              Advanced features for modern EV charging management
+              {getText("home.whyChooseSubtitle")}
             </Typography>
           </Box>
 
@@ -338,10 +335,10 @@ const HomePage = () => {
       {/* CTA Section */}
       <Container maxWidth="lg" sx={{ py: 8, textAlign: "center" }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Ready to Start Charging?
+          {getText("home.readyToStart")}
         </Typography>
         <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-          Join thousands of EV drivers using SkaEV charging network
+          {getText("home.readyToStartSubtitle")}
         </Typography>
 
         <Box
@@ -352,9 +349,9 @@ const HomePage = () => {
             flexWrap: "wrap",
           }}
         >
-          <Chip label="Customer" color="success" />
-          <Chip label="Staff" color="info" />
-          <Chip label="Administrator" color="error" />
+          <Chip label={getText("users.customer")} color="success" />
+          <Chip label={getText("users.staff")} color="info" />
+          <Chip label={getText("users.admin")} color="error" />
         </Box>
 
         <Button
@@ -375,7 +372,7 @@ const HomePage = () => {
             boxShadow: "0 4px 15px rgba(19, 121, 255, 0.2)",
           }}
         >
-          {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
+          {isAuthenticated ? getText("home.goToDashboard") : getText("auth.getStartedToday")}
         </Button>
       </Container>
 
@@ -387,7 +384,7 @@ const HomePage = () => {
               SkaEV
             </Typography>
             <Typography variant="body2" color="grey.400">
-              © 2024 SkaEV. Electric Vehicle Charging Management Platform.
+              {getText("home.copyright")}
             </Typography>
           </Box>
         </Container>

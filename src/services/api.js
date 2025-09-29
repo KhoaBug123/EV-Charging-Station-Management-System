@@ -60,7 +60,7 @@ class MockApiClient {
     );
 
     if (!user) {
-      throw new Error("Invalid email or password");
+      throw new Error("Email hoặc mật khẩu không đúng");
     }
 
     return {
@@ -76,7 +76,7 @@ class MockApiClient {
         token: `mock-token-${user.id}-${Date.now()}`,
         refreshToken: `mock-refresh-${user.id}-${Date.now()}`,
       },
-      message: "Login successful",
+      message: "Đăng nhập thành công",
     };
   }
 
@@ -92,7 +92,7 @@ class MockApiClient {
           return {
             success: true,
             data: nearbyStations,
-            message: "Nearby stations retrieved",
+            message: "Đã tải các trạm gần đây",
           };
         }
 
@@ -145,14 +145,14 @@ class MockApiClient {
         return {
           success: true,
           data: newBooking,
-          message: "Booking created successfully",
+          message: "Tạo đặt chỗ thành công",
         };
 
       default:
         return {
           success: true,
           data: null,
-          message: "Booking operation completed",
+          message: "Hoàn thành thao tác đặt chỗ",
         };
     }
   }
@@ -163,7 +163,7 @@ class MockApiClient {
         return {
           success: true,
           data: mockData.users.map((u) => ({ ...u, password: undefined })), // Don't return passwords
-          message: "Users retrieved",
+          message: "Đã tải danh sách người dùng",
         };
 
       default:

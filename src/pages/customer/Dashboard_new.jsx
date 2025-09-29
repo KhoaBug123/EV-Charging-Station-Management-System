@@ -63,16 +63,16 @@ const CustomerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { stations, nearbyStations, fetchNearbyStations } = useStationStore();
-  const { 
-    getCurrentBooking, 
-    getChargingSession, 
-    initializeSOCTracking, 
+  const {
+    getCurrentBooking,
+    getChargingSession,
+    initializeSOCTracking,
     startCharging,
     updateChargingProgress,
     getUpcomingBookings,
     getScheduledBookings
   } = useBookingStore();
-  
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,9 +111,9 @@ const CustomerDashboard = () => {
   const avgSessionDuration =
     userBookings.length > 0
       ? Math.round(
-          userBookings.reduce((sum, booking) => sum + booking.duration, 0) /
-            userBookings.length
-        )
+        userBookings.reduce((sum, booking) => sum + booking.duration, 0) /
+        userBookings.length
+      )
       : 0;
 
   // Environmental impact
@@ -174,19 +174,19 @@ const CustomerDashboard = () => {
     console.log('QR Scan successful:', result);
     setScanSuccess(result);
     setShowQRScanner(false);
-    
+
     // Initialize SOC tracking for the new booking
     if (result.booking) {
       // Simulate initial SOC (in real app, this would come from vehicle API)
       const initialSOC = 25 + Math.random() * 40; // Random between 25-65%
       const targetSOC = 80; // Default target
-      
+
       initializeSOCTracking(result.booking.id, initialSOC, targetSOC);
-      
+
       // Start charging session after a short delay
       setTimeout(() => {
         startCharging(result.booking.id);
-        
+
         // Simulate initial charging progress
         const initialProgress = {
           currentSOC: initialSOC,
@@ -197,11 +197,11 @@ const CustomerDashboard = () => {
           current: 100 + Math.random() * 30,
           temperature: 30 + Math.random() * 10,
         };
-        
+
         updateChargingProgress(result.booking.id, initialProgress);
       }, 2000);
     }
-    
+
     // Show success message
     setNotifications(prev => [{
       id: Date.now(),
@@ -342,22 +342,22 @@ const CustomerDashboard = () => {
           severity={activeBooking.status === "charging" ? "info" : "success"}
           sx={{ mb: 3 }}
           action={
-            <Button 
-              color="inherit" 
+            <Button
+              color="inherit"
               size="small"
               onClick={() => navigate(`/customer/booking/${activeBooking.id}`)}
             >
-              View Details
+              Xem chi tiết
             </Button>
           }
         >
           <Typography variant="body2">
             <strong>
-              {activeBooking.status === "charging" ? "Active Charging Session" : "Booking Confirmed"}:
+              {activeBooking.status === "charging" ? "Phiên sạc đang hoạt động" : "Đặt chỗ đã xác nhận"}:
             </strong>{" "}
-            {activeBooking.stationName} 
-            {activeBooking.status === "charging" 
-              ? " - Charging in progress" 
+            {activeBooking.stationName}
+            {activeBooking.status === "charging"
+              ? " - Charging in progress"
               : ` - ${activeBooking.duration || 15} minutes until arrival`}
           </Typography>
         </Alert>
@@ -366,16 +366,16 @@ const CustomerDashboard = () => {
       {/* Charging Status */}
       {(activeBooking || chargingSession) && (
         <Box sx={{ mb: 4 }}>
-          <ChargingStatus 
-            bookingId={activeBooking?.id || chargingSession?.bookingId} 
+          <ChargingStatus
+            bookingId={activeBooking?.id || chargingSession?.bookingId}
           />
         </Box>
       )}
 
       {/* Scan Success Alert */}
       {scanSuccess && (
-        <Alert 
-          severity="success" 
+        <Alert
+          severity="success"
           sx={{ mb: 3 }}
           onClose={() => setScanSuccess(null)}
         >
@@ -626,7 +626,7 @@ const CustomerDashboard = () => {
                                     sx={{ fontSize: 14, color: "warning.main" }}
                                   />
                                   <Typography variant="caption">
-                                    {booking.rating || "Rate this session"}
+                                    {booking.rating || "Đánh giá phiên này"}
                                   </Typography>
                                 </Box>
                               )}
@@ -663,7 +663,7 @@ const CustomerDashboard = () => {
                   fullWidth
                   size="large"
                   onClick={() => setShowQRScanner(true)}
-                  sx={{ 
+                  sx={{
                     background: "linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%)",
                     fontWeight: "bold"
                   }}

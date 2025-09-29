@@ -20,6 +20,9 @@ export const formatCurrency = (amount, currency = "VND") => {
 export const formatDate = (date, options = {}) => {
   if (!date) return "";
 
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) return "Ngày không hợp lệ";
+
   const defaultOptions = {
     year: "numeric",
     month: "long",
@@ -27,7 +30,7 @@ export const formatDate = (date, options = {}) => {
     ...options,
   };
 
-  return new Date(date).toLocaleDateString("vi-VN", defaultOptions);
+  return dateObj.toLocaleDateString("vi-VN", defaultOptions);
 };
 
 /**
@@ -36,13 +39,16 @@ export const formatDate = (date, options = {}) => {
 export const formatTime = (date, options = {}) => {
   if (!date) return "";
 
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) return "Giờ không hợp lệ";
+
   const defaultOptions = {
     hour: "2-digit",
     minute: "2-digit",
     ...options,
   };
 
-  return new Date(date).toLocaleTimeString("vi-VN", defaultOptions);
+  return dateObj.toLocaleTimeString("vi-VN", defaultOptions);
 };
 
 /**
@@ -64,9 +70,9 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(toRadians(lat2)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
@@ -257,7 +263,7 @@ export const getBrowserInfo = () => {
   else if (userAgent.includes("Firefox")) browserName = "Firefox";
   else if (userAgent.includes("Safari")) browserName = "Safari";
   else if (userAgent.includes("Edge")) browserName = "Edge";
-  else browserName = "Unknown";
+  else browserName = "Không xác định";
 
   return {
     name: browserName,

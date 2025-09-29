@@ -36,10 +36,9 @@ import {
   CheckCircle,
   Warning,
 } from "@mui/icons-material";
-import useAuthStore from "../../store/authStore";
+import { getText } from "../../utils/vietnameseTexts";
 
 const PaymentMethods = () => {
-  const { user } = useAuthStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [formData, setFormData] = useState({
@@ -164,14 +163,14 @@ const PaymentMethods = () => {
     } else if (method.type === "wallet") {
       return `${method.provider} ${method.accountNumber}`;
     }
-    return "Payment Method";
+    return "Phương thức thanh toán";
   };
 
   const getMethodSubtitle = (method) => {
     if (method.type === "credit_card") {
-      return `Expires ${method.expiryDate} • ${method.cardholderName}`;
+      return `Hết hạn ${method.expiryDate} • ${method.cardholderName}`;
     } else if (method.type === "wallet") {
-      return "Digital Wallet";
+      return "Ví điện tử";
     }
     return "";
   };
@@ -193,15 +192,15 @@ const PaymentMethods = () => {
           </Avatar>
           <Box>
             <Typography variant="h4" fontWeight="bold">
-              Payment Methods
+              {getText("payment.title")}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Manage your payment methods for charging sessions
+              {getText("payment.subtitle")}
             </Typography>
           </Box>
         </Box>
         <Button variant="contained" startIcon={<Add />} onClick={handleAddNew}>
-          Add Payment Method
+          {getText("payment.addPaymentMethod")}
         </Button>
       </Box>
 
@@ -210,8 +209,7 @@ const PaymentMethods = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Security />
           <Typography variant="body2">
-            Your payment information is encrypted and secure. We never store
-            your full card details.
+            Thông tin thanh toán của bạn được mã hóa và bảo mật. Chúng tôi không bao giờ lưu trữ thông tin thẻ đầy đủ của bạn.
           </Typography>
         </Box>
       </Alert>
@@ -220,24 +218,24 @@ const PaymentMethods = () => {
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Saved Payment Methods
+            {getText("payment.paymentMethods")}
           </Typography>
 
           {paymentMethods.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
               <CreditCard sx={{ fontSize: 60, color: "grey.400", mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
-                No payment methods added
+                {getText("payment.noPaymentMethods")}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Add a payment method to make charging payments easier
+                Thêm phương thức thanh toán để thanh toán dễ dàng hơn
               </Typography>
               <Button
                 variant="contained"
                 startIcon={<Add />}
                 onClick={handleAddNew}
               >
-                Add Your First Payment Method
+                {getText("payment.addFirstMethod")}
               </Button>
             </Box>
           ) : (
@@ -266,13 +264,13 @@ const PaymentMethods = () => {
                           </Typography>
                           {method.isDefault && (
                             <Chip
-                              label="Default"
+                              label={getText("payment.defaultMethod")}
                               size="small"
                               color="primary"
                             />
                           )}
                           {method.isExpired && (
-                            <Chip label="Expired" size="small" color="error" />
+                            <Chip label="Hết hạn" size="small" color="error" />
                           )}
                         </Box>
                       }
@@ -285,7 +283,7 @@ const PaymentMethods = () => {
                             size="small"
                             onClick={() => handleSetDefault(method.id)}
                           >
-                            Set Default
+                            {getText("payment.setAsDefault")}
                           </Button>
                         )}
                         <IconButton
@@ -322,7 +320,7 @@ const PaymentMethods = () => {
                 {paymentMethods.length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Payment Methods
+                Phương thức thanh toán
               </Typography>
             </CardContent>
           </Card>
@@ -334,7 +332,7 @@ const PaymentMethods = () => {
                 {paymentMethods.filter((m) => !m.isExpired).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Active Methods
+                Đang hoạt động
               </Typography>
             </CardContent>
           </Card>
@@ -346,7 +344,7 @@ const PaymentMethods = () => {
                 {paymentMethods.filter((m) => m.isExpired).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Need Update
+                Cần cập nhật
               </Typography>
             </CardContent>
           </Card>
@@ -361,22 +359,22 @@ const PaymentMethods = () => {
         fullWidth
       >
         <DialogTitle>
-          {selectedMethod ? "Edit Payment Method" : "Add Payment Method"}
+          {selectedMethod ? "Chỉnh sửa phương thức thanh toán" : getText("payment.addPaymentMethod")}
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Payment Type</InputLabel>
+                <InputLabel>Loại thanh toán</InputLabel>
                 <Select
                   value={formData.type}
-                  label="Payment Type"
+                  label="Loại thanh toán"
                   onChange={(e) =>
                     setFormData({ ...formData, type: e.target.value })
                   }
                 >
-                  <MenuItem value="credit_card">Credit/Debit Card</MenuItem>
-                  <MenuItem value="wallet">Digital Wallet</MenuItem>
+                  <MenuItem value="credit_card">{getText("payment.creditCard")}</MenuItem>
+                  <MenuItem value="wallet">{getText("payment.wallet")}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -386,7 +384,7 @@ const PaymentMethods = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Card Number"
+                    label={getText("payment.cardNumber")}
                     value={formData.cardNumber}
                     onChange={(e) =>
                       setFormData({ ...formData, cardNumber: e.target.value })
@@ -397,7 +395,7 @@ const PaymentMethods = () => {
                 <Grid item xs={6}>
                   <TextField
                     fullWidth
-                    label="Expiry Date"
+                    label={getText("payment.expiryDate")}
                     value={formData.expiryDate}
                     onChange={(e) =>
                       setFormData({ ...formData, expiryDate: e.target.value })
@@ -408,7 +406,7 @@ const PaymentMethods = () => {
                 <Grid item xs={6}>
                   <TextField
                     fullWidth
-                    label="CVV"
+                    label={getText("payment.cvv")}
                     value={formData.cvv}
                     onChange={(e) =>
                       setFormData({ ...formData, cvv: e.target.value })
@@ -420,7 +418,7 @@ const PaymentMethods = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Cardholder Name"
+                    label={getText("payment.cardHolder")}
                     value={formData.cardholderName}
                     onChange={(e) =>
                       setFormData({
@@ -435,9 +433,9 @@ const PaymentMethods = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDialogOpen(false)}>{getText("common.cancel")}</Button>
           <Button variant="contained" onClick={handleSave}>
-            {selectedMethod ? "Update" : "Add"} Payment Method
+            {selectedMethod ? "Cập nhật" : "Thêm"} phương thức thanh toán
           </Button>
         </DialogActions>
       </Dialog>

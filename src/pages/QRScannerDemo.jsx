@@ -20,13 +20,13 @@ const QRScannerDemo = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [activeBooking, setActiveBooking] = useState(null);
-  
+
   const { getMockQRCodes, stations } = useStationStore();
-  const { 
-    createBooking, 
-    initializeSOCTracking, 
+  const {
+    createBooking,
+    initializeSOCTracking,
     startCharging,
-    updateChargingProgress 
+    updateChargingProgress
   } = useBookingStore();
 
   const mockQRCodes = getMockQRCodes();
@@ -41,13 +41,13 @@ const QRScannerDemo = () => {
     if (result.booking) {
       const initialSOC = 25 + Math.random() * 40;
       const targetSOC = 80;
-      
+
       initializeSOCTracking(result.booking.id, initialSOC, targetSOC);
-      
+
       // Start charging after delay
       setTimeout(() => {
         startCharging(result.booking.id);
-        
+
         const initialProgress = {
           currentSOC: initialSOC,
           chargingRate: 25 + Math.random() * 15,
@@ -57,7 +57,7 @@ const QRScannerDemo = () => {
           current: 110 + Math.random() * 20,
           temperature: 35 + Math.random() * 10,
         };
-        
+
         updateChargingProgress(result.booking.id, initialProgress);
       }, 1500);
     }
@@ -101,9 +101,9 @@ const QRScannerDemo = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom fontWeight="bold">
-        QR Scanner & Charging Status Demo
+        Demo Quét QR & Trạng Thái Sạc
       </Typography>
-      
+
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         Demo tính năng quét QR code để bắt đầu sạc và hiển thị trạng thái sạc real-time
       </Typography>
@@ -124,25 +124,25 @@ const QRScannerDemo = () => {
               <Typography variant="h6" gutterBottom>
                 Điều khiển Demo
               </Typography>
-              
+
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Button
                   variant="contained"
                   startIcon={<QrCodeScanner />}
                   onClick={() => setShowScanner(true)}
                   size="large"
-                  sx={{ 
+                  sx={{
                     background: "linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%)",
                     fontWeight: "bold"
                   }}
                 >
                   Mở Camera Quét QR
                 </Button>
-                
+
                 <Typography variant="subtitle2" sx={{ mt: 2 }}>
                   Hoặc mô phỏng quét QR cho các trạm:
                 </Typography>
-                
+
                 {stations.slice(0, 3).map((station) => (
                   <Paper key={station.id} sx={{ p: 2, border: '1px solid #e0e0e0' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -154,7 +154,7 @@ const QRScannerDemo = () => {
                           QR Code: {mockQRCodes[station.id]}
                         </Typography>
                         <br />
-                        <Chip 
+                        <Chip
                           label={`${station.charging.availablePorts} ports available`}
                           size="small"
                           color={station.charging.availablePorts > 0 ? "success" : "default"}
@@ -182,7 +182,7 @@ const QRScannerDemo = () => {
               <Typography variant="h6" gutterBottom>
                 Kết quả Scan
               </Typography>
-              
+
               {scanResult ? (
                 <Box>
                   <Alert severity="success" sx={{ mb: 2 }}>
@@ -193,7 +193,7 @@ const QRScannerDemo = () => {
                       Booking ID: {scanResult.booking?.id}
                     </Typography>
                   </Alert>
-                  
+
                   <Typography variant="subtitle2" gutterBottom>
                     Chi tiết trạm sạc:
                   </Typography>

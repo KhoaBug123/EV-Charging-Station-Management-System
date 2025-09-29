@@ -21,24 +21,24 @@ const useBookingStore = create(
           stationName: bookingData.stationName,
           chargerType: bookingData.chargerType
             ? {
-                id: bookingData.chargerType.id,
-                name: bookingData.chargerType.name,
-                power: bookingData.chargerType.power,
-                price: bookingData.chargerType.price,
-              }
+              id: bookingData.chargerType.id,
+              name: bookingData.chargerType.name,
+              power: bookingData.chargerType.power,
+              price: bookingData.chargerType.price,
+            }
             : null,
           connector: bookingData.connector
             ? {
-                id: bookingData.connector.id,
-                name: bookingData.connector.name,
-                compatible: bookingData.connector.compatible,
-              }
+              id: bookingData.connector.id,
+              name: bookingData.connector.name,
+              compatible: bookingData.connector.compatible,
+            }
             : null,
           slot: bookingData.slot
             ? {
-                id: bookingData.slot.id,
-                location: bookingData.slot.location,
-              }
+              id: bookingData.slot.id,
+              location: bookingData.slot.location,
+            }
             : null,
           bookingTime: bookingData.bookingTime,
           scannedAt: bookingData.scannedAt,
@@ -56,8 +56,8 @@ const useBookingStore = create(
           id: `BOOK${Date.now()}`,
           status: cleanData.schedulingType === 'scheduled' ? "scheduled" : "confirmed",
           createdAt: new Date().toISOString(),
-          estimatedArrival: cleanData.schedulingType === 'scheduled' 
-            ? cleanData.scheduledDateTime 
+          estimatedArrival: cleanData.schedulingType === 'scheduled'
+            ? cleanData.scheduledDateTime
             : new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes from now for immediate
         };
 
@@ -87,31 +87,31 @@ const useBookingStore = create(
           bookings: state.bookings.map((booking) =>
             booking.id === bookingId
               ? {
-                  ...booking,
-                  status,
-                  ...data,
-                  updatedAt: new Date().toISOString(),
-                }
+                ...booking,
+                status,
+                ...data,
+                updatedAt: new Date().toISOString(),
+              }
               : booking
           ),
           bookingHistory: state.bookingHistory.map((booking) =>
             booking.id === bookingId
               ? {
-                  ...booking,
-                  status,
-                  ...data,
-                  updatedAt: new Date().toISOString(),
-                }
+                ...booking,
+                status,
+                ...data,
+                updatedAt: new Date().toISOString(),
+              }
               : booking
           ),
           currentBooking:
             state.currentBooking?.id === bookingId
               ? {
-                  ...state.currentBooking,
-                  status,
-                  ...data,
-                  updatedAt: new Date().toISOString(),
-                }
+                ...state.currentBooking,
+                status,
+                ...data,
+                updatedAt: new Date().toISOString(),
+              }
               : state.currentBooking,
         }));
       },
@@ -355,7 +355,7 @@ const useBookingStore = create(
           {
             id: "BOOK1732457890123",
             stationId: "ST001",
-            stationName: "VinFast Charging Station - District 1",
+            stationName: "Trạm sạc VinFast - Quận 1",
             chargerType: {
               id: "fast",
               name: "Sạc nhanh",
@@ -384,7 +384,7 @@ const useBookingStore = create(
           {
             id: "BOOK1732444290456",
             stationId: "ST003",
-            stationName: "Shell Recharge - District 3",
+            stationName: "Shell Recharge - Quận 3",
             chargerType: {
               id: "ultra",
               name: "Sạc siêu nhanh",
@@ -420,7 +420,7 @@ const useBookingStore = create(
           }
         };
 
-        set({ 
+        set({
           bookingHistory: mockBookings,
           socTracking: mockSOCTracking
         });

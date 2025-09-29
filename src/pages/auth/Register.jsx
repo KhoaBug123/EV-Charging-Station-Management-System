@@ -25,6 +25,7 @@ import {
 import { IconButton, InputAdornment } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
+import { getText } from "../../utils/vietnameseTexts";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -67,33 +68,33 @@ const RegisterPage = () => {
     const errors = {};
 
     if (!formData.firstName.trim()) {
-      errors.firstName = "Tên là bắt buộc";
+      errors.firstName = getText("errors.required");
     }
 
     if (!formData.lastName.trim()) {
-      errors.lastName = "Họ là bắt buộc";
+      errors.lastName = getText("errors.required");
     }
 
     if (!formData.email.trim()) {
-      errors.email = "Email là bắt buộc";
+      errors.email = getText("errors.emailRequired");
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Email không hợp lệ";
+      errors.email = getText("errors.emailInvalid");
     }
 
     if (!formData.phone.trim()) {
-      errors.phone = "Số điện thoại là bắt buộc";
+      errors.phone = getText("errors.required");
     } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ""))) {
-      errors.phone = "Số điện thoại phải có 10-11 chữ số";
+      errors.phone = getText("errors.phoneInvalid");
     }
 
     if (!formData.password) {
-      errors.password = "Mật khẩu là bắt buộc";
+      errors.password = getText("errors.passwordRequired");
     } else if (formData.password.length < 6) {
-      errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+      errors.password = getText("errors.passwordTooShort");
     }
 
     if (!formData.confirmPassword) {
-      errors.confirmPassword = "Xác nhận mật khẩu là bắt buộc";
+      errors.confirmPassword = getText("errors.required");
     } else if (formData.password !== formData.confirmPassword) {
       errors.confirmPassword = "Mật khẩu xác nhận không khớp";
     }
@@ -119,23 +120,6 @@ const RegisterPage = () => {
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Mock successful registration - auto login the user
-      const mockUser = {
-        id: `user-${Date.now()}`,
-        email: formData.email,
-        password: formData.password, // In real app, don't include password
-        role: formData.role,
-        profile: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone,
-          avatar: "",
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-          verified: false,
-        },
-      };
-
       // Auto-login after successful registration
       const result = await login(formData.email, formData.password);
 
@@ -149,8 +133,8 @@ const RegisterPage = () => {
   };
 
   const roleOptions = [
-    { value: "customer", label: "Khách hàng" },
-    { value: "staff", label: "Nhân viên" },
+    { value: "customer", label: getText("users.customer") },
+    { value: "staff", label: getText("users.staff") },
   ];
 
   return (
@@ -183,10 +167,10 @@ const RegisterPage = () => {
               }}
             />
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Đăng ký tài khoản
+              {getText("auth.registerTitle")}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Tạo tài khoản mới để sử dụng dịch vụ SkaEV
+              {getText("auth.registerSubtitle")}
             </Typography>
           </Box>
 
@@ -203,7 +187,7 @@ const RegisterPage = () => {
             <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
               <TextField
                 name="firstName"
-                label="Tên"
+                label={getText("auth.firstName")}
                 value={formData.firstName}
                 onChange={handleInputChange}
                 error={!!formErrors.firstName}
@@ -213,7 +197,7 @@ const RegisterPage = () => {
               />
               <TextField
                 name="lastName"
-                label="Họ"
+                label={getText("auth.lastName")}
                 value={formData.lastName}
                 onChange={handleInputChange}
                 error={!!formErrors.lastName}
@@ -226,7 +210,7 @@ const RegisterPage = () => {
             {/* Email */}
             <TextField
               name="email"
-              label="Email"
+              label={getText("auth.email")}
               type="email"
               value={formData.email}
               onChange={handleInputChange}
@@ -240,7 +224,7 @@ const RegisterPage = () => {
             {/* Phone */}
             <TextField
               name="phone"
-              label="Số điện thoại"
+              label={getText("auth.phone")}
               value={formData.phone}
               onChange={handleInputChange}
               error={!!formErrors.phone}
@@ -252,12 +236,12 @@ const RegisterPage = () => {
 
             {/* Role Selection */}
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Loại tài khoản</InputLabel>
+              <InputLabel>{getText("users.role")}</InputLabel>
               <Select
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                label="Loại tài khoản"
+                label={getText("users.role")}
               >
                 {roleOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -270,7 +254,7 @@ const RegisterPage = () => {
             {/* Password */}
             <TextField
               name="password"
-              label="Mật khẩu"
+              label={getText("auth.password")}
               type={showPassword ? "text" : "password"}
               value={formData.password}
               onChange={handleInputChange}
@@ -296,7 +280,7 @@ const RegisterPage = () => {
             {/* Confirm Password */}
             <TextField
               name="confirmPassword"
-              label="Xác nhận mật khẩu"
+              label={getText("auth.confirmPassword")}
               type={showConfirmPassword ? "text" : "password"}
               value={formData.confirmPassword}
               onChange={handleInputChange}
@@ -384,13 +368,13 @@ const RegisterPage = () => {
                 },
               }}
             >
-              {loading ? "Đang đăng ký..." : "Đăng ký"}
+              {loading ? getText("auth.registering") : getText("auth.register")}
             </Button>
 
             {/* Login Link */}
             <Box sx={{ textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary">
-                Đã có tài khoản?{" "}
+                {getText("auth.alreadyHaveAccount")}{" "}
                 <Link
                   component="button"
                   type="button"
@@ -398,7 +382,7 @@ const RegisterPage = () => {
                   color="primary"
                   sx={{ textDecoration: "none", fontWeight: "bold" }}
                 >
-                  Đăng nhập ngay
+                  {getText("auth.loginHere")}
                 </Link>
               </Typography>
             </Box>
