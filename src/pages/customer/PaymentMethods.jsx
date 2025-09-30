@@ -25,6 +25,9 @@ import {
   IconButton,
   Divider,
   Alert,
+  Container,
+  Stack,
+  Paper,
 } from "@mui/material";
 import {
   CreditCard,
@@ -176,33 +179,69 @@ const PaymentMethods = () => {
   };
 
   return (
-    <Box>
-      {/* Header */}
-      <Box
+    <Container maxWidth="lg" sx={{ py: 3 }}>
+      {/* Modern Payment Header */}
+      <Paper
+        elevation={0}
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
           mb: 4,
+          background: "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
+          borderRadius: 4,
+          p: 4,
+          color: "white",
+          position: "relative",
+          overflow: "hidden",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "30%",
+            height: "100%",
+            background: "radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+          }
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
-            <CreditCard />
-          </Avatar>
-          <Box>
-            <Typography variant="h4" fontWeight="bold">
-              {getText("payment.title")}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {getText("payment.subtitle")}
-            </Typography>
-          </Box>
-        </Box>
-        <Button variant="contained" startIcon={<Add />} onClick={handleAddNew}>
-          {getText("payment.addPaymentMethod")}
-        </Button>
-      </Box>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems="center" justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={3}>
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                background: "rgba(255,255,255,0.2)",
+                backdropFilter: "blur(10px)",
+                border: "2px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              <CreditCard sx={{ fontSize: 40, color: "white" }} />
+            </Avatar>
+            <Box>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                💳 Ví và thanh toán
+              </Typography>
+              <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                Quản lý phương thức thanh toán an toàn
+              </Typography>
+            </Box>
+          </Stack>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<Add />}
+            onClick={handleAddNew}
+            sx={{
+              background: "rgba(255,255,255,0.2)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.3)",
+              "&:hover": { background: "rgba(255,255,255,0.3)" },
+              minWidth: 180,
+            }}
+          >
+            Thêm phương thức
+          </Button>
+        </Stack>
+      </Paper>
 
       {/* Security Notice */}
       <Alert severity="info" sx={{ mb: 4 }}>
@@ -439,7 +478,7 @@ const PaymentMethods = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   );
 };
 

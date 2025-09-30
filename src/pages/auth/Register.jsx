@@ -350,7 +350,7 @@ const RegisterPage = () => {
                 loading ? <CircularProgress size={20} /> : <PersonAdd />
               }
               sx={{
-                mb: 2,
+                mb: 3,
                 py: 1.5,
                 fontWeight: "bold",
                 color: "white",
@@ -372,7 +372,7 @@ const RegisterPage = () => {
             </Button>
 
             {/* Login Link */}
-            <Box sx={{ textAlign: "center" }}>
+            <Box sx={{ textAlign: "center", mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
                 {getText("auth.alreadyHaveAccount")}{" "}
                 <Link

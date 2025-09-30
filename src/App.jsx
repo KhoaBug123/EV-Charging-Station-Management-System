@@ -23,10 +23,14 @@ import DateTimePickerDemo from "./pages/DateTimePickerDemo";
 import MockAPIDemo from "./pages/MockAPIDemo";
 
 // Customer Pages
+import CustomerDashboard from "./pages/customer/Dashboard";
 import FindStations from "./pages/customer/FindStations";
 import BookingHistory from "./pages/customer/BookingHistory";
 import PaymentMethods from "./pages/customer/PaymentMethods";
 import CustomerProfile from "./pages/customer/CustomerProfile";
+import VehicleManagement from "./pages/customer/VehicleManagement";
+import CustomerAnalytics from "./pages/customer/Analytics";
+import MonthlyCostReports from "./pages/customer/MonthlyCostReports";
 
 // Staff Pages
 import StaffDashboard from "./pages/staff/Dashboard";
@@ -78,7 +82,7 @@ const PublicRoute = ({ children }) => {
       case "staff":
         return <Navigate to="/staff/dashboard" replace />;
       case "customer":
-        return <Navigate to="/customer/find-stations" replace />;
+        return <Navigate to="/customer/dashboard" replace />;
       default:
         return <Navigate to="/" replace />;
     }
@@ -126,11 +130,15 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              <Route path="dashboard" element={<CustomerDashboard />} />
               <Route path="find-stations" element={<FindStations />} />
               <Route path="history" element={<BookingHistory />} />
               <Route path="payment" element={<PaymentMethods />} />
               <Route path="profile" element={<CustomerProfile />} />
-              <Route index element={<Navigate to="find-stations" replace />} />
+              <Route path="vehicles" element={<VehicleManagement />} />
+              <Route path="analytics" element={<CustomerAnalytics />} />
+              <Route path="reports" element={<MonthlyCostReports />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
             </Route>
 
             {/* Staff Routes */}

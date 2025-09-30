@@ -182,13 +182,13 @@ const LoginPage = () => {
               size="large"
               disabled={loading}
               startIcon={loading ? <CircularProgress size={20} /> : <Login />}
-              sx={{ mb: 2 }}
+              sx={{ mb: 3 }}
             >
               {loading ? getText("auth.signingIn") : getText("auth.login")}
             </Button>
           </form>
 
-          <Box sx={{ textAlign: "center", mb: 3 }}>
+          <Box sx={{ textAlign: "center", mt: 3, mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
               {getText("auth.dontHaveAccount")}{" "}
               <Link

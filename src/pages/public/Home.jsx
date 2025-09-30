@@ -7,14 +7,12 @@ import {
   Grid,
   Card,
   CardContent,
-  Chip,
 } from "@mui/material";
 import {
   ElectricCar,
   Speed,
-  Nature,
-  Security,
   LocationOn,
+  Security,
   TrendingUp,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -28,31 +26,31 @@ const HomePage = () => {
   const features = [
     {
       icon: <Speed sx={{ fontSize: 40, color: "primary.main" }} />,
-      title: getText("home.features.fastCharging.title"),
-      description: getText("home.features.fastCharging.description"),
+      title: "Sạc nhanh DC/AC",
+      description: "Hỗ trợ sạc nhanh DC lên đến 150kW và AC 22kW, rút ngắn thời gian chờ đợi",
     },
     {
       icon: <LocationOn sx={{ fontSize: 40, color: "success.main" }} />,
-      title: getText("home.features.wideNetwork.title"),
-      description: getText("home.features.wideNetwork.description"),
+      title: "Mạng lưới rộng khắp",
+      description: "Hơn 127 trạm sạc tại 63 tỉnh thành, phủ sóng các tuyến đường chính và khu đô thị",
     },
     {
-      icon: <Nature sx={{ fontSize: 40, color: "secondary.main" }} />,
-      title: getText("home.features.greenEnergy.title"),
-      description: getText("home.features.greenEnergy.description"),
+      icon: <TrendingUp sx={{ fontSize: 40, color: "secondary.main" }} />,
+      title: "Theo dõi thời gian thực",
+      description: "Giám sát trạng thái trạm sạc, thời gian chờ và quá trình sạc trực tiếp trên app",
     },
     {
       icon: <Security sx={{ fontSize: 40, color: "info.main" }} />,
-      title: getText("home.features.securePayments.title"),
-      description: getText("home.features.securePayments.description"),
+      title: "Thanh toán an toàn",
+      description: "Hỗ trợ đa dạng phương thức thanh toán: QR Code, thẻ RFID, ví điện tử",
     },
   ];
 
   const stats = [
-    { label: getText("home.stats.activeStations"), value: "50+", color: "primary" },
-    { label: getText("home.stats.happyCustomers"), value: "1,200+", color: "success" },
-    { label: getText("home.stats.chargingSessions"), value: "25,000+", color: "warning" },
-    { label: getText("home.stats.co2Saved"), value: "150T+", color: "secondary" },
+    { label: "Trạm sạc hoạt động", value: "127+", color: "primary" },
+    { label: "Khách hàng đăng ký", value: "15,680+", color: "success" },
+    { label: "Lượt sạc thành công", value: "89,234+", color: "warning" },
+    { label: "Độ tin cậy hệ thống", value: "99.8%", color: "secondary" },
   ];
 
   const handleGetStarted = () => {
@@ -158,10 +156,10 @@ const HomePage = () => {
                 gutterBottom
                 sx={{ fontSize: { xs: "2.5rem", md: "3.5rem" } }}
               >
-                {getText("home.title")}
+                Hệ thống quản lý trạm sạc xe điện thông minh
               </Typography>
               <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
-                {getText("home.subtitle")}
+                Giải pháp toàn diện cho việc tìm kiếm, đặt chỗ và thanh toán tại các trạm sạc xe điện trên toàn quốc
               </Typography>
 
               <Box
@@ -294,10 +292,10 @@ const HomePage = () => {
         <Container maxWidth="lg">
           <Box sx={{ textAlign: "center", mb: 6 }}>
             <Typography variant="h3" fontWeight="bold" gutterBottom>
-              {getText("home.whyChoose")}
+              Tại sao chọn SkaEV?
             </Typography>
             <Typography variant="h6" color="text.secondary">
-              {getText("home.whyChooseSubtitle")}
+              Nền tảng quản lý trạm sạc xe điện hàng đầu Việt Nam với công nghệ tiên tiến
             </Typography>
           </Box>
 
@@ -335,24 +333,11 @@ const HomePage = () => {
       {/* CTA Section */}
       <Container maxWidth="lg" sx={{ py: 8, textAlign: "center" }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          {getText("home.readyToStart")}
+          Sẵn sàng bắt đầu hành trình xe điện?
         </Typography>
         <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-          {getText("home.readyToStartSubtitle")}
+          Tham gia cùng hàng nghìn tài xế xe điện đang sử dụng mạng lưới sạc SkaEV
         </Typography>
-
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <Chip label={getText("users.customer")} color="success" />
-          <Chip label={getText("users.staff")} color="info" />
-          <Chip label={getText("users.admin")} color="error" />
-        </Box>
 
         <Button
           variant="contained"
@@ -384,7 +369,7 @@ const HomePage = () => {
               SkaEV
             </Typography>
             <Typography variant="body2" color="grey.400">
-              {getText("home.copyright")}
+              © 2024 SkaEV. Nền tảng quản lý sạc xe điện thông minh - Phát triển bởi FPTU SWP391
             </Typography>
           </Box>
         </Container>

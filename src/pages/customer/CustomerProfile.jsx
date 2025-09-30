@@ -373,49 +373,7 @@ const CustomerProfile = () => {
             </CardContent>
           </Card>
 
-          <Card sx={{ mt: 3 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Bảo mật tài khoản
-              </Typography>
 
-              <Alert severity="success" sx={{ mb: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Verified />
-                  <Typography variant="body2">
-                    Tài khoản của bạn đã được xác thực và bảo mật
-                  </Typography>
-                </Box>
-              </Alert>
-
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Mật khẩu
-                </Typography>
-                <Typography variant="body2">
-                  Thay đổi lần cuối 30 ngày trước
-                </Typography>
-                <Button size="small" sx={{ mt: 1 }}>
-                  {getText("profile.changePassword")}
-                </Button>
-              </Box>
-
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Xác thực hai yếu tố
-                </Typography>
-                <Chip
-                  label="Đã bật"
-                  color="success"
-                  size="small"
-                  icon={<Security />}
-                />
-                <Button size="small" sx={{ ml: 1 }}>
-                  Quản lý
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
         </Grid>
       </Grid>
     </Box>
