@@ -204,7 +204,7 @@ const CustomerDashboard = () => {
       >
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Welcome back, {user?.name}! ⚡
+            Chào mừng trở lại, {user?.profile?.firstName || 'Tài xế'}! ⚡
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Your electric journey dashboard - Let's charge up your day!
@@ -676,11 +676,11 @@ const CustomerDashboard = () => {
                 sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
               >
                 <Avatar sx={{ width: 60, height: 60, bgcolor: "primary.main" }}>
-                  {user?.name?.charAt(0)}
+                  {user?.profile?.firstName?.charAt(0) || 'N'}
                 </Avatar>
                 <Box>
                   <Typography variant="subtitle1" fontWeight="medium">
-                    {user?.name}
+                    {user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : 'Khách hàng'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {user?.email}

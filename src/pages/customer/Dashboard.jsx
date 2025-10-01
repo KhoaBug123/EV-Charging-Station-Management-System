@@ -91,7 +91,7 @@ const CustomerDashboard = () => {
             {/* Header chào mừng đơn giản */}
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" fontWeight="bold" gutterBottom>
-                    Chào mừng, {user?.name?.split(' ')[0] || 'Tài xế'}!
+                    Chào mừng, {user?.profile?.firstName || 'Tài xế'}!
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
                     Quản lý việc sạc xe điện của bạn

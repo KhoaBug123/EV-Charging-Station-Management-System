@@ -137,7 +137,7 @@ const AdminDashboard = () => {
     {
       id: 3,
       type: "user",
-      message: "New user registration: John Smith",
+      message: "New user registration: Nguyễn Văn An",
       time: "30 minutes ago",
       severity: "success",
     },

@@ -31,7 +31,7 @@ import {
 import useBookingStore from "../../store/bookingStore";
 import ChargingDateTimePicker from "../ui/ChargingDateTimePicker/ChargingDateTimePicker";
 
-const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
+const BookingModal = ({ open, onClose, station, onSuccess }) => {
   const { createBooking } = useBookingStore();
   const [activeStep, setActiveStep] = useState(0);
   const [selectedChargingPost, setSelectedChargingPost] = useState(null);
@@ -87,9 +87,9 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
 
     setLoading(true);
     try {
-      const baseRate = selectedChargingPost.type === 'AC' 
+      const baseRate = selectedChargingPost.type === 'AC'
         ? station.charging.pricing.acRate
-        : selectedChargingPost.power >= 150 
+        : selectedChargingPost.power >= 150
           ? station.charging.pricing.dcUltraRate || station.charging.pricing.dcRate
           : station.charging.pricing.dcRate;
 
@@ -114,20 +114,40 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
         bookingTime: new Date().toISOString(),
         schedulingType: selectedDateTime?.schedulingType || 'immediate',
         scheduledDateTime: selectedDateTime?.scheduledDateTime || null,
-        scheduledDate: selectedDateTime?.scheduledDate ? 
+        scheduledDate: selectedDateTime?.scheduledDate ?
           selectedDateTime.scheduledDate.toISOString().split('T')[0] : null,
-        scheduledTime: selectedDateTime?.scheduledTime ? 
+        scheduledTime: selectedDateTime?.scheduledTime ?
           selectedDateTime.scheduledTime.toISOString() : null,
       };
 
       const booking = createBooking(bookingData);
       setBookingResult('success');
-      setResultMessage(`Đặt chỗ thành công! Mã đặt chỗ: ${booking.id}`);
-      
+
+      // Different messages based on scheduling type
+      if (bookingData.schedulingType === 'scheduled') {
+        setResultMessage(
+          `Đặt lịch thành công!\n` +
+          `Mã đặt chỗ: ${booking.id}\n` +
+          `Thời gian: ${new Date(bookingData.scheduledDateTime).toLocaleString('vi-VN')}\n\n` +
+          `📱 Hãy đến trạm vào đúng giờ và quét mã QR để bắt đầu sạc!`
+        );
+      } else {
+        setResultMessage(
+          `Đặt chỗ thành công!\n` +
+          `Mã đặt chỗ: ${booking.id}\n\n` +
+          `📱 Hãy đến trạm trong 15 phút và quét mã QR để bắt đầu sạc!`
+        );
+      }
+
+      // Call onSuccess callback immediately after successful booking
+      if (onSuccess) {
+        onSuccess(booking);
+      }
+
+      // Don't automatically start charging - user needs to scan QR first
       setTimeout(() => {
-        onBookingComplete?.(booking);
         handleClose();
-      }, 2000);
+      }, 3000);
     } catch (error) {
       setBookingResult('error');
       setResultMessage('Có lỗi xảy ra khi đặt chỗ. Vui lòng thử lại.');
@@ -159,7 +179,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Trạm {station?.name} có {getChargingPosts().length} trụ sạc với các công suất khác nhau
             </Typography>
-            
+
             <Grid container spacing={2}>
               {getChargingPosts().map((post) => (
                 <Grid item xs={12} key={post.id}>
@@ -173,7 +193,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
                         cursor: "pointer",
                         border: selectedChargingPost?.id === post.id ? 2 : 1,
                         borderColor: selectedChargingPost?.id === post.id
-                            ? "primary.main" : "divider",
+                          ? "primary.main" : "divider",
                         "&:hover": { boxShadow: 2 },
                       }}
                     >
@@ -188,13 +208,13 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                bgcolor: post.type === 'AC' ? 'success.light' : 
-                                         post.power >= 150 ? 'error.light' : 'warning.light',
+                                bgcolor: post.type === 'AC' ? 'success.light' :
+                                  post.power >= 150 ? 'error.light' : 'warning.light',
                                 color: 'white'
                               }}
                             >
-                              {post.type === 'AC' ? <Schedule /> : 
-                               post.power >= 150 ? <ElectricCar /> : <FlashOn />}
+                              {post.type === 'AC' ? <Schedule /> :
+                                post.power >= 150 ? <ElectricCar /> : <FlashOn />}
                             </Box>
                             <Box>
                               <Typography variant="h6" fontWeight="bold">
@@ -215,7 +235,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
                               size="small"
                             />
                             <Typography variant="body2" sx={{ mt: 1 }}>
-                              {post.type === 'AC' ? 
+                              {post.type === 'AC' ?
                                 `${station?.charging?.pricing?.acRate?.toLocaleString()} VNĐ/kWh` :
                                 `${(station?.charging?.pricing?.dcRate || station?.charging?.pricing?.dcUltraRate)?.toLocaleString()} VNĐ/kWh`
                               }
@@ -255,7 +275,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
                             cursor: "pointer",
                             border: selectedSlot?.id === slot.id ? 2 : 1,
                             borderColor: selectedSlot?.id === slot.id
-                                ? "primary.main" : "divider",
+                              ? "primary.main" : "divider",
                             "&:hover": { boxShadow: 2 },
                           }}
                         >
@@ -324,13 +344,13 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
             <Typography variant="h6" gutterBottom>
               Xác nhận thông tin đặt chỗ
             </Typography>
-            
+
             {bookingResult === 'success' && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 <Typography><strong>✅ {resultMessage}</strong></Typography>
               </Alert>
             )}
-            
+
             {bookingResult === 'error' && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 <Typography><strong>❌ {resultMessage}</strong></Typography>
@@ -367,8 +387,8 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
                     <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
                       <Typography variant="body1" fontWeight="medium">
-                        {selectedDateTime?.schedulingType === 'immediate' 
-                          ? "Sạc ngay" 
+                        {selectedDateTime?.schedulingType === 'immediate'
+                          ? "Sạc ngay"
                           : selectedDateTime?.scheduledDateTime?.toLocaleString('vi-VN') || 'Chưa chọn'
                         }
                       </Typography>
@@ -376,7 +396,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
                     <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Giá dự kiến:</Typography>
                       <Typography variant="body1" fontWeight="medium" color="primary.main">
-                        {selectedChargingPost?.type === 'AC' ? 
+                        {selectedChargingPost?.type === 'AC' ?
                           `${station?.charging?.pricing?.acRate?.toLocaleString()} VNĐ/kWh` :
                           `${(station?.charging?.pricing?.dcRate || station?.charging?.pricing?.dcUltraRate)?.toLocaleString()} VNĐ/kWh`
                         }
@@ -409,7 +429,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
       case 0: return selectedChargingPost !== null;
       case 1: return selectedSlot !== null;
       case 2: return selectedDateTime !== null && (
-        selectedDateTime.schedulingType === 'immediate' || 
+        selectedDateTime.schedulingType === 'immediate' ||
         (selectedDateTime.isValid && selectedDateTime.scheduledDateTime)
       );
       case 3: return agreeTerms;
@@ -428,7 +448,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
       <DialogTitle
         sx={{
           display: "flex",
-          alignItems: "center", 
+          alignItems: "center",
           justifyContent: "space-between",
           pb: 1,
         }}
@@ -469,7 +489,7 @@ const BookingModal = ({ open, onClose, station, onBookingComplete }) => {
           </Button>
         ) : (
           <Button
-            variant="contained" 
+            variant="contained"
             onClick={handleConfirmBooking}
             disabled={!isStepComplete(activeStep) || loading}
             size="large"

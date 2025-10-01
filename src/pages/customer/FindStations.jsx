@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import useVehicleStore from "../../store/vehicleStore";
+import useBookingStore from "../../store/bookingStore";
 import {
   Box,
   Grid,
@@ -51,6 +53,11 @@ const FindStations = () => {
     loading,
   } = useStationStore();
 
+  const {
+    getCompatibleConnectorTypes,
+    getCurrentVehicleConnectors
+  } = useVehicleStore();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [userLocation, setUserLocation] = useState({
     lat: 10.7769,
@@ -64,13 +71,21 @@ const FindStations = () => {
 
   // Apply search query filter on top of store filtered stations
   const filteredStations = React.useMemo(() => {
+    console.log("🔄 FindStations: Re-computing filtered stations");
+    console.log("Current filters:", filters);
+    console.log("Search query:", searchQuery);
+
     try {
       const storeFiltered = getFilteredStations();
+      console.log("Store filtered results:", storeFiltered.length, "stations");
 
-      if (!searchQuery.trim()) return storeFiltered;
+      if (!searchQuery.trim()) {
+        console.log("No search query, returning store filtered:", storeFiltered.map(s => s.name));
+        return storeFiltered;
+      }
 
       const query = searchQuery.toLowerCase();
-      return storeFiltered.filter((station) => {
+      const searchFiltered = storeFiltered.filter((station) => {
         if (!station || !station.name || !station.location) return false;
 
         return (
@@ -80,11 +95,16 @@ const FindStations = () => {
           (station.location.district && station.location.district.toLowerCase().includes(query))
         );
       });
+
+      console.log("After search filter:", searchFiltered.map(s => s.name));
+      return searchFiltered;
     } catch (error) {
       console.error("Error filtering stations:", error);
       return [];
     }
-  }, [getFilteredStations, searchQuery]); useEffect(() => {
+  }, [getFilteredStations, searchQuery, filters]);
+
+  useEffect(() => {
     // Initialize data first
     initializeData();
   }, [initializeData]);
@@ -124,32 +144,32 @@ const FindStations = () => {
     };
   }, [fetchNearbyStations, filters.maxDistance, userLocation]);
 
-  const handleSearch = () => {
-    // Mock search functionality
-    console.log("Searching for:", searchQuery);
-  };
+
 
   const handleBookStation = (station) => {
     setStationToBook(station);
     setBookingModalOpen(true);
   };
 
-  const handleBookingComplete = (bookingData) => {
-    setBookingMessage(
-      formatText("stations.bookingSuccess", {
-        stationName: bookingData.stationName,
-        bookingId: bookingData.id
-      })
-    );
-    setBookingSuccess(true);
-    setBookingModalOpen(false);
-    // You can add logic to update booking history or navigate to booking details
-  };
-
-  const handleCloseBookingModal = () => {
+  const handleBookingModalClose = () => {
     setBookingModalOpen(false);
     setStationToBook(null);
+
+    // Check if there's a new booking to show success message
+    const { bookings } = useBookingStore.getState();
+    const latestBooking = bookings[bookings.length - 1];
+    if (latestBooking && new Date(latestBooking.createdAt) > new Date(Date.now() - 5000)) {
+      setBookingMessage(
+        formatText("stations.bookingSuccess", {
+          stationName: latestBooking.stationName,
+          bookingId: latestBooking.id
+        })
+      );
+      setBookingSuccess(true);
+    }
   };
+
+
 
   const getDistanceToStation = (station) => {
     return calculateDistance(
@@ -214,7 +234,7 @@ const FindStations = () => {
               />
             </Grid>
 
-            {/* Connector Type Filter */}
+            {/* Connector Type Filter with Smart Suggestions */}
             <Grid item xs={12} md={3}>
               <FormControl fullWidth>
                 <InputLabel>{getText("stations.connectorType")}</InputLabel>
@@ -227,28 +247,36 @@ const FindStations = () => {
                   }}
                   renderValue={(selected) => selected.join(', ')}
                 >
-                  {Object.values(CONNECTOR_TYPES).map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
+                  {Object.values(CONNECTOR_TYPES).map((type) => {
+                    const isVehicleCompatible = getCurrentVehicleConnectors().includes(type);
+                    return (
+                      <MenuItem key={type} value={type}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                          {type}
+                          {isVehicleCompatible && (
+                            <Chip
+                              size="small"
+                              label="Xe của bạn"
+                              color="primary"
+                              sx={{ ml: 'auto', fontSize: '0.7rem', height: '20px' }}
+                            />
+                          )}
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                  {getCurrentVehicleConnectors().length > 0 &&
+                    `Xe hiện tại hỗ trợ: ${getCurrentVehicleConnectors().join(', ')}`
+                  }
+                </Typography>
               </FormControl>
             </Grid>
 
 
 
-            {/* Search Button */}
-            <Grid item xs={12} md={2}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleSearch}
-                startIcon={<Search />}
-              >
-                {getText("common.search")}
-              </Button>
-            </Grid>
+
           </Grid>
         </CardContent>
       </Card>
@@ -297,18 +325,18 @@ const FindStations = () => {
 
                         <ListItemText
                           primary={
-                            <Box
-                              sx={{
+                            <span
+                              style={{
                                 display: "flex",
                                 justifyContent: "space-between",
                                 alignItems: "start",
                               }}
                             >
-                              <Typography variant="h6" fontWeight="bold">
+                              <span style={{ fontWeight: "bold", fontSize: "1.25rem" }}>
                                 {station.name}
-                              </Typography>
+                              </span>
                               {getStatusChip(station)}
-                            </Box>
+                            </span>
                           }
                           secondary={
                             <span>
@@ -542,9 +570,8 @@ const FindStations = () => {
       {/* Booking Modal */}
       <BookingModal
         open={bookingModalOpen}
-        onClose={handleCloseBookingModal}
+        onClose={handleBookingModalClose}
         station={stationToBook}
-        onBookingComplete={handleBookingComplete}
       />
 
       {/* Success Snackbar */}

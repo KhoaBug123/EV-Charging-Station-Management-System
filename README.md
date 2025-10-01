@@ -76,7 +76,7 @@ npm run dev
 | ------------ | -------------------- | -------------- | -------------------------------- |
 | **Admin**    | `admin@skaev.com`    | `Admin123!`    | Full system access               |
 | **Staff**    | `staff@skaev.com`    | `Staff123!`    | Station management & maintenance |
-| **Customer** | `john.doe@gmail.com` | `Customer123!` | Customer features                |
+| **Customer** | `nguyenvanan@gmail.com` | `Customer123!` | Customer features                |
 
 ## 📱 Features by Role
 

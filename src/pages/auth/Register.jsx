@@ -15,21 +15,27 @@ import {
   Link,
   Checkbox,
   FormControlLabel,
+  Divider,
+  Grid,
 } from "@mui/material";
 import {
   ElectricCar,
   PersonAdd,
   Visibility,
   VisibilityOff,
+  Google,
+  Phone,
 } from "@mui/icons-material";
 import { IconButton, InputAdornment } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import { getText } from "../../utils/vietnameseTexts";
+import { googleAuth } from "../../services/socialAuthService";
+import PhoneOTPModal from "../../components/auth/PhoneOTPModal";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { login, loading, error, clearError } = useAuthStore();
+  const { loading, error, clearError, register, socialRegister } = useAuthStore();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -45,6 +51,13 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+
+  // Social registration states
+  const [socialLoading, setSocialLoading] = useState({
+    google: false,
+    phone: false,
+  });
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, checked } = e.target;
@@ -114,21 +127,71 @@ const RegisterPage = () => {
       return;
     }
 
-    // In a real app, you would call a register API here
-    // For demo purposes, we'll simulate registration and auto-login
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Auto-login after successful registration
-      const result = await login(formData.email, formData.password);
+      const result = await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        role: formData.role,
+      });
 
       if (result.success) {
-        // Registration successful message could be shown here
-        console.log("Registration and login successful");
+        if (result.requiresVerification) {
+          // Redirect to email verification page
+          navigate(`/verify-email?email=${encodeURIComponent(formData.email)}&mode=auto`);
+        } else {
+          // Direct login
+          navigate("/customer/dashboard");
+        }
       }
     } catch (error) {
       console.error("Registration failed:", error);
+    }
+  };
+
+  // Social registration handlers
+  const handleGoogleRegister = async () => {
+    setSocialLoading({ ...socialLoading, google: true });
+    try {
+      const googleResult = await googleAuth.signUp();
+      if (googleResult.success) {
+        const authResult = await socialRegister('google', googleResult.user);
+        if (authResult.success) {
+          console.log("Google registration successful:", authResult.user);
+          navigate("/customer/dashboard");
+        }
+      } else {
+        console.error("Google registration failed:", googleResult.error);
+      }
+    } catch (error) {
+      console.error("Google registration error:", error);
+    } finally {
+      setSocialLoading({ ...socialLoading, google: false });
+    }
+  };
+
+  const handlePhoneRegister = () => {
+    setPhoneModalOpen(true);
+  };
+
+  const handlePhoneOTPSuccess = async (phoneData) => {
+    try {
+      const authResult = await socialRegister('phone', {
+        phone: phoneData.phoneNumber,
+        name: phoneData.name || "Người dùng",
+        email: phoneData.email || `${phoneData.phoneNumber}@skaev.temp`,
+        verified: true,
+      });
+
+      if (authResult.success) {
+        console.log("Phone registration successful:", authResult.user);
+        setPhoneModalOpen(false);
+        navigate("/customer/dashboard");
+      }
+    } catch (error) {
+      console.error("Phone registration error:", error);
     }
   };
 
@@ -371,6 +434,60 @@ const RegisterPage = () => {
               {loading ? getText("auth.registering") : getText("auth.register")}
             </Button>
 
+            {/* Social Registration */}
+            <Divider sx={{ my: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Hoặc đăng ký nhanh với
+              </Typography>
+            </Divider>
+
+            <Typography
+              variant="caption"
+              color="primary.main"
+              sx={{ display: 'block', textAlign: 'center', mb: 2, fontWeight: 'medium' }}
+            >
+              ✨ Đăng ký trong 30 giây - Không cần điền form dài!
+            </Typography>
+
+
+
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={socialLoading.google ? <CircularProgress size={16} /> : <Google />}
+                  onClick={handleGoogleRegister}
+                  disabled={socialLoading.google || loading}
+                  sx={{
+                    textTransform: "none",
+                    borderColor: '#db4437',
+                    color: '#db4437',
+                    '&:hover': { borderColor: '#db4437', bgcolor: '#db4437', color: 'white' }
+                  }}
+                >
+                  Google
+                </Button>
+              </Grid>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<Phone />}
+                  onClick={handlePhoneRegister}
+                  disabled={loading}
+                  sx={{
+                    textTransform: "none",
+                    borderColor: '#28a745',
+                    color: '#28a745',
+                    '&:hover': { borderColor: '#28a745', bgcolor: '#28a745', color: 'white' }
+                  }}
+                >
+                  Số điện thoại
+                </Button>
+              </Grid>
+            </Grid>
+
             {/* Login Link */}
             <Box sx={{ textAlign: "center", mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
@@ -389,6 +506,14 @@ const RegisterPage = () => {
           </Box>
         </CardContent>
       </Card>
+
+      {/* Phone OTP Modal */}
+      <PhoneOTPModal
+        open={phoneModalOpen}
+        onClose={() => setPhoneModalOpen(false)}
+        onSuccess={handlePhoneOTPSuccess}
+        mode="register"
+      />
     </Box>
   );
 };

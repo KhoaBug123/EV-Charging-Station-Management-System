@@ -54,11 +54,13 @@ const useBookingStore = create(
         const booking = {
           ...cleanData,
           id: `BOOK${Date.now()}`,
-          status: cleanData.schedulingType === 'scheduled' ? "scheduled" : "confirmed",
+          status: cleanData.schedulingType === 'scheduled' ? "scheduled" : "pending", // pending = waiting for QR scan
           createdAt: new Date().toISOString(),
           estimatedArrival: cleanData.schedulingType === 'scheduled'
             ? cleanData.scheduledDateTime
             : new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes from now for immediate
+          qrScanned: false, // Add QR scan tracking
+          chargingStarted: false, // Add charging start tracking
         };
 
         // Initialize SOC tracking for this booking
@@ -133,7 +135,37 @@ const useBookingStore = create(
         });
       },
 
+      // New method for QR code scanning
+      scanQRCode: (bookingId, qrData) => {
+        const state = get();
+        const booking = state.bookings.find(b => b.id === bookingId);
+
+        if (!booking) {
+          throw new Error('Booking not found');
+        }
+
+        if (booking.status !== 'pending' && booking.status !== 'scheduled') {
+          throw new Error('Booking is not in valid state for QR scanning');
+        }
+
+        // Update booking status to confirmed after QR scan
+        get().updateBookingStatus(bookingId, "confirmed", {
+          qrScannedAt: new Date().toISOString(),
+          qrScanned: true,
+          qrData: qrData
+        });
+
+        return booking;
+      },
+
       startCharging: (bookingId) => {
+        const state = get();
+        const booking = state.bookings.find(b => b.id === bookingId);
+
+        if (!booking || !booking.qrScanned) {
+          throw new Error('Must scan QR code before starting charging');
+        }
+
         const chargingSession = {
           bookingId,
           startTime: new Date().toISOString(),
@@ -148,6 +180,7 @@ const useBookingStore = create(
 
         get().updateBookingStatus(bookingId, "charging", {
           chargingStartedAt: new Date().toISOString(),
+          chargingStarted: true,
           sessionId: chargingSession.sessionId,
         });
       },
@@ -262,9 +295,9 @@ const useBookingStore = create(
         const { bookings } = get();
         return bookings.find(
           (booking) =>
-            booking.status === "confirmed" ||
-            booking.status === "in-progress" ||
-            booking.status === "charging"
+            booking.status === "charging" &&
+            booking.qrScanned === true &&
+            booking.chargingStarted === true
         );
       },
 

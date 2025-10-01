@@ -180,6 +180,12 @@ const MonthlyCostReports = () => {
                     >
                         Xuất báo cáo
                     </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => window.open("/customer/charging-habits", "_blank")}
+                    >
+                        Xem thói quen chi tiết
+                    </Button>
                 </Box>
             </Box>
 

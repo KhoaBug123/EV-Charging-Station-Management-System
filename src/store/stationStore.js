@@ -4,7 +4,7 @@ import { calculateDistance } from "../utils/helpers";
 
 const useStationStore = create((set, get) => ({
   // State
-  stations: [],
+  stations: mockStations, // Initialize with data immediately
   selectedStation: null,
   nearbyStations: [],
   loading: false,
@@ -17,9 +17,12 @@ const useStationStore = create((set, get) => ({
 
   // Initialize mock data on store creation
   initializeData: () => {
-    console.log("Initializing stations:", mockStations.length);
-    console.log("Sample station connectors:", mockStations[0]?.charging?.connectorTypes);
-    set({ stations: mockStations });
+    console.log("🚀 Initializing stations:", mockStations.length);
+    console.log("📊 All station connector types:");
+    mockStations.forEach((station, index) => {
+      console.log(`  ${index + 1}. ${station.name}: ${JSON.stringify(station.charging?.connectorTypes)}`);
+    });
+    set({ stations: mockStations, loading: false, error: null });
   },
 
   // Actions
@@ -90,33 +93,66 @@ const useStationStore = create((set, get) => ({
   getFilteredStations: () => {
     const { stations, filters } = get();
 
-    console.log("Filtering stations:", {
+    console.log("🔍 FILTERING DEBUG:", {
       totalStations: stations.length,
-      selectedConnectorTypes: filters.connectorTypes
+      selectedConnectorTypes: filters.connectorTypes,
+      filtersObject: filters
     });
 
-    return stations.filter((station) => {
+    if (stations.length === 0) {
+      console.warn("⚠️ No stations available for filtering");
+      return [];
+    }
+
+    const filtered = stations.filter((station) => {
+      console.log(`\n📍 Checking station: ${station.name}`);
+      console.log(`   - Available connectors: ${JSON.stringify(station.charging?.connectorTypes)}`);
+      console.log(`   - Station status: ${station.status}`);
+
+      // Filter by station status - only active stations
+      if (station.status !== "active") {
+        console.log(`   ❌ Station not active: ${station.status}`);
+        return false;
+      }
+
       // Filter by connector types
-      if (filters.connectorTypes.length > 0) {
-        console.log("Station connectors:", station.name, station.charging.connectorTypes);
-        const hasMatchingConnector = filters.connectorTypes.some((type) =>
-          station.charging.connectorTypes.includes(type)
-        );
-        console.log("Has matching connector:", hasMatchingConnector);
+      if (filters.connectorTypes && filters.connectorTypes.length > 0) {
+        const stationConnectors = station.charging?.connectorTypes || [];
+        console.log(`   - Filter connectors: ${JSON.stringify(filters.connectorTypes)}`);
+        console.log(`   - Station connectors: ${JSON.stringify(stationConnectors)}`);
+
+        const hasMatchingConnector = filters.connectorTypes.some((filterType) => {
+          const match = stationConnectors.includes(filterType);
+          console.log(`     Checking ${filterType}: ${match ? '✅' : '❌'}`);
+          return match;
+        });
+
+        console.log(`   - Has matching connector: ${hasMatchingConnector ? '✅' : '❌'}`);
         if (!hasMatchingConnector) return false;
       }
 
       // Filter by max price
       if (filters.maxPrice) {
         const maxStationPrice = Math.max(
-          station.charging.pricing.acRate || 0,
-          station.charging.pricing.dcRate || 0
+          station.charging?.pricing?.acRate || 0,
+          station.charging?.pricing?.dcRate || 0,
+          station.charging?.pricing?.dcFastRate || 0
         );
-        if (maxStationPrice > filters.maxPrice) return false;
+        console.log(`   - Max station price: ${maxStationPrice}, Filter max: ${filters.maxPrice}`);
+        if (maxStationPrice > filters.maxPrice) {
+          console.log(`   ❌ Price too high: ${maxStationPrice} > ${filters.maxPrice}`);
+          return false;
+        }
       }
 
+      console.log(`   ✅ Station passed all filters`);
       return true;
     });
+
+    console.log(`\n🎯 FILTER RESULT: ${filtered.length}/${stations.length} stations matched`);
+    console.log(`Matched stations: ${filtered.map(s => s.name).join(', ')}`);
+
+    return filtered;
   },
 
   // Station availability helpers

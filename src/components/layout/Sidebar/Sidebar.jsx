@@ -76,19 +76,29 @@ const Sidebar = ({ open, onClose }) => {
 
       case "customer":
         return [
-          // 1. Quản lý hồ sơ & dữ liệu cá nhân (tích hợp thanh toán)
+          // 1. Hồ sơ cá nhân (giữ nguyên quản lý xe và lịch sử sạc)
           {
             text: "Hồ sơ cá nhân",
             icon: <Person />,
-            path: "/customer/profile",
-            category: "account"
+            path: "/customer/profile"
           },
-          // 2. Sạc xe điện (luồng chính)
+          // 2. Sạc xe điện (luồng sạc chính)
           {
             text: "Sạc xe điện",
-            icon: <LocationOn />,
-            path: "/customer/charging",
-            category: "charging"
+            icon: <ElectricCar />,
+            path: "/customer/charging"
+          },
+          // 3. Thanh toán (tách riêng)
+          {
+            text: "Thanh toán",
+            icon: <Payment />,
+            path: "/customer/payment"
+          },
+          // 4. Thống kê & báo cáo (tách riêng)
+          {
+            text: "Thống kê & báo cáo",
+            icon: <Analytics />,
+            path: "/customer/analytics"
           },
         ];
 
@@ -166,7 +176,7 @@ const Sidebar = ({ open, onClose }) => {
             <Divider sx={{ my: 2 }} />
 
             {/* Quản lý tài khoản */}
-            <Typography variant="overline" sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600 }}>
+            <Typography variant="overline" sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600, display: 'none' }}>
               Tài khoản
             </Typography>
             {navigationItems.filter(item => item.category === "account").map((item) => (
@@ -202,7 +212,7 @@ const Sidebar = ({ open, onClose }) => {
             ))}
 
             {/* Sạc xe */}
-            <Typography variant="overline" sx={{ px: 2, py: 1, mt: 2, color: "text.secondary", fontWeight: 600 }}>
+            <Typography variant="overline" sx={{ px: 2, py: 1, mt: 2, color: "text.secondary", fontWeight: 600, display: 'none' }}>
               Sạc xe
             </Typography>
             {navigationItems.filter(item => item.category === "charging").map((item) => (

@@ -1,0 +1,110 @@
+import React, { useEffect } from 'react';
+import useAuthStore from '../../store/authStore';
+import useBookingStore from '../../store/bookingStore';
+import useVehicleStore from '../../store/vehicleStore';
+import useCustomerStore from '../../store/customerStore';
+
+/**
+ * CustomerDataSync - Component tự động đồng bộ dữ liệu customer
+ * Wrap component này xung quanh các trang customer để đảm bảo dữ liệu đồng bộ
+ */
+const CustomerDataSync = ({ children }) => {
+    const { user } = useAuthStore();
+    const { bookingHistory, initializeMockData } = useBookingStore();
+    const { vehicles, initializeWithUserData } = useVehicleStore();
+    const { initialized, syncAllStores } = useCustomerStore();
+
+    useEffect(() => {
+        const initializeCustomerData = async () => {
+            // Helper function to get mock data (inside useEffect to avoid dependency)
+            const getCustomerMockData = (userId) => {
+                const mockUsers = [
+                    {
+                        id: "customer-001",
+                        email: "nguyenvanan@gmail.com",
+                        role: "customer",
+                        profile: {
+                            firstName: "Nguyễn Văn",
+                            lastName: "An",
+                            phone: "+84 905 678 901",
+                            verified: true,
+                        },
+                        vehicle: {
+                            make: "Tesla",
+                            model: "Model 3",
+                            year: 2023,
+                            batteryCapacity: 75,
+                            chargingType: ["AC Type 2", "DC CCS"],
+                        },
+                        preferences: {
+                            maxDistance: 15,
+                            preferredPayment: "credit-card",
+                            priceRange: [5000, 15000],
+                        },
+                    },
+                    {
+                        id: "customer-002",
+                        email: "anna.nguyen@outlook.com",
+                        role: "customer",
+                        profile: {
+                            firstName: "Anna",
+                            lastName: "Nguyen",
+                            phone: "+84 906 789 012",
+                            verified: true,
+                        },
+                        vehicle: {
+                            make: "VinFast",
+                            model: "VF 8",
+                            year: 2024,
+                            batteryCapacity: 87.7,
+                            chargingType: ["AC Type 2", "DC CCS"],
+                        },
+                        preferences: {
+                            maxDistance: 20,
+                            preferredPayment: "e-wallet",
+                            priceRange: [6000, 12000],
+                        },
+                    },
+                ];
+
+                // Try to find by ID first, then fallback to first customer
+                return mockUsers.find(u => u.id === userId) ||
+                    mockUsers.find(u => u.email === user?.email) ||
+                    mockUsers.find(u => u.role === 'customer');
+            };
+
+            // Chỉ khởi tạo nếu user đã login và chưa initialized
+            if (user && !initialized) {
+                console.log('🔄 Initializing customer data sync...');
+
+                // 1. Initialize booking data if empty
+                if (bookingHistory.length === 0) {
+                    console.log('📊 Initializing booking data...');
+                    initializeMockData();
+                }
+
+                // 2. Initialize vehicle data with user profile
+                if (vehicles.length === 0 && user.id) {
+                    console.log('🚗 Initializing vehicle data...');
+                    const userData = getCustomerMockData(user.id);
+                    if (userData) {
+                        initializeWithUserData(userData);
+                    }
+                }
+
+                // 3. Mark as initialized
+                await syncAllStores();
+                console.log('✅ Customer data sync completed');
+            }
+        };
+
+        initializeCustomerData();
+    }, [user, initialized, bookingHistory.length, vehicles.length, initializeMockData, initializeWithUserData, syncAllStores]);
+
+    // Helper function removed - moved inside useEffect
+
+    // Return children without any UI changes
+    return children;
+};
+
+export default CustomerDataSync;

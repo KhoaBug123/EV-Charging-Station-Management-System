@@ -82,13 +82,13 @@ export const mockUsers = [
   // Customers
   {
     id: "customer-001",
-    email: "john.doe@gmail.com",
+    email: "nguyenvanan@gmail.com",
     password: "Customer123!",
     role: "customer",
     profile: {
-      firstName: "John",
-      lastName: "Doe",
-      avatar: "/assets/avatars/customer-john.jpg",
+      firstName: "Nguyễn Văn",
+      lastName: "An",
+      avatar: "/assets/avatars/customer-vanan.jpg",
       phone: "+84 905 678 901",
       createdAt: "2024-02-15T14:20:00Z",
       lastLogin: "2024-03-15T17:30:00Z",

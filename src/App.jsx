@@ -13,6 +13,8 @@ import AppLayout from "./components/layout/AppLayout/AppLayout";
 // Auth Pages
 import LoginPage from "./pages/auth/Login";
 import RegisterPage from "./pages/auth/Register";
+import EmailVerification from "./pages/auth/EmailVerification";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 
 // Public Pages
 import HomePage from "./pages/public/Home";
@@ -27,10 +29,13 @@ import CustomerDashboard from "./pages/customer/Dashboard";
 import FindStations from "./pages/customer/FindStations";
 import BookingHistory from "./pages/customer/BookingHistory";
 import PaymentMethods from "./pages/customer/PaymentMethods";
+import PaymentHistory from "./pages/customer/PaymentHistory";
 import CustomerProfile from "./pages/customer/CustomerProfile";
-import VehicleManagement from "./pages/customer/VehicleManagement";
+import PaymentPage from "./pages/customer/PaymentPage";
+import AnalyticsPage from "./pages/customer/AnalyticsPage";
 import CustomerAnalytics from "./pages/customer/Analytics";
 import MonthlyCostReports from "./pages/customer/MonthlyCostReports";
+import ChargingHabitsAnalysis from "./pages/customer/ChargingHabitsAnalysis";
 
 // Staff Pages
 import StaffDashboard from "./pages/staff/Dashboard";
@@ -119,6 +124,22 @@ function App() {
                 </PublicRoute>
               }
             />
+            <Route
+              path="/verify-email"
+              element={
+                <PublicRoute>
+                  <EmailVerification />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
+              }
+            />
 
             {/* Customer Routes */}
             <Route
@@ -132,6 +153,12 @@ function App() {
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<CustomerProfile />} />
               <Route path="charging" element={<ChargingFlow />} />
+              <Route path="payment" element={<PaymentPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="payment-history" element={<PaymentHistory />} />
+              <Route path="monthly-reports" element={<MonthlyCostReports />} />
+              <Route path="charging-habits" element={<ChargingHabitsAnalysis />} />
+
             </Route>
 
             {/* Staff Routes */}

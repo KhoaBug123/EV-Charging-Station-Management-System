@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import useVehicleStore from "../../store/vehicleStore";
-import useAuthStore from "../../store/authStore";
+import React, { useState } from "react";
 import {
     Box,
     Typography,
@@ -44,19 +41,6 @@ import {
 } from "@mui/icons-material";
 
 const VehicleManagement = () => {
-    const [searchParams] = useSearchParams();
-
-    // Store hooks
-    const {
-        vehicles,
-        addVehicle,
-        updateVehicle,
-        deleteVehicle,
-        setDefaultVehicle,
-        initializeWithUserData
-    } = useVehicleStore();
-    const { user } = useAuthStore();
-
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [formData, setFormData] = useState({
@@ -66,38 +50,41 @@ const VehicleManagement = () => {
         year: "",
         batteryCapacity: "",
         maxChargingSpeed: "",
-        connectorTypes: [], // Changed to array
+        connectorType: [],
         licensePlate: "",
         color: "",
         isDefault: false,
     });
 
-    // Initialize store with user data
-    useEffect(() => {
-        if (user) {
-            initializeWithUserData(user);
-        }
-    }, [user, initializeWithUserData]);
-
-    // Handle query parameters for navigation from CustomerProfile
-    useEffect(() => {
-        const editId = searchParams.get('edit');
-        const shouldAdd = searchParams.get('add');
-
-        if (editId && vehicles.length > 0) {
-            const vehicleToEdit = vehicles.find(v => v.id === editId);
-            if (vehicleToEdit) {
-                handleEdit(vehicleToEdit);
-            }
-        } else if (shouldAdd === 'true') {
-            handleAddNew();
-        }
-    }, [searchParams, vehicles]);
-
-    // Remove mock data, use store instead
-    /* const [vehicles, setVehicles] = useState([
-    // Mock data removed - now using store
-    */
+    // Mock vehicle data
+    const [vehicles, setVehicles] = useState([
+        {
+            id: "1",
+            nickname: "Xe chính",
+            make: "VinFast",
+            model: "VF8",
+            year: "2024",
+            batteryCapacity: "87.7",
+            maxChargingSpeed: "150",
+            connectorType: ["CCS2", "Type2"],
+            licensePlate: "30A-123.45",
+            color: "Xanh",
+            isDefault: true,
+        },
+        {
+            id: "2",
+            nickname: "Xe gia đình",
+            make: "Tesla",
+            model: "Model 3",
+            year: "2023",
+            batteryCapacity: "75",
+            maxChargingSpeed: "250",
+            connectorType: ["CCS2"],
+            licensePlate: "29B-678.90",
+            color: "Trắng",
+            isDefault: false,
+        },
+    ]);
 
     const makeOptions = [
         "VinFast",
@@ -129,7 +116,7 @@ const VehicleManagement = () => {
             year: "",
             batteryCapacity: "",
             maxChargingSpeed: "",
-            connectorTypes: [],
+            connectorType: [],
             licensePlate: "",
             color: "",
             isDefault: false,
@@ -146,7 +133,7 @@ const VehicleManagement = () => {
             year: vehicle.year,
             batteryCapacity: vehicle.batteryCapacity,
             maxChargingSpeed: vehicle.maxChargingSpeed,
-            connectorTypes: vehicle.connectorTypes || [vehicle.connectorType].filter(Boolean),
+            connectorType: Array.isArray(vehicle.connectorType) ? vehicle.connectorType : [vehicle.connectorType].filter(Boolean),
             licensePlate: vehicle.licensePlate,
             color: vehicle.color,
             isDefault: vehicle.isDefault,
@@ -155,35 +142,51 @@ const VehicleManagement = () => {
     };
 
     const handleDelete = (vehicleId) => {
-        deleteVehicle(vehicleId);
+        setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== vehicleId));
     };
 
     const handleSetDefault = (vehicleId) => {
-        setDefaultVehicle(vehicleId);
+        setVehicles((prev) =>
+            prev.map((vehicle) => ({
+                ...vehicle,
+                isDefault: vehicle.id === vehicleId,
+            }))
+        );
     };
 
     const handleSave = () => {
+        // Validation
+        if (!formData.nickname || !formData.make || !formData.model || !formData.year) {
+            alert('Vui lòng điền đầy đủ thông tin bắt buộc.');
+            return;
+        }
+
+        if (!formData.connectorType || formData.connectorType.length === 0) {
+            alert('Vui lòng chọn ít nhất một loại cổng sạc.');
+            return;
+        }
+
         if (selectedVehicle) {
             // Update existing vehicle
-            updateVehicle(selectedVehicle.id, formData);
+            setVehicles((prev) =>
+                prev.map((vehicle) =>
+                    vehicle.id === selectedVehicle.id
+                        ? { ...vehicle, ...formData }
+                        : vehicle
+                )
+            );
         } else {
             // Add new vehicle
-            addVehicle(formData);
+            const newVehicle = {
+                id: Date.now().toString(),
+                ...formData,
+            };
+            setVehicles((prev) => [...prev, newVehicle]);
         }
         setDialogOpen(false);
     };
 
-    const getConnectorTypeLabel = (types) => {
-        if (Array.isArray(types)) {
-            return types.map(type => {
-                const connector = connectorTypes.find(c => c.value === type);
-                return connector ? connector.label : type;
-            }).join(', ');
-        }
-        // Fallback for single type (backward compatibility)
-        const connector = connectorTypes.find(c => c.value === types);
-        return connector ? connector.label : types;
-    };
+
 
     return (
         <Container maxWidth="lg" sx={{ py: 3 }}>
@@ -366,9 +369,23 @@ const VehicleManagement = () => {
                                         </Grid>
 
                                         <Grid item xs={12}>
-                                            <Typography variant="body2" color="text.secondary">
-                                                Loại cổng sạc: {getConnectorTypeLabel(vehicle.connectorTypes || [vehicle.connectorType].filter(Boolean))}
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                Loại cổng sạc:
                                             </Typography>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                {(Array.isArray(vehicle.connectorType) ? vehicle.connectorType : [vehicle.connectorType]).filter(Boolean).map((type) => {
+                                                    const connector = connectorTypes.find(c => c.value === type);
+                                                    return (
+                                                        <Chip
+                                                            key={type}
+                                                            label={connector?.label || type}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            color="primary"
+                                                        />
+                                                    );
+                                                })}
+                                            </Box>
                                         </Grid>
 
                                         <Grid item xs={12}>
@@ -486,28 +503,72 @@ const VehicleManagement = () => {
                             />
                         </Grid>
 
-                        <Grid item xs={12} sm={6}>
-                            <FormControl fullWidth>
-                                <InputLabel>Loại cổng sạc</InputLabel>
-                                <Select
-                                    value={formData.connectorTypes || []}
-                                    label="Loại cổng sạc"
-                                    multiple
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, connectorTypes: e.target.value })
+                        <Grid item xs={12}>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Loại cổng sạc
+                            </Typography>
+                            
+                            {/* Display selected connector types */}
+                            {formData.connectorType.length > 0 && (
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                                        Đã chọn:
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                        {formData.connectorType.map((type) => {
+                                            const connector = connectorTypes.find(c => c.value === type);
+                                            return (
+                                                <Chip
+                                                    key={type}
+                                                    label={connector?.label || type}
+                                                    onDelete={() => {
+                                                        setFormData({
+                                                            ...formData,
+                                                            connectorType: formData.connectorType.filter(t => t !== type)
+                                                        });
+                                                    }}
+                                                    color="primary"
+                                                    size="small"
+                                                />
+                                            );
+                                        })}
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {/* Available connector types to add */}
+                            <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                                    Chọn thêm loại cổng sạc:
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                    {connectorTypes
+                                        .filter(type => !formData.connectorType.includes(type.value))
+                                        .map((type) => (
+                                            <Button
+                                                key={type.value}
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => {
+                                                    setFormData({
+                                                        ...formData,
+                                                        connectorType: [...formData.connectorType, type.value]
+                                                    });
+                                                }}
+                                                startIcon={<Add />}
+                                                sx={{ textTransform: 'none' }}
+                                            >
+                                                {type.label}
+                                            </Button>
+                                        ))
                                     }
-                                    renderValue={(selected) => selected.map(value => {
-                                        const type = connectorTypes.find(t => t.value === value);
-                                        return type ? type.label : value;
-                                    }).join(', ')}
-                                >
-                                    {connectorTypes.map((type) => (
-                                        <MenuItem key={type.value} value={type.value}>
-                                            {type.label}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                                    {connectorTypes.filter(type => !formData.connectorType.includes(type.value)).length === 0 && (
+                                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                            Đã chọn tất cả loại cổng sạc có sẵn
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Box>
                         </Grid>
 
                         <Grid item xs={12} sm={6}>

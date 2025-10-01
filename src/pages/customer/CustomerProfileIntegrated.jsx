@@ -62,9 +62,9 @@ const CustomerProfile = () => {
     const [tabValue, setTabValue] = useState(0);
     const [editMode, setEditMode] = useState(false);
     const [profileData, setProfileData] = useState({
-        name: user?.name || "Nguyễn Văn An",
+        name: user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : "Khách hàng",
         email: user?.email || "customer@skaev.com",
-        phone: "+84 901 234 567",
+        phone: user?.profile?.phone || "+84 901 234 567",
         address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
     });
 

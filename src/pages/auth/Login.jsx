@@ -12,11 +12,14 @@ import {
   Grid,
   Chip,
   Link,
+  IconButton
 } from "@mui/material";
-import { ElectricCar, Login } from "@mui/icons-material";
+import { ElectricCar, Login, Google, Phone } from "@mui/icons-material";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import { getText } from "../../utils/vietnameseTexts";
+import { googleAuth } from "../../services/socialAuthService";
+import PhoneOTPModal from "../../components/auth/PhoneOTPModal";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -26,6 +29,12 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
+
+  const [socialLoading, setSocialLoading] = useState({
+    google: false
+  });
+
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -46,6 +55,38 @@ const LoginPage = () => {
     }
   };
 
+  // Social login handlers
+  const handleGoogleLogin = async () => {
+    setSocialLoading(prev => ({ ...prev, google: true }));
+    try {
+      const response = await googleAuth.signIn();
+      if (response.success && response.user) {
+        await login(response.user.email, 'social-login');
+        console.log('Google login successful:', response.user.name);
+        // Show success message
+        alert(`Chào mừng ${response.user.name}! Đăng nhập Google thành công.`);
+      } else if (!response.success) {
+        console.error('Google login failed:', response.error);
+      }
+    } catch (error) {
+      console.error('Google login failed:', error.message);
+      // Show user-friendly error
+      if (error.message.includes('cancelled')) {
+        // User cancelled, no need to show error
+        return;
+      }
+      alert(`Đăng nhập Google thất bại: ${error.message}`);
+    } finally {
+      setSocialLoading(prev => ({ ...prev, google: false }));
+    }
+  };
+
+
+
+  const handlePhoneLoginSuccess = (response) => {
+    console.log('Phone login successful:', response);
+  };
+
   const demoAccounts = [
     {
       email: "admin@skaev.com",
@@ -60,7 +101,7 @@ const LoginPage = () => {
       color: "info",
     },
     {
-      email: "john.doe@gmail.com",
+      email: "nguyenvanan@gmail.com",
       password: "Customer123!",
       role: getText("users.customer"),
       color: "success",
@@ -188,7 +229,17 @@ const LoginPage = () => {
             </Button>
           </form>
 
-          <Box sx={{ textAlign: "center", mt: 3, mb: 3 }}>
+          <Box sx={{ textAlign: "center", mt: 2, mb: 2 }}>
+            <Link
+              component={RouterLink}
+              to="/forgot-password"
+              sx={{ textDecoration: "none", fontWeight: "medium", fontSize: '0.875rem' }}
+            >
+              Quên mật khẩu?
+            </Link>
+          </Box>
+
+          <Box sx={{ textAlign: "center", mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
               {getText("auth.dontHaveAccount")}{" "}
               <Link
@@ -208,14 +259,22 @@ const LoginPage = () => {
             </Typography>
           </Divider>
 
+
+
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={6}>
               <Button
                 fullWidth
                 variant="outlined"
-                startIcon={<img src="/assets/google-icon.svg" alt="Google" width="20" height="20" />}
-                onClick={() => console.log("Google login")}
-                sx={{ textTransform: "none" }}
+                startIcon={socialLoading.google ? <CircularProgress size={16} /> : <Google />}
+                onClick={handleGoogleLogin}
+                disabled={socialLoading.google || loading}
+                sx={{
+                  textTransform: "none",
+                  borderColor: '#db4437',
+                  color: '#db4437',
+                  '&:hover': { borderColor: '#db4437', bgcolor: '#db4437', color: 'white' }
+                }}
               >
                 Google
               </Button>
@@ -224,11 +283,17 @@ const LoginPage = () => {
               <Button
                 fullWidth
                 variant="outlined"
-                startIcon={<img src="/assets/facebook-icon.svg" alt="Facebook" width="20" height="20" />}
-                onClick={() => console.log("Facebook login")}
-                sx={{ textTransform: "none" }}
+                startIcon={<Phone />}
+                onClick={() => setPhoneModalOpen(true)}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  borderColor: '#28a745',
+                  color: '#28a745',
+                  '&:hover': { borderColor: '#28a745', bgcolor: '#28a745', color: 'white' }
+                }}
               >
-                Facebook
+                Số điện thoại
               </Button>
             </Grid>
           </Grid>
@@ -277,6 +342,13 @@ const LoginPage = () => {
           </Box>
         </CardContent>
       </Card>
+
+      {/* Phone OTP Modal */}
+      <PhoneOTPModal
+        open={phoneModalOpen}
+        onClose={() => setPhoneModalOpen(false)}
+        onSuccess={handlePhoneLoginSuccess}
+      />
     </Box>
   );
 };

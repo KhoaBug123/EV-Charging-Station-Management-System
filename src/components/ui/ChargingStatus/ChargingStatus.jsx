@@ -4,13 +4,12 @@ import { mockAPI } from '../../../data/mockAPI';
 import './ChargingStatus.css';
 
 const ChargingStatus = ({ bookingId, compact = false }) => {
-  const { 
-    getSOCProgress, 
-    getChargingSession, 
-    updateChargingProgress,
-    getCurrentBooking 
+  const {
+    getSOCProgress,
+    getChargingSession,
+    getCurrentBooking
   } = useBookingStore();
-  
+
   const [socData, setSocData] = useState(null);
   const [chargingSession, setChargingSession] = useState(null);
   const [currentBooking, setCurrentBooking] = useState(null);
@@ -31,12 +30,15 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
           vehicleId: `vehicle-${bookingId}`
         });
 
-        // Start charging if this is an active session
+        // Check if charging is already started (via QR scan)
         const session = getChargingSession();
-        if (session?.bookingId === bookingId && session?.status === 'active') {
-          await mockAPI.soc.startCharging(bookingId);
-          
-          // Start real-time simulation
+        const booking = getCurrentBooking();
+
+        // Only start simulation if charging has been properly initiated with QR scan
+        if (session?.bookingId === bookingId && session?.status === 'active' &&
+          booking?.qrScanned === true && booking?.chargingStarted === true) {
+
+          // Start real-time simulation for already started charging
           simulationInterval = mockAPI.soc.simulateRealTimeUpdates(bookingId, (updatedSession) => {
             setSocData({
               initialSOC: updatedSession.initialSOC,
@@ -46,7 +48,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
               estimatedTimeToTarget: updatedSession.estimatedTimeToTarget,
               lastUpdated: updatedSession.lastUpdated,
             });
-            
+
             setChargingSession({
               ...session,
               currentSOC: updatedSession.currentSOC,
@@ -71,7 +73,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
       const progress = getSOCProgress(bookingId);
       const session = getChargingSession();
       const booking = getCurrentBooking();
-      
+
       setSocData(progress);
       setChargingSession(session);
       setCurrentBooking(booking);
@@ -93,10 +95,10 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
 
   const formatTime = (minutes) => {
     if (!minutes || minutes <= 0) return '0 phút';
-    
+
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = Math.round(minutes % 60);
-    
+
     if (hours > 0) {
       return `${hours}h ${remainingMinutes}ph`;
     }
@@ -105,24 +107,24 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    
+
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     const isToday = date.toDateString() === today.toDateString();
     const isYesterday = date.toDateString() === yesterday.toDateString();
-    
+
     if (isToday) {
-      return `Hôm nay, ${date.toLocaleTimeString('vi-VN', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return `Hôm nay, ${date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit'
       })}`;
     } else if (isYesterday) {
-      return `Hôm qua, ${date.toLocaleTimeString('vi-VN', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return `Hôm qua, ${date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit'
       })}`;
     } else {
       return date.toLocaleString('vi-VN', {
@@ -160,7 +162,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
             )}
           </div>
         )}
-        
+
         {currentBooking?.bookingDate && (
           <div className="booking-date-compact">
             📅 {formatDate(currentBooking.createdAt || currentBooking.bookingTime)}
@@ -187,20 +189,20 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
                 <span className="soc-label">SOC</span>
               </div>
               <svg className="soc-progress" viewBox="0 0 100 100">
-                <circle 
-                  cx="50" 
-                  cy="50" 
-                  r="45" 
-                  stroke="#e5e7eb" 
-                  strokeWidth="8" 
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  stroke="#e5e7eb"
+                  strokeWidth="8"
                   fill="none"
                 />
-                <circle 
-                  cx="50" 
-                  cy="50" 
-                  r="45" 
-                  stroke="var(--soc-color)" 
-                  strokeWidth="8" 
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  stroke="var(--soc-color)"
+                  strokeWidth="8"
                   fill="none"
                   strokeLinecap="round"
                   strokeDasharray="283"
@@ -209,7 +211,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
                 />
               </svg>
             </div>
-            
+
             <div className="soc-details">
               {socData.initialSOC !== null && (
                 <div className="soc-stat">
@@ -217,21 +219,21 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
                   <span className="stat-value">{socData.initialSOC}%</span>
                 </div>
               )}
-              
+
               {socData.targetSOC && (
                 <div className="soc-stat">
                   <span className="stat-label">Mục tiêu:</span>
                   <span className="stat-value">{socData.targetSOC}%</span>
                 </div>
               )}
-              
+
               {socData.chargingRate && (
                 <div className="soc-stat">
                   <span className="stat-label">Tốc độ sạc:</span>
                   <span className="stat-value">{socData.chargingRate.toFixed(1)}%/h</span>
                 </div>
               )}
-              
+
               {socData.estimatedTimeToTarget && (
                 <div className="soc-stat">
                   <span className="stat-label">Thời gian còn lại:</span>
@@ -257,7 +259,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
                 </div>
               </div>
             )}
-            
+
             {chargingSession.energyDelivered && (
               <div className="session-stat">
                 <span className="stat-icon">🔋</span>
@@ -267,7 +269,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
                 </div>
               </div>
             )}
-            
+
             {chargingSession.voltage && (
               <div className="session-stat">
                 <span className="stat-icon">🔌</span>
@@ -277,7 +279,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
                 </div>
               </div>
             )}
-            
+
             {chargingSession.current && (
               <div className="session-stat">
                 <span className="stat-icon">⚡</span>
@@ -287,7 +289,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
                 </div>
               </div>
             )}
-            
+
             {chargingSession.temperature && (
               <div className="session-stat">
                 <span className="stat-icon">🌡️</span>
@@ -298,7 +300,7 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
               </div>
             )}
           </div>
-          
+
           {chargingSession.startTime && (
             <div className="session-time">
               <span className="time-label">Bắt đầu:</span>
