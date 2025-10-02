@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -8,20 +8,16 @@ import {
   Grid,
   Avatar,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Divider,
-  Switch,
-  FormControlLabel,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemSecondaryAction,
-  Alert,
   Chip,
+  Container,
+  Tabs,
+  Tab,
+  Stack
 } from "@mui/material";
 import {
   Person,
@@ -29,395 +25,306 @@ import {
   Phone,
   LocationOn,
   Edit,
-  Security,
-  Notifications,
-  Language,
-  Save,
-  Verified,
+  ElectricCar,
+  History,
+  BatteryFull,
+  Speed,
+  EmojiNature,
+  CalendarToday
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
+import useBookingStore from "../../store/bookingStore";
+import useVehicleStore from "../../store/vehicleStore";
+import { formatCurrency } from "../../utils/helpers";
+import { mockUsers } from "../../data/mockData";
+
+function TabPanel({ children, value, index, ...other }) {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`profile-tabpanel-${index}`}
+      aria-labelledby={`profile-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 const CustomerProfile = () => {
-  const { user, updateUser } = useAuthStore();
+  const { user, updateProfile } = useAuthStore();
+  const { bookingHistory, initializeMockData, getBookingStats } = useBookingStore();
+  const { vehicles, initializeWithUserData } = useVehicleStore();
+  const [tabValue, setTabValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    address: user?.address || "",
-    city: user?.city || "",
-    province: user?.province || "",
-    language: "vi",
-    notifications: {
-      email: true,
-      sms: false,
-      push: true,
-      marketing: false,
-    },
+  const [profileData, setProfileData] = useState({
+    name: user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : "Nguyễn Văn An",
+    email: user?.email || "customer@skaev.com",
+    phone: user?.profile?.phone || "+84 901 234 567",
+    address: "123 Nguyễn Huệ, Quận 1, TP.HCM"
   });
 
-  const handleSave = () => {
-    updateUser(formData);
+  useEffect(() => {
+    if (bookingHistory.length === 0) {
+      initializeMockData();
+    }
+
+    // Initialize vehicle data with user data
+    const getCurrentUserData = () => {
+      if (user?.id) {
+        const userData = mockUsers.find(u => u.id === user.id);
+        return userData;
+      }
+      return mockUsers.find(u => u.role === 'customer') || mockUsers[2]; // Default to first customer
+    };
+
+    const userData = getCurrentUserData();
+    if (userData) {
+      initializeWithUserData(userData);
+    }
+  }, [bookingHistory.length, initializeMockData, user?.id, initializeWithUserData]);
+
+  const bookingStats = getBookingStats();
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const handleSaveProfile = () => {
+    // Parse name into firstName and lastName
+    const nameParts = profileData.name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const updatedProfile = {
+      firstName,
+      lastName,
+      phone: profileData.phone,
+      // Keep other existing profile data
+      ...(user?.profile || {}),
+    };
+
+    updateProfile(updatedProfile);
     setEditMode(false);
   };
 
-  const handleNotificationChange = (type) => {
-    setFormData({
-      ...formData,
-      notifications: {
-        ...formData.notifications,
-        [type]: !formData.notifications[type],
-      },
-    });
-  };
-
-  const profileStats = [
-    { label: "Member Since", value: "Jan 2024", icon: <Person /> },
-    { label: "Total Sessions", value: "24", icon: <Verified /> },
-    {
-      label: "Favorite Station",
-      value: "SkaEV Downtown",
-      icon: <LocationOn />,
-    },
-    { label: "Account Status", value: "Verified", icon: <Security /> },
-  ];
-
   return (
-    <Box>
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Avatar
-            sx={{
-              bgcolor: "primary.main",
-              width: 64,
-              height: 64,
-              mr: 3,
-              fontSize: "1.5rem",
-            }}
-          >
-            {user?.name?.charAt(0) || "U"}
-          </Avatar>
-          <Box>
-            <Typography variant="h4" fontWeight="bold">
-              {user?.name || "User Profile"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Manage your account settings and preferences
-            </Typography>
-          </Box>
-        </Box>
-        <Button
-          variant={editMode ? "outlined" : "contained"}
-          startIcon={editMode ? <Save /> : <Edit />}
-          onClick={editMode ? handleSave : () => setEditMode(true)}
+    <Container maxWidth="lg" sx={{
+      py: 3,
+      '& .MuiTab-root': {
+        '&::after': {
+          display: 'none'
+        }
+      },
+      '& [role="tabpanel"]::after': {
+        display: 'none'
+      },
+      '& *:contains("TÀI KHOẢN"), & *:contains("SẠC XE")': {
+        display: 'none !important'
+      }
+    }}>
+      <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: "bold" }}>
+        Hồ sơ cá nhân
+      </Typography>
+
+      <Card sx={{ mb: 3 }}>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          indicatorColor="primary"
         >
-          {editMode ? "Save Changes" : "Edit Profile"}
-        </Button>
-      </Box>
+          <Tab icon={<Person />} label="HỒ SƠ CÁ NHÂN" />
+          <Tab icon={<ElectricCar />} label="QUẢN LÝ XE" />
+          <Tab icon={<History />} label="LỊCH SỬ SẠC" />
+        </Tabs>
+      </Card>
 
-      <Grid container spacing={4}>
-        {/* Profile Information */}
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Personal Information
-              </Typography>
-
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
+      <TabPanel value={tabValue} index={0}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent sx={{ textAlign: "center", p: 3 }}>
+                <Avatar sx={{ width: 120, height: 120, mx: "auto", mb: 2 }}>
+                  <Person sx={{ fontSize: 60 }} />
+                </Avatar>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  {profileData.name}
+                </Typography>
+                <Chip label="Tài xế" color="primary" />
+                <Box sx={{ mt: 2 }}>
+                  <Button
+                    variant={editMode ? "contained" : "outlined"}
+                    startIcon={<Edit />}
+                    onClick={editMode ? handleSaveProfile : () => setEditMode(true)}
                     fullWidth
-                    label="Full Name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    disabled={!editMode}
-                    InputProps={{
-                      startAdornment: (
-                        <Person sx={{ mr: 1, color: "action.active" }} />
-                      ),
-                    }}
-                  />
+                  >
+                    {editMode ? "Lưu thay đổi" : "Chỉnh sửa"}
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={8}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Thông tin chi tiết</Typography>
+                <Divider sx={{ mb: 3 }} />
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Họ và tên" value={profileData.name} disabled={!editMode} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} InputProps={{ startAdornment: <Person sx={{ mr: 1, color: "text.secondary" }} /> }} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Email" value={profileData.email} disabled={!editMode} onChange={(e) => setProfileData({ ...profileData, email: e.target.value })} InputProps={{ startAdornment: <Email sx={{ mr: 1, color: "text.secondary" }} /> }} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Số điện thoại" value={profileData.phone} disabled={!editMode} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} InputProps={{ startAdornment: <Phone sx={{ mr: 1, color: "text.secondary" }} /> }} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField fullWidth label="Địa chỉ" value={profileData.address} disabled={!editMode} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} InputProps={{ startAdornment: <LocationOn sx={{ mr: 1, color: "text.secondary" }} /> }} />
+                  </Grid>
                 </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Email Address"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    disabled={!editMode}
-                    InputProps={{
-                      startAdornment: (
-                        <Email sx={{ mr: 1, color: "action.active" }} />
-                      ),
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Phone Number"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    disabled={!editMode}
-                    InputProps={{
-                      startAdornment: (
-                        <Phone sx={{ mr: 1, color: "action.active" }} />
-                      ),
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth disabled={!editMode}>
-                    <InputLabel>Language</InputLabel>
-                    <Select
-                      value={formData.language}
-                      label="Language"
-                      onChange={(e) =>
-                        setFormData({ ...formData, language: e.target.value })
-                      }
-                      startAdornment={
-                        <Language sx={{ mr: 1, color: "action.active" }} />
-                      }
-                    >
-                      <MenuItem value="vi">Tiếng Việt</MenuItem>
-                      <MenuItem value="en">English</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Address"
-                    value={formData.address}
-                    onChange={(e) =>
-                      setFormData({ ...formData, address: e.target.value })
-                    }
-                    disabled={!editMode}
-                    multiline
-                    rows={2}
-                    InputProps={{
-                      startAdornment: (
-                        <LocationOn
-                          sx={{
-                            mr: 1,
-                            color: "action.active",
-                            alignSelf: "flex-start",
-                            mt: 1,
-                          }}
-                        />
-                      ),
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="City"
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    disabled={!editMode}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Province"
-                    value={formData.province}
-                    onChange={(e) =>
-                      setFormData({ ...formData, province: e.target.value })
-                    }
-                    disabled={!editMode}
-                  />
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Notification Settings */}
-          <Card sx={{ mt: 3 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Notification Preferences
-              </Typography>
-
-              <List>
-                <ListItem>
-                  <ListItemIcon>
-                    <Email />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Email Notifications"
-                    secondary="Receive booking confirmations and updates via email"
-                  />
-                  <ListItemSecondaryAction>
-                    <Switch
-                      checked={formData.notifications.email}
-                      onChange={() => handleNotificationChange("email")}
-                      disabled={!editMode}
-                    />
-                  </ListItemSecondaryAction>
-                </ListItem>
-
-                <ListItem>
-                  <ListItemIcon>
-                    <Phone />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="SMS Notifications"
-                    secondary="Get text messages for important updates"
-                  />
-                  <ListItemSecondaryAction>
-                    <Switch
-                      checked={formData.notifications.sms}
-                      onChange={() => handleNotificationChange("sms")}
-                      disabled={!editMode}
-                    />
-                  </ListItemSecondaryAction>
-                </ListItem>
-
-                <ListItem>
-                  <ListItemIcon>
-                    <Notifications />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Push Notifications"
-                    secondary="Receive browser notifications for real-time updates"
-                  />
-                  <ListItemSecondaryAction>
-                    <Switch
-                      checked={formData.notifications.push}
-                      onChange={() => handleNotificationChange("push")}
-                      disabled={!editMode}
-                    />
-                  </ListItemSecondaryAction>
-                </ListItem>
-
-                <ListItem>
-                  <ListItemIcon>
-                    <Notifications />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Marketing Communications"
-                    secondary="Receive promotional offers and news"
-                  />
-                  <ListItemSecondaryAction>
-                    <Switch
-                      checked={formData.notifications.marketing}
-                      onChange={() => handleNotificationChange("marketing")}
-                      disabled={!editMode}
-                    />
-                  </ListItemSecondaryAction>
-                </ListItem>
-              </List>
-            </CardContent>
-          </Card>
+                {editMode && (
+                  <Box sx={{ mt: 3, display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                    <Button variant="outlined" onClick={() => setEditMode(false)}>Hủy</Button>
+                    <Button variant="contained" onClick={handleSaveProfile}>Lưu thay đổi</Button>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
+      </TabPanel>
 
-        {/* Profile Stats */}
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Account Overview
-              </Typography>
-
-              {profileStats.map((stat, index) => (
-                <Box key={index} sx={{ mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: "primary.light",
-                        width: 32,
-                        height: 32,
-                        mr: 2,
-                      }}
-                    >
-                      {stat.icon}
+      <TabPanel value={tabValue} index={1}>
+        <Grid container spacing={3}>
+          {vehicles.map((vehicle) => (
+            <Grid item xs={12} md={6} key={vehicle.id}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Avatar sx={{ bgcolor: "primary.light", mr: 2 }}>
+                      <ElectricCar />
                     </Avatar>
                     <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        {stat.label}
-                      </Typography>
-                      <Typography variant="body1" fontWeight="medium">
-                        {stat.value}
-                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">{vehicle.make} {vehicle.model}</Typography>
+                      <Typography variant="body2" color="text.secondary">{vehicle.year} • {vehicle.licensePlate || vehicle.nickname || 'Chưa đăng ký'}</Typography>
                     </Box>
                   </Box>
-                  {index < profileStats.length - 1 && <Divider />}
-                </Box>
-              ))}
-            </CardContent>
-          </Card>
+                  <Grid container spacing={2}>
+                    <Grid item xs={4}>
+                      <Box sx={{ textAlign: "center", p: 1 }}>
+                        <BatteryFull color="success" />
+                        <Typography variant="body2" fontWeight="medium">{vehicle.batteryCapacity || '87.7'} kWh</Typography>
+                        <Typography variant="caption" color="text.secondary">Dung lượng</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Box sx={{ textAlign: "center", p: 1 }}>
+                        <Speed color="info" />
+                        <Typography variant="body2" fontWeight="medium">{vehicle.range || Math.floor((parseFloat(vehicle.batteryCapacity) || 87.7) * 5.5)} km</Typography>
+                        <Typography variant="caption" color="text.secondary">Quãng đường</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Box sx={{ textAlign: "center", p: 1 }}>
+                        <EmojiNature color="primary" />
+                        <Typography variant="body2" fontWeight="medium">{vehicle.efficiency || '5.2'} km/kWh</Typography>
+                        <Typography variant="caption" color="text.secondary">Hiệu suất</Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
 
-          <Card sx={{ mt: 3 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Account Security
-              </Typography>
+                  {/* Charging Types Support */}
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" fontWeight="medium" gutterBottom>
+                      Loại sạc hỗ trợ:
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {(vehicle.connectorTypes || vehicle.chargingType || ["Type 2", "CCS2"]).map((type, index) => (
+                        <Chip
+                          key={index}
+                          label={type}
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                        />
+                      ))}
+                    </Box>
+                  </Box>
 
-              <Alert severity="success" sx={{ mb: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Verified />
-                  <Typography variant="body2">
-                    Your account is verified and secure
-                  </Typography>
-                </Box>
-              </Alert>
-
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Password
-                </Typography>
-                <Typography variant="body2">
-                  Last changed 30 days ago
-                </Typography>
-                <Button size="small" sx={{ mt: 1 }}>
-                  Change Password
-                </Button>
-              </Box>
-
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Two-Factor Authentication
-                </Typography>
-                <Chip
-                  label="Enabled"
-                  color="success"
-                  size="small"
-                  icon={<Security />}
-                />
-                <Button size="small" sx={{ ml: 1 }}>
-                  Manage
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
+                  <Button variant="outlined" fullWidth sx={{ mt: 2 }}>Chỉnh sửa thông tin</Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
-      </Grid>
-    </Box>
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={2}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={3}>
+            <Card><CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" color="primary.main" fontWeight="bold">{bookingStats.total}</Typography>
+              <Typography variant="body2" color="text.secondary">Tổng phiên sạc</Typography>
+            </CardContent></Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card><CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" color="success.main" fontWeight="bold">{bookingStats.completed}</Typography>
+              <Typography variant="body2" color="text.secondary">Hoàn thành</Typography>
+            </CardContent></Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card><CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" color="info.main" fontWeight="bold">{bookingStats.totalEnergyCharged} kWh</Typography>
+              <Typography variant="body2" color="text.secondary">Tổng năng lượng</Typography>
+            </CardContent></Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card><CardContent sx={{ textAlign: "center" }}>
+              <Typography variant="h4" color="warning.main" fontWeight="bold">{formatCurrency(bookingStats.totalAmount)}</Typography>
+              <Typography variant="body2" color="text.secondary">Tổng chi phí</Typography>
+            </CardContent></Card>
+          </Grid>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Lịch sử sạc gần đây</Typography>
+                <Divider sx={{ mb: 2 }} />
+                <List>
+                  {bookingHistory.slice(0, 5).map((booking) => (
+                    <ListItem key={booking.id} sx={{ border: 1, borderColor: "divider", borderRadius: 1, mb: 1 }}>
+                      <ListItemIcon>
+                        <Avatar sx={{ bgcolor: "primary.light" }}>
+                          <ElectricCar />
+                        </Avatar>
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={booking.stationName}
+                        secondary={
+                          <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
+                            <Chip icon={<CalendarToday />} label={new Date(booking.createdAt).toLocaleDateString("vi-VN")} size="small" variant="outlined" />
+                            <Chip label={`${booking.energyDelivered || 0} kWh`} size="small" color="info" />
+                            <Chip label={formatCurrency(booking.totalAmount || 0)} size="small" color="success" />
+                          </Stack>
+                        }
+                      />
+                      <Chip
+                        label={booking.status === "completed" ? "Hoàn thành" : "Đã hủy"}
+                        color={booking.status === "completed" ? "success" : "error"}
+                        size="small"
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </TabPanel>
+    </Container>
   );
 };
 

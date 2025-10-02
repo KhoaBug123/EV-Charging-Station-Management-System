@@ -82,13 +82,13 @@ export const mockUsers = [
   // Customers
   {
     id: "customer-001",
-    email: "john.doe@gmail.com",
+    email: "nguyenvanan@gmail.com",
     password: "Customer123!",
     role: "customer",
     profile: {
-      firstName: "John",
-      lastName: "Doe",
-      avatar: "/assets/avatars/customer-john.jpg",
+      firstName: "Nguyễn Văn",
+      lastName: "An",
+      avatar: "/assets/avatars/customer-vanan.jpg",
       phone: "+84 905 678 901",
       createdAt: "2024-02-15T14:20:00Z",
       lastLogin: "2024-03-15T17:30:00Z",
@@ -148,7 +148,7 @@ export const mockStations = [
     type: "public",
     status: "active",
     location: {
-      address: "123 Nguyen Hue Street, District 1, Ho Chi Minh City",
+      address: "123 Đường Nguyễn Huệ, Quận 1, Thành phố Hồ Chí Minh",
       coordinates: { lat: 10.7769, lng: 106.7009 },
       landmarks: ["Nguyen Hue Walking Street", "Saigon Centre"],
     },
@@ -170,22 +170,22 @@ export const mockStations = [
           totalSlots: 3,
           availableSlots: 2,
           slots: [
-            { 
-              id: "A1", 
-              connectorType: "Type 2", 
+            {
+              id: "A1",
+              connectorType: "Type 2",
               status: "available",
               lastUsed: "2024-12-25T14:30:00Z"
             },
-            { 
-              id: "A2", 
-              connectorType: "Type 2", 
+            {
+              id: "A2",
+              connectorType: "Type 2",
               status: "occupied",
               currentBooking: "booking-123",
               lastUsed: "2024-12-26T08:15:00Z"
             },
-            { 
-              id: "A3", 
-              connectorType: "Type 2", 
+            {
+              id: "A3",
+              connectorType: "Type 2",
               status: "available",
               lastUsed: "2024-12-25T16:45:00Z"
             }
@@ -200,15 +200,15 @@ export const mockStations = [
           totalSlots: 2,
           availableSlots: 2,
           slots: [
-            { 
-              id: "B1", 
-              connectorType: "CCS2", 
+            {
+              id: "B1",
+              connectorType: "CCS2",
               status: "available",
               lastUsed: "2024-12-25T12:20:00Z"
             },
-            { 
-              id: "B2", 
-              connectorType: "CCS2", 
+            {
+              id: "B2",
+              connectorType: "CCS2",
               status: "available",
               lastUsed: "2024-12-25T18:10:00Z"
             }
@@ -223,15 +223,15 @@ export const mockStations = [
           totalSlots: 2,
           availableSlots: 1,
           slots: [
-            { 
-              id: "C1", 
-              connectorType: "CCS2", 
+            {
+              id: "C1",
+              connectorType: "CCS2",
               status: "available",
               lastUsed: "2024-12-25T10:05:00Z"
             },
-            { 
-              id: "C2", 
-              connectorType: "CHAdeMO", 
+            {
+              id: "C2",
+              connectorType: "CHAdeMO",
               status: "maintenance",
               lastMaintenance: "2024-12-26T06:00:00Z"
             }
@@ -269,7 +269,7 @@ export const mockStations = [
     type: "semi-private",
     status: "active",
     location: {
-      address: "456 Le Thanh Ton Street, District 1, Ho Chi Minh City",
+      address: "456 Đường Lê Thánh Tôn, Quận 1, Thành phố Hồ Chí Minh",
       coordinates: { lat: 10.7837, lng: 106.6956 },
       landmarks: ["Bitexco Financial Tower", "Nguyen Hue Boulevard"],
     },
@@ -291,21 +291,21 @@ export const mockStations = [
           totalSlots: 3,
           availableSlots: 3,
           slots: [
-            { 
-              id: "D1", 
-              connectorType: "CCS2", 
+            {
+              id: "D1",
+              connectorType: "CCS2",
               status: "available",
               lastUsed: "2024-12-25T20:30:00Z"
             },
-            { 
-              id: "D2", 
-              connectorType: "CCS2", 
+            {
+              id: "D2",
+              connectorType: "CCS2",
               status: "available",
               lastUsed: "2024-12-25T19:15:00Z"
             },
-            { 
-              id: "D3", 
-              connectorType: "CHAdeMO", 
+            {
+              id: "D3",
+              connectorType: "CHAdeMO",
               status: "available",
               lastUsed: "2024-12-25T17:45:00Z"
             }
@@ -320,21 +320,21 @@ export const mockStations = [
           totalSlots: 3,
           availableSlots: 3,
           slots: [
-            { 
-              id: "E1", 
-              connectorType: "CCS2", 
+            {
+              id: "E1",
+              connectorType: "CCS2",
               status: "available",
               lastUsed: "2024-12-25T21:00:00Z"
             },
-            { 
-              id: "E2", 
-              connectorType: "CCS2", 
+            {
+              id: "E2",
+              connectorType: "CCS2",
               status: "available",
               lastUsed: "2024-12-25T22:30:00Z"
             },
-            { 
-              id: "E3", 
-              connectorType: "CHAdeMO", 
+            {
+              id: "E3",
+              connectorType: "CHAdeMO",
               status: "available",
               lastUsed: "2024-12-25T16:20:00Z"
             }
@@ -371,7 +371,7 @@ export const mockStations = [
     type: "public",
     status: "active",
     location: {
-      address: "789 Vo Van Tan Street, District 3, Ho Chi Minh City",
+      address: "789 Đường Võ Văn Tần, Quận 3, Thành phố Hồ Chí Minh",
       coordinates: { lat: 10.7892, lng: 106.6844 },
       landmarks: ["Tao Dan Park", "War Remnants Museum"],
     },
@@ -392,15 +392,15 @@ export const mockStations = [
           totalSlots: 2,
           availableSlots: 1,
           slots: [
-            { 
-              id: "F1", 
-              connectorType: "Type 2", 
+            {
+              id: "F1",
+              connectorType: "Type 2",
               status: "available",
               lastUsed: "2024-12-25T13:15:00Z"
             },
-            { 
-              id: "F2", 
-              connectorType: "Type 2", 
+            {
+              id: "F2",
+              connectorType: "Type 2",
               status: "occupied",
               currentBooking: "booking-456",
               lastUsed: "2024-12-26T07:30:00Z"
@@ -416,16 +416,16 @@ export const mockStations = [
           totalSlots: 2,
           availableSlots: 0, // Fully occupied
           slots: [
-            { 
-              id: "G1", 
-              connectorType: "CCS2", 
+            {
+              id: "G1",
+              connectorType: "CCS2",
               status: "occupied",
               currentBooking: "booking-789",
               lastUsed: "2024-12-26T09:00:00Z"
             },
-            { 
-              id: "G2", 
-              connectorType: "CCS2", 
+            {
+              id: "G2",
+              connectorType: "CCS2",
               status: "occupied",
               currentBooking: "booking-101",
               lastUsed: "2024-12-26T08:45:00Z"

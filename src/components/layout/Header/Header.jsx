@@ -14,6 +14,7 @@ import {
 import { AccountCircle, Logout, Dashboard } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../../store/authStore";
+import { getText } from "../../../utils/vietnameseTexts";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const Header = () => {
     const dashboardPath = {
       admin: "/admin/dashboard",
       staff: "/staff/dashboard",
-      customer: "/customer/find-stations",
+      customer: "/customer/charging",
     }[user?.role];
 
     if (dashboardPath) {
@@ -153,12 +154,12 @@ const Header = () => {
                 {user?.role !== "customer" && (
                   <MenuItem onClick={handleDashboard}>
                     <Dashboard sx={{ mr: 1 }} />
-                    Dashboard
+                    {getText("nav.dashboard")}
                   </MenuItem>
                 )}
                 <MenuItem onClick={handleLogout}>
                   <Logout sx={{ mr: 1 }} />
-                  Logout
+                  {getText("auth.logout")}
                 </MenuItem>
               </Menu>
             </Box>
@@ -173,7 +174,7 @@ const Header = () => {
             variant="outlined"
             sx={{ ml: 2 }}
           >
-            Login
+            {getText("auth.login")}
           </Button>
         )}
       </Toolbar>

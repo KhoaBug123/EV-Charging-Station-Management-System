@@ -22,7 +22,7 @@ const useAuthStore = create(
           );
 
           if (!user) {
-            throw new Error("Invalid email or password");
+            throw new Error("Email hoặc mật khẩu không đúng");
           }
 
           // Simulate API delay
@@ -41,6 +41,79 @@ const useAuthStore = create(
           });
 
           return { success: true };
+        } catch (error) {
+          set({ loading: false, error: error.message });
+          return { success: false, error: error.message };
+        }
+      },
+
+      register: async (userData) => {
+        set({ loading: true, error: null });
+
+        try {
+          // Mock API call - simulate user registration
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+
+          // Create new user object
+          const newUser = {
+            id: `user_${Date.now()}`,
+            email: userData.email,
+            role: userData.role || "customer",
+            profile: {
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              phone: userData.phone,
+              avatar: null,
+              createdAt: new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+              verified: false, // New users need verification
+            },
+          };
+
+          // In real app, this would be handled by backend
+          // For demo, we'll add to mockUsers and return success
+          set({
+            user: newUser,
+            isAuthenticated: false, // Requires verification first
+            loading: false,
+          });
+
+          return { success: true, user: newUser, requiresVerification: true };
+        } catch (error) {
+          set({ loading: false, error: error.message });
+          return { success: false, error: error.message };
+        }
+      },
+
+      socialRegister: async (provider, socialData) => {
+        set({ loading: true, error: null });
+
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          const newUser = {
+            id: `${provider}_${Date.now()}`,
+            email: socialData.email,
+            role: "customer",
+            profile: {
+              firstName: socialData.firstName || socialData.name?.split(' ')[0] || '',
+              lastName: socialData.lastName || socialData.name?.split(' ').slice(1).join(' ') || '',
+              phone: socialData.phone || '',
+              avatar: socialData.picture || socialData.avatar,
+              createdAt: new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+              verified: true, // Social accounts are pre-verified
+            },
+            socialProvider: provider,
+          };
+
+          set({
+            user: newUser,
+            isAuthenticated: true, // Social registration is immediate
+            loading: false,
+          });
+
+          return { success: true, user: newUser };
         } catch (error) {
           set({ loading: false, error: error.message });
           return { success: false, error: error.message };

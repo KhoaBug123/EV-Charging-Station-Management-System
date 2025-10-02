@@ -1,372 +1,419 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from "react";
 import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Avatar,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  LinearProgress,
-  Divider,
-  IconButton,
-  Menu,
-  MenuItem,
-  Alert,
-  CircularProgress,
-  Paper,
-  CardActions,
-  Tooltip
-} from '@mui/material';
+    Box,
+    Typography,
+    Card,
+    CardContent,
+    Grid,
+    Avatar,
+    Button,
+    LinearProgress,
+    Chip,
+    Alert,
+    Paper,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    ListItemSecondaryAction,
+    IconButton,
+    Divider,
+    Stack,
+    Container,
+} from "@mui/material";
 import {
-  ElectricCar,
-  Schedule,
-  Payment,
-  Star,
-  LocationOn,
-  TrendingUp,
-  MoreVert,
-  Notifications,
-  Speed,
-  Battery80,
-  Timer,
-  CheckCircle,
-  Warning,
-  Cancel,
-  Navigation,
-  LocalGasStation,
-  Eco,
-  BatteryChargingFull
-} from '@mui/icons-material';
+    ElectricCar,
+    LocationOn,
+    Schedule,
+    Payment,
+    QrCodeScanner,
+    Battery80,
+    Speed,
+    AccessTime,
+    Notifications,
+    Star,
+    MoreVert,
+    TrendingUp,
+    Flash,
+    History,
+    BatteryChargingFull,
+    LocalGasStation,
+    AccountBalanceWallet,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import useAuthStore from '../../store/authStore';
-import useStationStore from '../../store/stationStore';
-import { mockData } from '../../data/mockData';
-import { formatCurrency, formatDate, formatTime, calculateDistance } from '../../utils/helpers';
-import { BOOKING_STATUS, STATION_STATUS } from '../../utils/constants';
-
+import { formatCurrency } from "../../utils/helpers";
+import useAuthStore from "../../store/authStore";
 const CustomerDashboard = () => {
-  const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const { stations, nearbyStations, fetchNearbyStations } = useStationStore();
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState(null);
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
 
-  // Get user's booking data
-  const userBookings = mockData.bookings.filter(
-    (booking) => booking.userId === user?.id
-  );
-  const recentBookings = userBookings.slice(0, 4);
-  const activeBooking = userBookings.find(
-    (booking) => booking.status === 'in_progress'
-  );
+    // Mock active charging session
+    const [activeBooking] = useState({
+        id: "B001",
+        stationName: "Vincom Mega Mall - Trạm A01",
+        progress: 65,
+        currentSOC: 65,
+        targetSOC: 80,
+        estimatedTimeRemaining: 25, // minutes
+        currentCost: 89000,
+        chargingRate: 45, // kW
+        energyDelivered: 18.5, // kWh
+        status: "charging",
+    });
 
-  // Enhanced stats
-  const totalSessions = userBookings.length;
-  const totalSpent = userBookings.reduce((sum, booking) => sum + booking.cost, 0);
-  const completedSessions = userBookings.filter(
-    (booking) => booking.status === 'completed'
-  ).length;
-  const totalEnergyCharged = userBookings.reduce((sum, booking) => sum + (booking.energyDelivered || 0), 0);
-  const avgSessionDuration = userBookings.length > 0 
-    ? Math.round(userBookings.reduce((sum, booking) => sum + booking.duration, 0) / userBookings.length)
-    : 0;
+    const quickActions = [
+        {
+            title: "Tìm trạm sạc",
+            description: "Khám phá trạm sạc gần nhất",
+            icon: <LocationOn sx={{ fontSize: 28 }} />,
+            color: "primary",
+            gradient: "linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)",
+            action: () => navigate("/customer/find-stations"),
+        },
+        {
+            title: "Quét QR sạc ngay",
+            description: "Bắt đầu phiên sạc nhanh chóng",
+            icon: <QrCodeScanner sx={{ fontSize: 28 }} />,
+            color: "success", 
+            gradient: "linear-gradient(135deg, #388e3c 0%, #66bb6a 100%)",
+            action: () => navigate("/qr-demo"),
+        },
+        {
+            title: "Lịch sử & Thống kê",
+            description: "Xem báo cáo sạc chi tiết",
+            icon: <TrendingUp sx={{ fontSize: 28 }} />,
+            color: "info",
+            gradient: "linear-gradient(135deg, #0288d1 0%, #29b6f6 100%)",
+            action: () => navigate("/customer/analytics"),
+        },
+        {
+            title: "Phương thức thanh toán",
+            description: "Quản lý ví và thẻ thanh toán",
+            icon: <Payment sx={{ fontSize: 28 }} />,
+            color: "warning",
+            gradient: "linear-gradient(135deg, #f57c00 0%, #ffb74d 100%)",
+            action: () => navigate("/customer/payment"),
+        },
+    ];
 
-  // Environmental impact
-  const co2Saved = Math.round(totalEnergyCharged * 0.5); // Rough calculation: 0.5kg CO2 saved per kWh
+    const recentBookings = [
+        {
+            id: "B002",
+            stationName: "AEON Mall Bình Tân",
+            date: "29/09/2024",
+            energy: 32.5,
+            cost: 176000,
+            status: "completed",
+            rating: 5,
+        },
+        {
+            id: "B003",
+            stationName: "Lotte Mart Gò Vấp",
+            date: "27/09/2024",
+            energy: 28.0,
+            cost: 152000,
+            status: "completed",
+            rating: 4,
+        },
+        {
+            id: "B004",
+            stationName: "Big C Thăng Long",
+            date: "25/09/2024",
+            energy: 35.2,
+            cost: 191000,
+            status: "completed",
+            rating: null,
+        },
+    ];
 
-  const quickActions = [
-    {
-      title: "Find Charging Stations",
-      description: "Locate nearby available charging points",
-      icon: <LocationOn color="primary" />,
-      action: () => navigate("/customer/find-stations"),
-    },
-    {
-      title: "View History",
-      description: "Check your past charging sessions",
-      icon: <History color="success" />,
-      action: () => navigate("/customer/history"),
-    },
-    {
-      title: "Payment Methods",
-      description: "Manage your payment options",
-      icon: <Payment color="warning" />,
-      action: () => navigate("/customer/payment"),
-    },
-  ];
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "charging": return "primary";
+            case "completed": return "success";
+            case "cancelled": return "error";
+            default: return "default";
+        }
+    };
 
-  return (
-    <Box>
-      {/* Welcome Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Welcome back, {user?.profile?.firstName}! 👋
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage your EV charging sessions and discover new stations
-        </Typography>
-      </Box>
+    const getStatusText = (status) => {
+        switch (status) {
+            case "charging": return "Đang sạc";
+            case "completed": return "Hoàn thành";
+            case "cancelled": return "Đã hủy";
+            default: return status;
+        }
+    };
 
-      {/* Active Charging Session */}
-      {activeBooking && (
-        <Card sx={{ mb: 4, border: 2, borderColor: "success.main" }}>
-          <CardContent>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
-              }}
+    return (
+        <Container maxWidth="xl" sx={{ py: 2 }}>
+            {/* Welcome Header with modern design */}
+            <Box 
+                sx={{ 
+                    mb: 4,
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    borderRadius: 4,
+                    p: 4,
+                    color: "white",
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        right: 0,
+                        width: "40%", 
+                        height: "100%",
+                        background: "url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"none\" stroke=\"%23ffffff\" stroke-width=\"0.5\" opacity=\"0.1\"/></svg>') repeat",
+                        opacity: 0.1,
+                    }
+                }}
             >
-              <Typography variant="h6" fontWeight="bold" color="success.main">
-                🔋 Active Charging Session
-              </Typography>
-              <Chip label="In Progress" color="success" />
+                <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems="center">
+                    <Avatar 
+                        sx={{ 
+                            width: 80, 
+                            height: 80, 
+                            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                            fontSize: "2rem",
+                            fontWeight: "bold"
+                        }}
+                    >
+                        {user?.profile?.firstName?.[0] || user?.name?.[0] || 'U'}
+                    </Avatar>
+                    <Box sx={{ flex: 1, textAlign: { xs: "center", md: "left" } }}>
+                        <Typography variant="h4" fontWeight="bold" gutterBottom>
+                            Xin chào, {user?.profile?.firstName || user?.name?.split(' ')[0] || 'Bạn'}! 
+                        </Typography>
+                <Typography variant="body1" color="text.secondary">
+                    Quản lý việc sạc xe điện của bạn một cách dễ dàng
+                </Typography>
             </Box>
 
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Station
-                </Typography>
-                <Typography variant="h6" gutterBottom>
-                  {
-                    mockStations.find((s) => s.id === activeBooking.stationId)
-                      ?.name
-                  }
-                </Typography>
-
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Energy Delivered
-                </Typography>
-                <Typography variant="h5" fontWeight="bold" color="success.main">
-                  {activeBooking.currentEnergyDelivered} kWh
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Estimated Cost
-                </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  ₫{activeBooking.estimatedCost?.toLocaleString()}
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  gutterBottom
-                  sx={{ mt: 2 }}
-                >
-                  Progress
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={65}
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  Estimated completion:{" "}
-                  {new Date(
-                    activeBooking.estimatedEndTime
-                  ).toLocaleTimeString()}
-                </Typography>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Quick Stats */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <ElectricCar
-                sx={{ fontSize: 40, color: "primary.main", mb: 1 }}
-              />
-              <Typography variant="h4" fontWeight="bold" color="primary.main">
-                {totalSessions}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Sessions
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <TrendingUp sx={{ fontSize: 40, color: "success.main", mb: 1 }} />
-              <Typography variant="h4" fontWeight="bold" color="success.main">
-                {totalEnergy.toFixed(1)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                kWh Charged
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <Payment sx={{ fontSize: 40, color: "warning.main", mb: 1 }} />
-              <Typography variant="h4" fontWeight="bold" color="warning.main">
-                ₫{totalSpent.toLocaleString()}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Spent
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={3}>
-        {/* Quick Actions */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Quick Actions
-              </Typography>
-
-              <List>
-                {quickActions.map((action, index) => (
-                  <ListItem
-                    key={index}
-                    button
-                    onClick={action.action}
+            {/* Active Charging Session */}
+            {activeBooking && (
+                <Alert
+                    severity="info"
                     sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                      "&:hover": {
-                        backgroundColor: "grey.100",
-                      },
+                        mb: 4,
+                        border: 2,
+                        borderColor: "primary.main",
+                        bgcolor: "primary.50"
                     }}
-                  >
-                    <ListItemIcon>{action.icon}</ListItemIcon>
-                    <ListItemText
-                      primary={action.title}
-                      secondary={action.description}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Recent Activity */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 2,
-                }}
-              >
-                <Typography variant="h6" fontWeight="bold">
-                  Recent Sessions
-                </Typography>
-                <Button
-                  size="small"
-                  onClick={() => navigate("/customer/history")}
                 >
-                  View All
-                </Button>
-              </Box>
+                    <Box>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                            🔋 Phiên sạc đang hoạt động
+                        </Typography>
+                        <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="body1" fontWeight="medium">
+                                    📍 {activeBooking.stationName}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    ⚡ {activeBooking.chargingRate} kW • 🔋 {activeBooking.currentSOC}% → {activeBooking.targetSOC}%
+                                </Typography>
+                                <Box sx={{ mt: 1, mb: 1 }}>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={activeBooking.progress}
+                                        sx={{ height: 8, borderRadius: 4 }}
+                                    />
+                                </Box>
+                                <Typography variant="caption" color="text.secondary">
+                                    ⏱️ Còn lại ~{activeBooking.estimatedTimeRemaining} phút • 💰 {formatCurrency(activeBooking.currentCost)}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} md={6} sx={{ textAlign: { xs: "left", md: "right" } }}>
+                                <Button
+                                    variant="contained"
+                                    sx={{ mr: 1, mb: { xs: 1, md: 0 } }}
+                                    onClick={() => navigate("/customer/history")}
+                                >
+                                    Xem chi tiết
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                >
+                                    Dừng sạc
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                </Alert>
+            )}
 
-              {recentBookings.length > 0 ? (
-                <List>
-                  {recentBookings.map((booking) => {
-                    const station = mockStations.find(
-                      (s) => s.id === booking.stationId
-                    );
-                    return (
-                      <ListItem key={booking.id} sx={{ px: 0 }}>
-                        <ListItemIcon>
-                          <Schedule color="action" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={station?.name}
-                          secondary={
-                            <>
-                              {new Date(booking.endTime).toLocaleDateString()} •
-                              {booking.energyDelivered}kWh • ₫
-                              {booking.cost.total.toLocaleString()}
-                            </>
-                          }
-                        />
-                      </ListItem>
-                    );
-                  })}
-                </List>
-              ) : (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ textAlign: "center", py: 3 }}
-                >
-                  No recent sessions found
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+            <Grid container spacing={3}>
+                {/* Quick Actions */}
+                <Grid item xs={12} md={8}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                Thao tác nhanh
+                            </Typography>
+                            <Grid container spacing={2}>
+                                {quickActions.map((action, index) => (
+                                    <Grid item xs={12} sm={6} key={index}>
+                                        <Paper
+                                            sx={{
+                                                p: 2,
+                                                cursor: "pointer",
+                                                border: "1px solid",
+                                                borderColor: "divider",
+                                                transition: "all 0.2s",
+                                                "&:hover": {
+                                                    borderColor: `${action.color}.main`,
+                                                    transform: "translateY(-2px)",
+                                                    boxShadow: 2,
+                                                },
+                                            }}
+                                            onClick={action.action}
+                                        >
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                                <Avatar
+                                                    sx={{
+                                                        bgcolor: `${action.color}.main`,
+                                                        width: 48,
+                                                        height: 48,
+                                                    }}
+                                                >
+                                                    {action.icon}
+                                                </Avatar>
+                                                <Box>
+                                                    <Typography variant="subtitle1" fontWeight="medium">
+                                                        {action.title}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {action.description}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </CardContent>
+                    </Card>
 
-        {/* Upcoming Bookings */}
-        {upcomingBookings.length > 0 && (
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  Upcoming Bookings
-                </Typography>
+                    {/* Recent Sessions */}
+                    <Card sx={{ mt: 3 }}>
+                        <CardContent>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                                <Typography variant="h6" fontWeight="bold">
+                                    Phiên sạc gần đây
+                                </Typography>
+                                <Button
+                                    size="small"
+                                    onClick={() => navigate("/customer/history")}
+                                >
+                                    Xem tất cả
+                                </Button>
+                            </Box>
+                            <List>
+                                {recentBookings.map((booking, index) => (
+                                    <React.Fragment key={booking.id}>
+                                        <ListItem sx={{ px: 0 }}>
+                                            <ListItemIcon>
+                                                <Avatar sx={{ bgcolor: "primary.light" }}>
+                                                    <ElectricCar />
+                                                </Avatar>
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={booking.stationName}
+                                                secondary={
+                                                    <Box>
+                                                        <Typography variant="caption" display="block">
+                                                            {booking.date} • {booking.energy} kWh • {formatCurrency(booking.cost)}
+                                                        </Typography>
+                                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                                                            <Chip
+                                                                label={getStatusText(booking.status)}
+                                                                size="small"
+                                                                color={getStatusColor(booking.status)}
+                                                            />
+                                                            {booking.rating && (
+                                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                                                    <Star sx={{ fontSize: 14, color: "warning.main" }} />
+                                                                    <Typography variant="caption">{booking.rating}</Typography>
+                                                                </Box>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
+                                                }
+                                            />
+                                            <ListItemSecondaryAction>
+                                                <IconButton size="small">
+                                                    <MoreVert />
+                                                </IconButton>
+                                            </ListItemSecondaryAction>
+                                        </ListItem>
+                                        {index < recentBookings.length - 1 && <Box sx={{ height: 8 }} />}
+                                    </React.Fragment>
+                                ))}
+                            </List>
+                        </CardContent>
+                    </Card>
+                </Grid>
 
-                <List>
-                  {upcomingBookings.map((booking) => {
-                    const station = mockStations.find(
-                      (s) => s.id === booking.stationId
-                    );
-                    return (
-                      <ListItem key={booking.id}>
-                        <ListItemIcon>
-                          <Schedule color="primary" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={station?.name}
-                          secondary={`Scheduled: ${new Date(
-                            booking.scheduledTime
-                          ).toLocaleString()} • 
-                            Est. Cost: ₫${booking.estimatedCost?.toLocaleString()}`}
-                        />
-                        <Chip label="Scheduled" color="primary" size="small" />
-                      </ListItem>
-                    );
-                  })}
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
-      </Grid>
-    </Box>
-  );
+                {/* Sidebar */}
+                <Grid item xs={12} md={4}>
+                    {/* Quick Stats */}
+                    <Card sx={{ mb: 3 }}>
+                        <CardContent>
+                            <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                Tổng quan tháng này
+                            </Typography>
+                            <Box sx={{ mb: 3 }}>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                                    <Typography variant="body2">Số lần sạc</Typography>
+                                    <Typography variant="h6" color="primary.main" fontWeight="bold">15</Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                                    <Typography variant="body2">Tổng chi phí</Typography>
+                                    <Typography variant="h6" color="success.main" fontWeight="bold">
+                                        {formatCurrency(2450000)}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                                    <Typography variant="body2">Năng lượng</Typography>
+                                    <Typography variant="h6" color="info.main" fontWeight="bold">450 kWh</Typography>
+                                </Box>
+                            </Box>
+                            <Button
+                                variant="outlined"
+                                fullWidth
+                                onClick={() => navigate("/customer/analytics")}
+                            >
+                                Xem phân tích chi tiết
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* Notifications */}
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                <Notifications sx={{ mr: 1, verticalAlign: "middle" }} />
+                                Thông báo
+                            </Typography>
+                            <Box sx={{ mb: 2 }}>
+                                <Alert severity="success" sx={{ mb: 2 }}>
+                                    <Typography variant="body2">
+                                        🎉 Bạn đã tiết kiệm được 15% chi phí sạc tháng này!
+                                    </Typography>
+                                </Alert>
+                                <Alert severity="info">
+                                    <Typography variant="body2">
+                                        ⚡ Trạm sạc Vincom Mega Mall có khuyến mãi 20% vào cuối tuần
+                                    </Typography>
+                                </Alert>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
+        </Box>
+    );
 };
 
 export default CustomerDashboard;

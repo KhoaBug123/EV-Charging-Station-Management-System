@@ -54,7 +54,7 @@ export const IMAGE_PATHS = {
       linda: "/assets/avatars/owner-linda.jpg",
     },
     customer: {
-      john: "/assets/avatars/customer-john.jpg",
+      vanan: "/assets/avatars/customer-vanan.jpg",
       anna: "/assets/avatars/customer-anna.jpg",
     },
   },

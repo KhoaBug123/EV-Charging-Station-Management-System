@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import useVehicleStore from "../../store/vehicleStore";
+import useBookingStore from "../../store/bookingStore";
 import {
   Box,
   Grid,
@@ -12,7 +14,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Slider,
   List,
   ListItem,
   ListItemText,
@@ -36,20 +37,26 @@ import useStationStore from "../../store/stationStore";
 import {
   formatCurrency,
   calculateDistance,
-  getStatusColor,
 } from "../../utils/helpers";
 import { getStationImage } from "../../utils/imageAssets";
 import { CONNECTOR_TYPES } from "../../utils/constants";
 import BookingModal from "../../components/customer/BookingModal";
+import { getText, formatText } from "../../utils/vietnameseTexts";
 
 const FindStations = () => {
   const {
-    stations,
     filters,
     updateFilters,
     getFilteredStations,
     fetchNearbyStations,
+    initializeData,
+    loading,
   } = useStationStore();
+
+  const {
+    getCompatibleConnectorTypes,
+    getCurrentVehicleConnectors
+  } = useVehicleStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [userLocation, setUserLocation] = useState({
@@ -62,50 +69,107 @@ const FindStations = () => {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingMessage, setBookingMessage] = useState("");
 
-  const filteredStations = getFilteredStations();
+  // Apply search query filter on top of store filtered stations
+  const filteredStations = React.useMemo(() => {
+    console.log("🔄 FindStations: Re-computing filtered stations");
+    console.log("Current filters:", filters);
+    console.log("Search query:", searchQuery);
+
+    try {
+      const storeFiltered = getFilteredStations();
+      console.log("Store filtered results:", storeFiltered.length, "stations");
+
+      if (!searchQuery.trim()) {
+        console.log("No search query, returning store filtered:", storeFiltered.map(s => s.name));
+        return storeFiltered;
+      }
+
+      const query = searchQuery.toLowerCase();
+      const searchFiltered = storeFiltered.filter((station) => {
+        if (!station || !station.name || !station.location) return false;
+
+        return (
+          station.name.toLowerCase().includes(query) ||
+          (station.location.address && station.location.address.toLowerCase().includes(query)) ||
+          (station.location.city && station.location.city.toLowerCase().includes(query)) ||
+          (station.location.district && station.location.district.toLowerCase().includes(query))
+        );
+      });
+
+      console.log("After search filter:", searchFiltered.map(s => s.name));
+      return searchFiltered;
+    } catch (error) {
+      console.error("Error filtering stations:", error);
+      return [];
+    }
+  }, [getFilteredStations, searchQuery, filters]);
 
   useEffect(() => {
+    // Initialize data first
+    initializeData();
+  }, [initializeData]);
+
+  useEffect(() => {
+    let isMounted = true;
+
     // Get user location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-          fetchNearbyStations(position.coords, filters.maxDistance);
+          if (isMounted) {
+            const newLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            setUserLocation(newLocation);
+            fetchNearbyStations(newLocation, filters.maxDistance);
+          }
         },
-        (error) => {
-          console.warn("Location access denied, using default location");
-          fetchNearbyStations(userLocation, filters.maxDistance);
+        () => {
+          if (isMounted) {
+            console.warn("Location access denied, using default location");
+            fetchNearbyStations(userLocation, filters.maxDistance);
+          }
         }
       );
+    } else {
+      // Fallback: load stations with default location
+      if (isMounted) {
+        fetchNearbyStations(userLocation, filters.maxDistance);
+      }
     }
-  }, []);
 
-  const handleSearch = () => {
-    // Mock search functionality
-    console.log("Searching for:", searchQuery);
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchNearbyStations, filters.maxDistance, userLocation]);
+
+
 
   const handleBookStation = (station) => {
     setStationToBook(station);
     setBookingModalOpen(true);
   };
 
-  const handleBookingComplete = (bookingData) => {
-    setBookingMessage(
-      `Đặt chỗ thành công tại ${bookingData.stationName}! Mã đặt chỗ: ${bookingData.id}`
-    );
-    setBookingSuccess(true);
-    setBookingModalOpen(false);
-    // You can add logic to update booking history or navigate to booking details
-  };
-
-  const handleCloseBookingModal = () => {
+  const handleBookingModalClose = () => {
     setBookingModalOpen(false);
     setStationToBook(null);
+
+    // Check if there's a new booking to show success message
+    const { bookings } = useBookingStore.getState();
+    const latestBooking = bookings[bookings.length - 1];
+    if (latestBooking && new Date(latestBooking.createdAt) > new Date(Date.now() - 5000)) {
+      setBookingMessage(
+        formatText("stations.bookingSuccess", {
+          stationName: latestBooking.stationName,
+          bookingId: latestBooking.id
+        })
+      );
+      setBookingSuccess(true);
+    }
   };
+
+
 
   const getDistanceToStation = (station) => {
     return calculateDistance(
@@ -121,20 +185,20 @@ const FindStations = () => {
     const totalPorts = station.charging.totalPorts;
 
     if (station.status !== "active") {
-      return <Chip label="Offline" color="error" size="small" />;
+      return <Chip label={getText("stations.offline")} color="error" size="small" />;
     }
 
     if (availablePorts === 0) {
-      return <Chip label="Full" color="warning" size="small" />;
+      return <Chip label={getText("stations.full")} color="warning" size="small" />;
     }
 
     if (availablePorts === totalPorts) {
-      return <Chip label="Available" color="success" size="small" />;
+      return <Chip label={getText("stations.available")} color="success" size="small" />;
     }
 
     return (
       <Chip
-        label={`${availablePorts}/${totalPorts} Available`}
+        label={`${availablePorts}/${totalPorts} Có sẵn`}
         color="info"
         size="small"
       />
@@ -145,10 +209,10 @@ const FindStations = () => {
     <Box>
       {/* Header */}
       <Typography variant="h4" fontWeight="bold" gutterBottom>
-        Find Charging Stations ⚡
+        {getText("stations.title")} ⚡
       </Typography>
       <Typography variant="body1" color="text.secondary" gutterBottom>
-        Discover nearby charging stations and book your charging session
+        {getText("stations.subtitle")}
       </Typography>
 
       {/* Search & Filters */}
@@ -159,7 +223,7 @@ const FindStations = () => {
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                placeholder="Search by location, station name..."
+                placeholder={getText("stations.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 InputProps={{
@@ -170,52 +234,49 @@ const FindStations = () => {
               />
             </Grid>
 
-            {/* Connector Type Filter */}
+            {/* Connector Type Filter with Smart Suggestions */}
             <Grid item xs={12} md={3}>
               <FormControl fullWidth>
-                <InputLabel>Connector Type</InputLabel>
+                <InputLabel>{getText("stations.connectorType")}</InputLabel>
                 <Select
-                  value={filters.connectorTypes}
+                  value={filters.connectorTypes || []}
                   multiple
-                  onChange={(e) =>
-                    updateFilters({ connectorTypes: e.target.value })
-                  }
+                  onChange={(e) => {
+                    console.log("Selected connectors:", e.target.value);
+                    updateFilters({ connectorTypes: e.target.value });
+                  }}
+                  renderValue={(selected) => selected.join(', ')}
                 >
-                  {Object.values(CONNECTOR_TYPES).map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
+                  {Object.values(CONNECTOR_TYPES).map((type) => {
+                    const isVehicleCompatible = getCurrentVehicleConnectors().includes(type);
+                    return (
+                      <MenuItem key={type} value={type}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                          {type}
+                          {isVehicleCompatible && (
+                            <Chip
+                              size="small"
+                              label="Xe của bạn"
+                              color="primary"
+                              sx={{ ml: 'auto', fontSize: '0.7rem', height: '20px' }}
+                            />
+                          )}
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                  {getCurrentVehicleConnectors().length > 0 &&
+                    `Xe hiện tại hỗ trợ: ${getCurrentVehicleConnectors().join(', ')}`
+                  }
+                </Typography>
               </FormControl>
             </Grid>
 
-            {/* Distance Filter */}
-            <Grid item xs={12} md={3}>
-              <Typography variant="body2" gutterBottom>
-                Max Distance: {filters.maxDistance}km
-              </Typography>
-              <Slider
-                value={filters.maxDistance}
-                onChange={(e, value) => updateFilters({ maxDistance: value })}
-                min={1}
-                max={50}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => `${value}km`}
-              />
-            </Grid>
 
-            {/* Search Button */}
-            <Grid item xs={12} md={2}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleSearch}
-                startIcon={<Search />}
-              >
-                Search
-              </Button>
-            </Grid>
+
+
           </Grid>
         </CardContent>
       </Card>
@@ -226,96 +287,78 @@ const FindStations = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {filteredStations.length} Stations Found
+                {loading ? "Đang tải..." : `${filteredStations.length} ${getText("stations.stationsFound")}`}
               </Typography>
 
-              <List>
-                {filteredStations.map((station, index) => (
-                  <React.Fragment key={station.id}>
-                    <ListItem
-                      onClick={() => setSelectedStation(station)}
-                      sx={{
-                        borderRadius: 2,
-                        mb: 1,
-                        border: selectedStation?.id === station.id ? 2 : 1,
-                        borderColor:
-                          selectedStation?.id === station.id
-                            ? "primary.main"
-                            : "divider",
-                        "&:hover": {
-                          backgroundColor: "grey.50",
-                        },
-                        cursor: "pointer",
-                      }}
-                    >
-                      <ListItemIcon>
-                        <Avatar
-                          src={getStationImage(station)}
-                          sx={{ width: 60, height: 60 }}
-                        >
-                          <ElectricCar />
-                        </Avatar>
-                      </ListItemIcon>
-
-                      <ListItemText
-                        primary={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "start",
-                            }}
+              {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <Typography>Đang tìm trạm sạc gần bạn...</Typography>
+                </Box>
+              ) : (
+                <List>
+                  {filteredStations.map((station, index) => (
+                    <React.Fragment key={station.id}>
+                      <ListItem
+                        onClick={() => setSelectedStation(station)}
+                        sx={{
+                          borderRadius: 2,
+                          mb: 1,
+                          border: selectedStation?.id === station.id ? 2 : 1,
+                          borderColor:
+                            selectedStation?.id === station.id
+                              ? "primary.main"
+                              : "divider",
+                          "&:hover": {
+                            backgroundColor: "grey.50",
+                          },
+                          cursor: "pointer",
+                        }}
+                      >
+                        <ListItemIcon>
+                          <Avatar
+                            src={getStationImage(station)}
+                            sx={{ width: 60, height: 60 }}
                           >
-                            <Typography variant="h6" fontWeight="bold">
-                              {station.name}
-                            </Typography>
-                            {getStatusChip(station)}
-                          </Box>
-                        }
-                        secondary={
-                          <span>
-                            <span
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                marginBottom: "4px",
-                              }}
-                            >
-                              <LocationOn
-                                sx={{ fontSize: 16, color: "text.secondary" }}
-                              />
-                              <span
-                                style={{
-                                  fontSize: "0.875rem",
-                                  color: "rgba(0, 0, 0, 0.6)",
-                                }}
-                              >
-                                {station.location.address} •{" "}
-                                {getDistanceToStation(station)}km away
-                              </span>
-                            </span>
+                            <ElectricCar />
+                          </Avatar>
+                        </ListItemIcon>
 
+                        <ListItemText
+                          primary={
                             <span
                               style={{
                                 display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                marginBottom: "4px",
+                                justifyContent: "space-between",
+                                alignItems: "start",
                               }}
                             >
+                              <span style={{ fontWeight: "bold", fontSize: "1.25rem" }}>
+                                {station.name}
+                              </span>
+                              {getStatusChip(station)}
+                            </span>
+                          }
+                          secondary={
+                            <span>
                               <span
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: "2px",
+                                  gap: "4px",
+                                  marginBottom: "4px",
                                 }}
                               >
-                                <Speed
-                                  sx={{ fontSize: 16, color: "primary.main" }}
+                                <LocationOn
+                                  sx={{ fontSize: 16, color: "text.secondary" }}
                                 />
-                                <span style={{ fontSize: "0.875rem" }}>
-                                  Up to {station.charging.maxPower}kW
+                                <span
+                                  style={{
+                                    fontSize: "0.875rem",
+                                    color: "rgba(0, 0, 0, 0.6)",
+                                  }}
+                                >
+                                  {station.location.address} •{" "}
+                                  {getDistanceToStation(station)}{getText("units.km")} {getText("stations.away")}
                                 </span>
                               </span>
 
@@ -323,71 +366,95 @@ const FindStations = () => {
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: "2px",
+                                  gap: "8px",
+                                  marginBottom: "4px",
                                 }}
                               >
                                 <span
                                   style={{
-                                    fontSize: 16,
-                                    color: "#4caf50",
-                                    fontWeight: "bold",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "2px",
                                   }}
                                 >
-                                  ₫
+                                  <Speed
+                                    sx={{ fontSize: 16, color: "primary.main" }}
+                                  />
+                                  <span style={{ fontSize: "0.875rem" }}>
+                                    {getText("stations.upTo")} {station.charging.maxPower}{getText("units.kw")}
+                                  </span>
                                 </span>
-                                <span style={{ fontSize: "0.875rem" }}>
-                                  From{" "}
-                                  {formatCurrency(
-                                    station.charging.pricing.acRate
-                                  )}
-                                  /kWh
+
+                                <span
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "2px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: 16,
+                                      color: "#4caf50",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {getText("units.vnd")}
+                                  </span>
+                                  <span style={{ fontSize: "0.875rem" }}>
+                                    {getText("stations.from")}{" "}
+                                    {formatCurrency(
+                                      station.charging.pricing.acRate
+                                    )}
+                                    {getText("units.perKwh")}
+                                  </span>
                                 </span>
                               </span>
-                            </span>
 
-                            <span
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                              }}
-                            >
-                              <Rating
-                                value={station.ratings.overall}
-                                precision={0.1}
-                                size="small"
-                                readOnly
-                              />
                               <span
                                 style={{
-                                  fontSize: "0.75rem",
-                                  color: "rgba(0, 0, 0, 0.6)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
                                 }}
                               >
-                                {station.ratings.overall} (
-                                {station.ratings.totalReviews} reviews)
+                                <Rating
+                                  value={station.ratings.overall}
+                                  precision={0.1}
+                                  size="small"
+                                  readOnly
+                                />
+                                <span
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "rgba(0, 0, 0, 0.6)",
+                                  }}
+                                >
+                                  {station.ratings.overall} (
+                                  {station.ratings.totalReviews} {getText("stations.reviews")})
+                                </span>
                               </span>
                             </span>
-                          </span>
-                        }
-                      />
+                          }
+                        />
 
-                      <Button
-                        variant="contained"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBookStation(station);
-                        }}
-                        sx={{ ml: 2 }}
-                      >
-                        Book Now
-                      </Button>
-                    </ListItem>
+                        <Button
+                          variant="contained"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookStation(station);
+                          }}
+                          sx={{ ml: 2 }}
+                        >
+                          {getText("stations.bookNow")}
+                        </Button>
+                      </ListItem>
 
-                    {index < filteredStations.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
+                      {index < filteredStations.length - 1 && <Divider />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -428,49 +495,49 @@ const FindStations = () => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Distance: {getDistanceToStation(selectedStation)}km
+                  {getText("stations.distance")}: {getDistanceToStation(selectedStation)}{getText("units.km")}
                 </Typography>
 
                 <Divider sx={{ my: 2 }} />
 
                 <Typography variant="subtitle2" gutterBottom>
-                  Charging Information
+                  {getText("stations.chargingInfo")}
                 </Typography>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • Max Power: {selectedStation.charging.maxPower}kW
+                  • {getText("stations.maxPower")}: {selectedStation.charging.maxPower}{getText("units.kw")}
                 </Box>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • Available Ports: {selectedStation.charging.availablePorts}/
+                  • {getText("stations.availablePorts")}: {selectedStation.charging.availablePorts}/
                   {selectedStation.charging.totalPorts}
                 </Box>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • Connector Types:{" "}
+                  • {getText("stations.connectorTypes")}:{" "}
                   {selectedStation.charging.connectorTypes.join(", ")}
                 </Box>
 
                 <Divider sx={{ my: 2 }} />
 
                 <Typography variant="subtitle2" gutterBottom>
-                  Pricing
+                  {getText("stations.pricing")}
                 </Typography>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • AC Charging:{" "}
-                  {formatCurrency(selectedStation.charging.pricing.acRate)}/kWh
+                  • {getText("stations.acCharging")}:{" "}
+                  {formatCurrency(selectedStation.charging.pricing.acRate)}{getText("units.perKwh")}
                 </Box>
                 {selectedStation.charging.pricing.dcRate && (
                   <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                    • DC Charging:{" "}
+                    • {getText("stations.dcCharging")}:{" "}
                     {formatCurrency(selectedStation.charging.pricing.dcRate)}
-                    /kWh
+                    {getText("units.perKwh")}
                   </Box>
                 )}
                 {selectedStation.charging.pricing.parkingFee > 0 && (
                   <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                    • Parking:{" "}
+                    • {getText("stations.parking")}:{" "}
                     {formatCurrency(
                       selectedStation.charging.pricing.parkingFee
                     )}
-                    /hour
+                    {getText("units.perHour")}
                   </Box>
                 )}
 
@@ -481,7 +548,7 @@ const FindStations = () => {
                   onClick={() => handleBookStation(selectedStation)}
                   sx={{ mt: 2 }}
                 >
-                  Book This Station
+                  {getText("stations.bookThisStation")}
                 </Button>
               </CardContent>
             </Card>
@@ -489,11 +556,10 @@ const FindStations = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Select a Station
+                  {getText("stations.selectStation")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Choose a charging station from the list to see detailed
-                  information and book your session.
+                  {getText("stations.selectStationDescription")}
                 </Typography>
               </CardContent>
             </Card>
@@ -504,9 +570,8 @@ const FindStations = () => {
       {/* Booking Modal */}
       <BookingModal
         open={bookingModalOpen}
-        onClose={handleCloseBookingModal}
+        onClose={handleBookingModalClose}
         station={stationToBook}
-        onBookingComplete={handleBookingComplete}
       />
 
       {/* Success Snackbar */}

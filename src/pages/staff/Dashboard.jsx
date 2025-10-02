@@ -94,7 +94,7 @@ const mockAlerts = [
     station: "Lotte Center",
     chargingPost: "DC Fast B",
     slot: "Slot 1",
-    message: "Connection error detected - charging stopped",
+    message: "Phát hiện lỗi kết nối - đã dừng sạc",
     priority: "high",
     time: "30 minutes ago",
   },
@@ -148,7 +148,7 @@ const StaffDashboard = () => {
         totalSlots += post.totalSlots;
         occupiedSlots += (post.totalSlots - post.availableSlots);
 
-        switch(post.status) {
+        switch (post.status) {
           case 'active':
           case 'occupied':
             activePosts++;
@@ -297,7 +297,7 @@ const StaffDashboard = () => {
                     {stats.availableSlots}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Available Slots
+                    Slot có sẵn
                   </Typography>
                 </Box>
               </Box>
@@ -429,7 +429,7 @@ const StaffDashboard = () => {
                             variant="determinate"
                             value={
                               ((station.chargingPosts.reduce((sum, post) => sum + (post.totalSlots - post.availableSlots), 0)) /
-                              station.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)) * 100
+                                station.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)) * 100
                             }
                             sx={{ height: 6, borderRadius: 3, mb: 1 }}
                           />
@@ -495,8 +495,8 @@ const StaffDashboard = () => {
                     alert.priority === "high"
                       ? "error"
                       : alert.priority === "medium"
-                      ? "warning"
-                      : "info"
+                        ? "warning"
+                        : "info"
                   }
                   sx={{ mb: 1 }}
                   action={

@@ -12,10 +12,14 @@ import {
   Grid,
   Chip,
   Link,
+  IconButton
 } from "@mui/material";
-import { ElectricCar, Login } from "@mui/icons-material";
+import { ElectricCar, Login, Google, Phone } from "@mui/icons-material";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
+import { getText } from "../../utils/vietnameseTexts";
+import { googleAuth } from "../../services/socialAuthService";
+import PhoneOTPModal from "../../components/auth/PhoneOTPModal";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -25,6 +29,12 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
+
+  const [socialLoading, setSocialLoading] = useState({
+    google: false
+  });
+
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,23 +55,55 @@ const LoginPage = () => {
     }
   };
 
+  // Social login handlers
+  const handleGoogleLogin = async () => {
+    setSocialLoading(prev => ({ ...prev, google: true }));
+    try {
+      const response = await googleAuth.signIn();
+      if (response.success && response.user) {
+        await login(response.user.email, 'social-login');
+        console.log('Google login successful:', response.user.name);
+        // Show success message
+        alert(`Chào mừng ${response.user.name}! Đăng nhập Google thành công.`);
+      } else if (!response.success) {
+        console.error('Google login failed:', response.error);
+      }
+    } catch (error) {
+      console.error('Google login failed:', error.message);
+      // Show user-friendly error
+      if (error.message.includes('cancelled')) {
+        // User cancelled, no need to show error
+        return;
+      }
+      alert(`Đăng nhập Google thất bại: ${error.message}`);
+    } finally {
+      setSocialLoading(prev => ({ ...prev, google: false }));
+    }
+  };
+
+
+
+  const handlePhoneLoginSuccess = (response) => {
+    console.log('Phone login successful:', response);
+  };
+
   const demoAccounts = [
     {
       email: "admin@skaev.com",
       password: "Admin123!",
-      role: "Admin",
+      role: getText("users.admin"),
       color: "error",
     },
     {
       email: "staff@skaev.com",
       password: "Staff123!",
-      role: "Staff",
+      role: getText("users.staff"),
       color: "info",
     },
     {
-      email: "john.doe@gmail.com",
+      email: "nguyenvanan@gmail.com",
       password: "Customer123!",
-      role: "Customer",
+      role: getText("users.customer"),
       color: "success",
     },
   ];
@@ -136,7 +178,7 @@ const LoginPage = () => {
               SkaEV
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Electric Vehicle Charging Management
+              {getText("auth.loginSubtitle")}
             </Typography>
           </Box>
 
@@ -145,7 +187,7 @@ const LoginPage = () => {
             <Box sx={{ mb: 3 }}>
               <TextField
                 fullWidth
-                label="Email Address"
+                label={getText("auth.email")}
                 name="email"
                 type="email"
                 value={formData.email}
@@ -158,7 +200,7 @@ const LoginPage = () => {
             <Box sx={{ mb: 3 }}>
               <TextField
                 fullWidth
-                label="Password"
+                label={getText("auth.password")}
                 name="password"
                 type="password"
                 value={formData.password}
@@ -181,32 +223,86 @@ const LoginPage = () => {
               size="large"
               disabled={loading}
               startIcon={loading ? <CircularProgress size={20} /> : <Login />}
-              sx={{ mb: 2 }}
+              sx={{ mb: 3 }}
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? getText("auth.signingIn") : getText("auth.login")}
             </Button>
           </form>
 
+          <Box sx={{ textAlign: "center", mt: 2, mb: 2 }}>
+            <Link
+              component={RouterLink}
+              to="/forgot-password"
+              sx={{ textDecoration: "none", fontWeight: "medium", fontSize: '0.875rem' }}
+            >
+              Quên mật khẩu?
+            </Link>
+          </Box>
+
           <Box sx={{ textAlign: "center", mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              Don't have an account?{" "}
+              {getText("auth.dontHaveAccount")}{" "}
               <Link
                 component={RouterLink}
                 to="/register"
                 sx={{ textDecoration: "none", fontWeight: "medium" }}
               >
-                Sign up here
+                {getText("auth.registerHere")}
               </Link>
             </Typography>
           </Box>
 
+          {/* Social Login */}
           <Divider sx={{ my: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              Demo Accounts
+              Hoặc đăng nhập với
             </Typography>
           </Divider>
 
-          {/* Demo Accounts */}
+
+
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={6}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={socialLoading.google ? <CircularProgress size={16} /> : <Google />}
+                onClick={handleGoogleLogin}
+                disabled={socialLoading.google || loading}
+                sx={{
+                  textTransform: "none",
+                  borderColor: '#db4437',
+                  color: '#db4437',
+                  '&:hover': { borderColor: '#db4437', bgcolor: '#db4437', color: 'white' }
+                }}
+              >
+                Google
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<Phone />}
+                onClick={() => setPhoneModalOpen(true)}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  borderColor: '#28a745',
+                  color: '#28a745',
+                  '&:hover': { borderColor: '#28a745', bgcolor: '#28a745', color: 'white' }
+                }}
+              >
+                Số điện thoại
+              </Button>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              {getText("auth.demoAccounts")}
+            </Typography>
+          </Divider>          {/* Demo Accounts */}
           <Grid container spacing={2}>
             {demoAccounts.map((account, index) => (
               <Grid item xs={12} key={index}>
@@ -241,11 +337,18 @@ const LoginPage = () => {
 
           <Box sx={{ textAlign: "center", mt: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              Click any demo account to auto-fill credentials
+              {getText("auth.clickToFill")}
             </Typography>
           </Box>
         </CardContent>
       </Card>
+
+      {/* Phone OTP Modal */}
+      <PhoneOTPModal
+        open={phoneModalOpen}
+        onClose={() => setPhoneModalOpen(false)}
+        onSuccess={handlePhoneLoginSuccess}
+      />
     </Box>
   );
 };

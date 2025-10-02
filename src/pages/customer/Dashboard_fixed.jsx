@@ -89,9 +89,9 @@ const CustomerDashboard = () => {
   const avgSessionDuration =
     userBookings.length > 0
       ? Math.round(
-          userBookings.reduce((sum, booking) => sum + booking.duration, 0) /
-            userBookings.length
-        )
+        userBookings.reduce((sum, booking) => sum + booking.duration, 0) /
+        userBookings.length
+      )
       : 0;
 
   // Environmental impact
@@ -204,7 +204,7 @@ const CustomerDashboard = () => {
       >
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Welcome back, {user?.name}! ⚡
+            Chào mừng trở lại, {user?.profile?.firstName || 'Tài xế'}! ⚡
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Your electric journey dashboard - Let's charge up your day!
@@ -272,7 +272,7 @@ const CustomerDashboard = () => {
           sx={{ mb: 3 }}
           action={
             <Button color="inherit" size="small">
-              View Details
+              Xem chi tiết
             </Button>
           }
         >
@@ -519,7 +519,7 @@ const CustomerDashboard = () => {
                                     sx={{ fontSize: 14, color: "warning.main" }}
                                   />
                                   <Typography variant="caption">
-                                    {booking.rating || "Rate this session"}
+                                    {booking.rating || "Đánh giá phiên này"}
                                   </Typography>
                                 </Box>
                               )}
@@ -676,11 +676,11 @@ const CustomerDashboard = () => {
                 sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
               >
                 <Avatar sx={{ width: 60, height: 60, bgcolor: "primary.main" }}>
-                  {user?.name?.charAt(0)}
+                  {user?.profile?.firstName?.charAt(0) || 'N'}
                 </Avatar>
                 <Box>
                   <Typography variant="subtitle1" fontWeight="medium">
-                    {user?.name}
+                    {user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : 'Khách hàng'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {user?.email}

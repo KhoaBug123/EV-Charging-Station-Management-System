@@ -7,53 +7,50 @@ import {
   Grid,
   Card,
   CardContent,
-  Chip,
-  useTheme,
 } from "@mui/material";
 import {
   ElectricCar,
   Speed,
-  Nature,
-  Security,
   LocationOn,
+  Security,
   TrendingUp,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
+import { getText } from "../../utils/vietnameseTexts";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
   const { isAuthenticated, user } = useAuthStore();
 
   const features = [
     {
       icon: <Speed sx={{ fontSize: 40, color: "primary.main" }} />,
-      title: "Fast Charging",
-      description: "Ultra-fast DC charging up to 250kW for quick top-ups",
+      title: "Sạc nhanh DC/AC",
+      description: "Hỗ trợ sạc nhanh DC lên đến 150kW và AC 22kW, rút ngắn thời gian chờ đợi",
     },
     {
       icon: <LocationOn sx={{ fontSize: 40, color: "success.main" }} />,
-      title: "Wide Network",
-      description: "Extensive network of charging stations across the city",
+      title: "Mạng lưới rộng khắp",
+      description: "Hơn 127 trạm sạc tại 63 tỉnh thành, phủ sóng các tuyến đường chính và khu đô thị",
     },
     {
-      icon: <Nature sx={{ fontSize: 40, color: "secondary.main" }} />,
-      title: "Green Energy",
-      description: "100% renewable energy sources for sustainable charging",
+      icon: <TrendingUp sx={{ fontSize: 40, color: "secondary.main" }} />,
+      title: "Theo dõi thời gian thực",
+      description: "Giám sát trạng thái trạm sạc, thời gian chờ và quá trình sạc trực tiếp trên app",
     },
     {
       icon: <Security sx={{ fontSize: 40, color: "info.main" }} />,
-      title: "Secure Payments",
-      description: "Safe and secure payment processing with multiple options",
+      title: "Thanh toán an toàn",
+      description: "Hỗ trợ đa dạng phương thức thanh toán: QR Code, thẻ RFID, ví điện tử",
     },
   ];
 
   const stats = [
-    { label: "Active Stations", value: "50+", color: "primary" },
-    { label: "Happy Customers", value: "1,200+", color: "success" },
-    { label: "Charging Sessions", value: "25,000+", color: "warning" },
-    { label: "CO₂ Saved", value: "150T+", color: "secondary" },
+    { label: "Trạm sạc hoạt động", value: "127+", color: "primary" },
+    { label: "Khách hàng đăng ký", value: "15,680+", color: "success" },
+    { label: "Lượt sạc thành công", value: "89,234+", color: "warning" },
+    { label: "Độ tin cậy hệ thống", value: "99.8%", color: "secondary" },
   ];
 
   const handleGetStarted = () => {
@@ -62,7 +59,7 @@ const HomePage = () => {
       const redirectPath = {
         admin: "/admin/dashboard",
         staff: "/staff/dashboard",
-        customer: "/customer/find-stations", // Customer goes to find stations instead of dashboard
+        customer: "/customer/charging", // Customer goes to charging flow
       }[user?.role];
       if (redirectPath) navigate(redirectPath);
     } else {
@@ -123,7 +120,7 @@ const HomePage = () => {
                     },
                   }}
                 >
-                  Đăng nhập
+                  {getText("auth.login")}
                 </Button>
                 <Button
                   variant="contained"
@@ -142,7 +139,7 @@ const HomePage = () => {
                     },
                   }}
                 >
-                  Đăng ký
+                  {getText("auth.register")}
                 </Button>
               </Box>
             )}
@@ -159,12 +156,10 @@ const HomePage = () => {
                 gutterBottom
                 sx={{ fontSize: { xs: "2.5rem", md: "3.5rem" } }}
               >
-                Smart EV Charging Network
+                Hệ thống quản lý trạm sạc xe điện thông minh
               </Typography>
               <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
-                Manage your electric vehicle charging stations efficiently with
-                our comprehensive platform. Real-time monitoring, smart booking,
-                and seamless payments.
+                Giải pháp toàn diện cho việc tìm kiếm, đặt chỗ và thanh toán tại các trạm sạc xe điện trên toàn quốc
               </Typography>
 
               <Box
@@ -196,9 +191,9 @@ const HomePage = () => {
                 >
                   {isAuthenticated
                     ? user?.role === "customer"
-                      ? "Tìm trạm sạc"
-                      : "Vào Dashboard"
-                    : "Bắt đầu ngay"}
+                      ? getText("home.findStations")
+                      : getText("home.goToDashboard")
+                    : getText("auth.getStarted")}
                 </Button>
 
                 {!isAuthenticated && (
@@ -224,7 +219,7 @@ const HomePage = () => {
                       boxShadow: "0 4px 15px rgba(255, 107, 53, 0.3)",
                     }}
                   >
-                    Đăng ký miễn phí
+                    {getText("auth.signUpFree")}
                   </Button>
                 )}
               </Box>
@@ -297,10 +292,10 @@ const HomePage = () => {
         <Container maxWidth="lg">
           <Box sx={{ textAlign: "center", mb: 6 }}>
             <Typography variant="h3" fontWeight="bold" gutterBottom>
-              Why Choose SkaEV?
+              Tại sao chọn SkaEV?
             </Typography>
             <Typography variant="h6" color="text.secondary">
-              Advanced features for modern EV charging management
+              Nền tảng quản lý trạm sạc xe điện hàng đầu Việt Nam với công nghệ tiên tiến
             </Typography>
           </Box>
 
@@ -338,24 +333,11 @@ const HomePage = () => {
       {/* CTA Section */}
       <Container maxWidth="lg" sx={{ py: 8, textAlign: "center" }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Ready to Start Charging?
+          Sẵn sàng bắt đầu hành trình xe điện?
         </Typography>
         <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-          Join thousands of EV drivers using SkaEV charging network
+          Tham gia cùng hàng nghìn tài xế xe điện đang sử dụng mạng lưới sạc SkaEV
         </Typography>
-
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <Chip label="Customer" color="success" />
-          <Chip label="Staff" color="info" />
-          <Chip label="Administrator" color="error" />
-        </Box>
 
         <Button
           variant="contained"
@@ -375,7 +357,7 @@ const HomePage = () => {
             boxShadow: "0 4px 15px rgba(19, 121, 255, 0.2)",
           }}
         >
-          {isAuthenticated ? "Go to Dashboard" : "Get Started Today"}
+          {isAuthenticated ? getText("home.goToDashboard") : getText("auth.getStartedToday")}
         </Button>
       </Container>
 
@@ -387,7 +369,7 @@ const HomePage = () => {
               SkaEV
             </Typography>
             <Typography variant="body2" color="grey.400">
-              © 2024 SkaEV. Electric Vehicle Charging Management Platform.
+              © 2024 SkaEV. Nền tảng quản lý sạc xe điện thông minh - Phát triển bởi FPTU SWP391
             </Typography>
           </Box>
         </Container>

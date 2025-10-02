@@ -34,12 +34,11 @@ import {
 } from "@mui/icons-material";
 import { formatCurrency, formatDate } from "../../utils/helpers";
 import { mockData } from "../../data/mockData";
-import useAuthStore from "../../store/authStore";
 import useBookingStore from "../../store/bookingStore";
+import { getText } from "../../utils/vietnameseTexts";
 
 const BookingHistory = () => {
-  const { user } = useAuthStore();
-  const { bookingHistory, getBookingStats, initializeMockData } =
+  const { bookingHistory, initializeMockData } =
     useBookingStore();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -66,6 +65,21 @@ const BookingHistory = () => {
         return "warning";
       default:
         return "default";
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case "completed":
+        return getText("booking.completed");
+      case "active":
+        return "Đang hoạt động";
+      case "cancelled":
+        return getText("booking.cancelled");
+      case "pending":
+        return getText("booking.pending");
+      default:
+        return status;
     }
   };
 
@@ -97,10 +111,10 @@ const BookingHistory = () => {
         </Avatar>
         <Box>
           <Typography variant="h4" fontWeight="bold">
-            Booking History
+            {getText("history.title")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            View and manage your charging session history
+            {getText("history.subtitle")}
           </Typography>
         </Box>
       </Box>
@@ -114,7 +128,7 @@ const BookingHistory = () => {
                 {userBookings.length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Total Sessions
+                Tổng số lượt
               </Typography>
             </CardContent>
           </Card>
@@ -126,7 +140,7 @@ const BookingHistory = () => {
                 {userBookings.filter((b) => b.status === "completed").length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Completed
+                Hoàn thành
               </Typography>
             </CardContent>
           </Card>
@@ -140,7 +154,7 @@ const BookingHistory = () => {
                 )}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Total Spent
+                Tổng chi phí
               </Typography>
             </CardContent>
           </Card>
@@ -154,7 +168,7 @@ const BookingHistory = () => {
                   .toFixed(1)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                kWh Charged
+                {getText("units.kwh")} đã sạc
               </Typography>
             </CardContent>
           </Card>
@@ -165,17 +179,17 @@ const BookingHistory = () => {
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Recent Charging Sessions
+            Lịch sử sạc gần đây
           </Typography>
 
           {userBookings.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
               <ElectricCar sx={{ fontSize: 60, color: "grey.400", mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
-                No booking history found
+                {getText("history.noBookings")}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Start charging to see your session history here
+                {getText("history.noBookingsDescription")}
               </Typography>
             </Box>
           ) : (
@@ -183,13 +197,13 @@ const BookingHistory = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Station</TableCell>
-                    <TableCell>Date & Time</TableCell>
-                    <TableCell>Duration</TableCell>
-                    <TableCell>Energy</TableCell>
-                    <TableCell>Cost</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell align="center">Actions</TableCell>
+                    <TableCell>Trạm sạc</TableCell>
+                    <TableCell>Ngày & Giờ</TableCell>
+                    <TableCell>Thời lượng</TableCell>
+                    <TableCell>Năng lượng</TableCell>
+                    <TableCell>Chi phí</TableCell>
+                    <TableCell>Trạng thái</TableCell>
+                    <TableCell align="center">Thao tác</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -212,56 +226,56 @@ const BookingHistory = () => {
                             <Typography variant="subtitle2" fontWeight="medium">
                               {mockData.stations.find(
                                 (s) => s.id === booking.stationId
-                              )?.name || "Unknown Station"}
+                              )?.name || "Trạm không xác định"}
                             </Typography>
                             <Typography
                               variant="caption"
                               color="text.secondary"
                             >
-                              Port {booking.portNumber || "N/A"}
+                              Cổng {booking.portNumber || "Không có"}
                             </Typography>
                           </Box>
                         </Box>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
-                          {formatDate(booking.startTime)}
+                          {formatDate(booking.actualStartTime || booking.scheduledTime)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {new Date(booking.startTime).toLocaleTimeString()}
+                          {new Date(booking.actualStartTime || booking.scheduledTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
                           {booking.endTime
                             ? calculateDuration(
-                                booking.startTime,
-                                booking.endTime
-                              )
-                            : "In Progress"}
+                              booking.startTime,
+                              booking.endTime
+                            )
+                            : "Đang tiến hành"}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
                           {booking.energyDelivered
-                            ? `${booking.energyDelivered} kWh`
-                            : "N/A"}
+                            ? `${booking.energyDelivered} ${getText("units.kwh")}`
+                            : "Không có"}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight="medium">
-                          {formatCurrency(booking.cost)}
+                          {formatCurrency(booking.cost?.total || booking.estimatedCost || 0)}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={booking.status}
+                          label={getStatusText(booking.status)}
                           color={getStatusColor(booking.status)}
                           size="small"
                         />
                       </TableCell>
                       <TableCell align="center">
-                        <Tooltip title="View Details">
+                        <Tooltip title={getText("history.viewDetails")}>
                           <IconButton
                             size="small"
                             onClick={() => handleViewDetails(booking)}
@@ -269,7 +283,7 @@ const BookingHistory = () => {
                             <Visibility />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Download Receipt">
+                        <Tooltip title="Tải xuống hóa đơn">
                           <IconButton size="small">
                             <Download />
                           </IconButton>
@@ -291,17 +305,17 @@ const BookingHistory = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Booking Details</DialogTitle>
+        <DialogTitle>{getText("booking.bookingDetails")}</DialogTitle>
         <DialogContent dividers>
           {selectedBooking && (
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <Typography variant="h6" gutterBottom>
-                  Session Information
+                  Thông tin phiên sạc
                 </Typography>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Booking ID
+                    {getText("booking.bookingId")}
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
                     #{selectedBooking.id}
@@ -309,7 +323,7 @@ const BookingHistory = () => {
                 </Box>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Station
+                    {getText("booking.station")}
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
                     {
@@ -321,18 +335,18 @@ const BookingHistory = () => {
                 </Box>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Port Number
+                    Số cổng
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
-                    {selectedBooking.portNumber || "N/A"}
+                    {selectedBooking.portNumber || "Không có"}
                   </Typography>
                 </Box>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Status
+                    {getText("booking.status")}
                   </Typography>
                   <Chip
-                    label={selectedBooking.status}
+                    label={getStatusText(selectedBooking.status)}
                     color={getStatusColor(selectedBooking.status)}
                     size="small"
                   />
@@ -341,55 +355,55 @@ const BookingHistory = () => {
 
               <Grid item xs={12} md={6}>
                 <Typography variant="h6" gutterBottom>
-                  Charging Details
+                  Chi tiết sạc
                 </Typography>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Start Time
+                    Thời gian bắt đầu
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
-                    {formatDate(selectedBooking.startTime)} at{" "}
-                    {new Date(selectedBooking.startTime).toLocaleTimeString()}
+                    {formatDate(selectedBooking.actualStartTime || selectedBooking.scheduledTime)} lúc{" "}
+                    {new Date(selectedBooking.actualStartTime || selectedBooking.scheduledTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                   </Typography>
                 </Box>
-                {selectedBooking.endTime && (
+                {(selectedBooking.endTime || selectedBooking.estimatedEndTime) && (
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      End Time
+                      Thời gian kết thúc {selectedBooking.estimatedEndTime && !selectedBooking.endTime ? '(ước tính)' : ''}
                     </Typography>
                     <Typography variant="body1" fontWeight="medium">
-                      {formatDate(selectedBooking.endTime)} at{" "}
-                      {new Date(selectedBooking.endTime).toLocaleTimeString()}
+                      {formatDate(selectedBooking.endTime || selectedBooking.estimatedEndTime)} lúc{" "}
+                      {new Date(selectedBooking.endTime || selectedBooking.estimatedEndTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </Typography>
                   </Box>
                 )}
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Duration
+                    {getText("booking.duration")}
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
                     {selectedBooking.endTime
                       ? calculateDuration(
-                          selectedBooking.startTime,
-                          selectedBooking.endTime
-                        )
-                      : "In Progress"}
+                        selectedBooking.startTime,
+                        selectedBooking.endTime
+                      )
+                      : "Đang tiến hành"}
                   </Typography>
                 </Box>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Energy Delivered
+                    Năng lượng đã sạc
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
                     {selectedBooking.energyDelivered
-                      ? `${selectedBooking.energyDelivered} kWh`
+                      ? `${selectedBooking.energyDelivered} ${getText("units.kwh")}`
                       : "N/A"}
                   </Typography>
                 </Box>
                 <Divider sx={{ my: 2 }} />
                 <Box>
                   <Typography variant="body2" color="text.secondary">
-                    Total Cost
+                    {getText("booking.totalCost")}
                   </Typography>
                   <Typography
                     variant="h5"
@@ -404,9 +418,9 @@ const BookingHistory = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Close</Button>
+          <Button onClick={handleCloseDialog}>{getText("common.close")}</Button>
           <Button variant="contained" startIcon={<Download />}>
-            Download Receipt
+            Tải hóa đơn
           </Button>
         </DialogActions>
       </Dialog>

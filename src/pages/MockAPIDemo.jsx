@@ -12,13 +12,13 @@ import {
   Chip,
   CircularProgress,
 } from '@mui/material';
-import { 
-  QrCodeScanner, 
-  BatteryChargingFull, 
-  PlayArrow, 
-  Stop, 
+import {
+  QrCodeScanner,
+  BatteryChargingFull,
+  PlayArrow,
+  Stop,
   Refresh,
-  CheckCircle 
+  CheckCircle
 } from '@mui/icons-material';
 import { mockAPI } from '../data/mockAPI';
 import useStationStore from '../store/stationStore';
@@ -29,7 +29,7 @@ const MockAPIDemo = () => {
   const [apiLoading, setApiLoading] = useState(false);
   const [simulationRunning, setSimulationRunning] = useState(false);
   const [logs, setLogs] = useState([]);
-  
+
   const { stations } = useStationStore();
 
   const addLog = (message, type = 'info') => {
@@ -63,9 +63,9 @@ const MockAPIDemo = () => {
         targetSOC: 85,
         batteryCapacity: 75
       });
-      
+
       addLog(`✅ QR booking created: ${result.data.booking.id}`, 'success');
-      
+
       // Initialize SOC session
       const socResult = await mockAPI.soc.initializeSOCSession(result.data.booking.id, {
         initialSOC: 30,
@@ -73,10 +73,10 @@ const MockAPIDemo = () => {
         batteryCapacity: 75,
         vehicleId: 'demo-vehicle'
       });
-      
+
       setSocSession(socResult.data);
       addLog(`🔋 SOC session initialized: ${socResult.data.initialSOC}% → ${socResult.data.targetSOC}%`, 'info');
-      
+
     } catch (error) {
       addLog(`❌ QR booking failed: ${error.message}`, 'error');
     } finally {
@@ -97,7 +97,7 @@ const MockAPIDemo = () => {
       setSocSession(result.data);
       setSimulationRunning(true);
       addLog(`⚡ Charging started for booking ${socSession.bookingId}`, 'success');
-      
+
       // Start real-time simulation
       const interval = mockAPI.soc.simulateRealTimeUpdates(socSession.bookingId, (updatedSession) => {
         setSocSession(updatedSession);
@@ -106,10 +106,10 @@ const MockAPIDemo = () => {
           addLog(`🎉 Charging completed! Final SOC: ${updatedSession.currentSOC}%`, 'success');
         }
       });
-      
+
       // Store interval for cleanup
       window.chargingSimulation = interval;
-      
+
     } catch (error) {
       addLog(`❌ Start charging failed: ${error.message}`, 'error');
     } finally {
@@ -126,12 +126,12 @@ const MockAPIDemo = () => {
         clearInterval(window.chargingSimulation);
         window.chargingSimulation = null;
       }
-      
+
       const result = await mockAPI.soc.stopCharging(socSession.bookingId);
       setSocSession(result.data);
       setSimulationRunning(false);
       addLog(`⏹️ Charging stopped. Final SOC: ${result.data.finalSOC}%`, 'info');
-      
+
     } catch (error) {
       addLog(`❌ Stop charging failed: ${error.message}`, 'error');
     } finally {
@@ -171,7 +171,7 @@ const MockAPIDemo = () => {
       <Typography variant="h4" gutterBottom fontWeight="bold">
         Mock API Demo - SOC & QR Scanner
       </Typography>
-      
+
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         Test SOC tracking và QR scanner với Mock API thực tế
       </Typography>
@@ -185,10 +185,10 @@ const MockAPIDemo = () => {
                 <QrCodeScanner color="primary" />
                 QR Scanner API Test
               </Typography>
-              
+
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Typography variant="subtitle2">Test với các QR codes mẫu:</Typography>
-                
+
                 {stations.slice(0, 3).map((station) => (
                   <Paper key={station.id} sx={{ p: 2, border: '1px solid #e0e0e0' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -207,7 +207,7 @@ const MockAPIDemo = () => {
                           onClick={() => testQRValidation(`SKAEV:STATION:${station.id}:A01`)}
                           disabled={apiLoading}
                         >
-                          Validate
+                          Xác thực
                         </Button>
                         <Button
                           size="small"
@@ -288,11 +288,11 @@ const MockAPIDemo = () => {
                         </Box>
                       </Box>
                     </Box>
-                    
+
                     <Typography variant="body2" textAlign="center">
-                      <strong>Status:</strong> <Chip label={socSession.status} size="small" 
+                      <strong>Status:</strong> <Chip label={socSession.status} size="small"
                         color={socSession.status === 'charging' ? 'success' : 'default'} /><br />
-                      <strong>Target:</strong> {socSession.targetSOC}% • 
+                      <strong>Target:</strong> {socSession.targetSOC}% •
                       <strong>Rate:</strong> {socSession.chargingRate}%/h<br />
                       {socSession.estimatedTimeToTarget && (
                         <>
@@ -312,7 +312,7 @@ const MockAPIDemo = () => {
                       disabled={apiLoading || socSession.status === 'charging' || simulationRunning}
                       size="small"
                     >
-                      Start Charging
+                      Bắt đầu sạc
                     </Button>
                     <Button
                       variant="contained"
@@ -357,15 +357,15 @@ const MockAPIDemo = () => {
               <Typography variant="h6" gutterBottom>
                 📝 API Call Logs
               </Typography>
-              
+
               <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
                 {logs.length > 0 ? (
                   logs.map((log) => (
-                    <Paper 
-                      key={log.id} 
-                      sx={{ 
-                        p: 1, 
-                        mb: 1, 
+                    <Paper
+                      key={log.id}
+                      sx={{
+                        p: 1,
+                        mb: 1,
                         bgcolor: log.type === 'error' ? 'error.50' : log.type === 'success' ? 'success.50' : 'grey.50',
                         borderLeft: `4px solid ${log.type === 'error' ? 'red' : log.type === 'success' ? 'green' : 'blue'}`
                       }}
@@ -384,10 +384,10 @@ const MockAPIDemo = () => {
                   </Typography>
                 )}
               </Box>
-              
-              <Button 
-                variant="outlined" 
-                size="small" 
+
+              <Button
+                variant="outlined"
+                size="small"
                 onClick={() => setLogs([])}
                 sx={{ mt: 2 }}
                 disabled={logs.length === 0}
@@ -400,10 +400,10 @@ const MockAPIDemo = () => {
       </Grid>
 
       {apiLoading && (
-        <Box sx={{ 
-          position: 'fixed', 
-          top: '50%', 
-          left: '50%', 
+        <Box sx={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
           transform: 'translate(-50%, -50%)',
           zIndex: 9999
         }}>

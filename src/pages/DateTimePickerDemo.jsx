@@ -21,7 +21,7 @@ const DateTimePickerDemo = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [dateTimeData, setDateTimeData] = useState(null);
   const [selectedStation, setSelectedStation] = useState(null);
-  
+
   const { stations } = useStationStore();
   const { getScheduledBookings, getUpcomingBookings } = useBookingStore();
 
@@ -48,11 +48,11 @@ const DateTimePickerDemo = () => {
     if (booking.schedulingType === 'immediate') {
       return 'Sạc ngay';
     }
-    
+
     if (booking.scheduledDateTime) {
       return new Date(booking.scheduledDateTime).toLocaleString('vi-VN');
     }
-    
+
     return 'Chưa xác định';
   };
 
@@ -61,7 +61,7 @@ const DateTimePickerDemo = () => {
       <Typography variant="h4" gutterBottom fontWeight="bold">
         Demo Chọn Ngày Giờ Sạc
       </Typography>
-      
+
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         Tính năng cho phép customer chọn ngày và giờ sạc cụ thể hoặc sạc ngay
       </Typography>
@@ -73,18 +73,18 @@ const DateTimePickerDemo = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CalendarToday color="primary" />
-                DateTime Picker Standalone
+                Chọn Ngày Giờ Độc Lập
               </Typography>
-              
+
               {showDateTimePicker && (
-                <ChargingDateTimePicker 
+                <ChargingDateTimePicker
                   station={stations[0]}
                   onDateTimeChange={handleDateTimeChange}
                 />
               )}
-              
+
               <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                <Button 
+                <Button
                   variant="outlined"
                   onClick={() => setShowDateTimePicker(!showDateTimePicker)}
                 >
@@ -93,7 +93,7 @@ const DateTimePickerDemo = () => {
               </Box>
             </CardContent>
           </Card>
-          
+
           {/* Current Selection */}
           {dateTimeData && (
             <Card sx={{ mt: 2 }}>
@@ -135,11 +135,11 @@ const DateTimePickerDemo = () => {
                 <Schedule color="primary" />
                 Test Booking với DateTime
               </Typography>
-              
+
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Chọn trạm để mở BookingModal có tích hợp DateTime picker:
               </Typography>
-              
+
               {stations.slice(0, 3).map((station) => (
                 <Paper key={station.id} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -151,7 +151,7 @@ const DateTimePickerDemo = () => {
                         {station.location.address}
                       </Typography>
                       <br />
-                      <Chip 
+                      <Chip
                         label={`${station.charging.availablePorts}/${station.charging.totalPorts} ports`}
                         size="small"
                         color={station.charging.availablePorts > 0 ? "success" : "default"}
@@ -169,14 +169,14 @@ const DateTimePickerDemo = () => {
               ))}
             </CardContent>
           </Card>
-          
+
           {/* Bookings List */}
           <Card sx={{ mt: 2 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 📅 Lịch sạc đã đặt
               </Typography>
-              
+
               {upcomingBookings.length > 0 ? (
                 upcomingBookings.map((booking) => (
                   <Paper key={booking.id} sx={{ p: 2, mb: 2, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
@@ -195,7 +195,7 @@ const DateTimePickerDemo = () => {
                           <strong>Loại:</strong> {booking.chargerType?.name} • {booking.connector?.name}
                         </Typography>
                       </Box>
-                      <Chip 
+                      <Chip
                         label={booking.status === 'scheduled' ? 'Đã lên lịch' : 'Đã xác nhận'}
                         color={booking.status === 'scheduled' ? 'warning' : 'success'}
                         size="small"

@@ -13,20 +13,29 @@ import AppLayout from "./components/layout/AppLayout/AppLayout";
 // Auth Pages
 import LoginPage from "./pages/auth/Login";
 import RegisterPage from "./pages/auth/Register";
+import EmailVerification from "./pages/auth/EmailVerification";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 
 // Public Pages
 import HomePage from "./pages/public/Home";
 // Test and Demo Pages
 import TestPage from "./pages/TestPage";
-import QRScannerDemo from "./pages/QRScannerDemo";
+import ChargingFlow from "./pages/customer/ChargingFlow";
 import DateTimePickerDemo from "./pages/DateTimePickerDemo";
 import MockAPIDemo from "./pages/MockAPIDemo";
 
 // Customer Pages
+import CustomerDashboard from "./pages/customer/Dashboard";
 import FindStations from "./pages/customer/FindStations";
 import BookingHistory from "./pages/customer/BookingHistory";
 import PaymentMethods from "./pages/customer/PaymentMethods";
+import PaymentHistory from "./pages/customer/PaymentHistory";
 import CustomerProfile from "./pages/customer/CustomerProfile";
+import PaymentPage from "./pages/customer/PaymentPage";
+import AnalyticsPage from "./pages/customer/AnalyticsPage";
+import CustomerAnalytics from "./pages/customer/Analytics";
+import MonthlyCostReports from "./pages/customer/MonthlyCostReports";
+import ChargingHabitsAnalysis from "./pages/customer/ChargingHabitsAnalysis";
 
 // Staff Pages
 import StaffDashboard from "./pages/staff/Dashboard";
@@ -79,7 +88,7 @@ const PublicRoute = ({ children }) => {
       case "staff":
         return <Navigate to="/staff/dashboard" replace />;
       case "customer":
-        return <Navigate to="/customer/find-stations" replace />;
+        return <Navigate to="/customer/profile" replace />;
       default:
         return <Navigate to="/" replace />;
     }
@@ -98,7 +107,6 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/test" element={<TestPage />} />
-            <Route path="/qr-demo" element={<QRScannerDemo />} />
             <Route path="/datetime-demo" element={<DateTimePickerDemo />} />
             <Route path="/api-demo" element={<MockAPIDemo />} />
             <Route
@@ -117,6 +125,22 @@ function App() {
                 </PublicRoute>
               }
             />
+            <Route
+              path="/verify-email"
+              element={
+                <PublicRoute>
+                  <EmailVerification />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
+              }
+            />
 
             {/* Customer Routes */}
             <Route
@@ -127,11 +151,15 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="find-stations" element={<FindStations />} />
-              <Route path="history" element={<BookingHistory />} />
-              <Route path="payment" element={<PaymentMethods />} />
+              <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<CustomerProfile />} />
-              <Route index element={<Navigate to="find-stations" replace />} />
+              <Route path="charging" element={<ChargingFlow />} />
+              <Route path="payment" element={<PaymentPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="payment-history" element={<PaymentHistory />} />
+              <Route path="monthly-reports" element={<MonthlyCostReports />} />
+              <Route path="charging-habits" element={<ChargingHabitsAnalysis />} />
+
             </Route>
 
             {/* Staff Routes */}
@@ -171,7 +199,7 @@ function App() {
             {/* Fallback Routes */}
             <Route
               path="/unauthorized"
-              element={<div>Unauthorized Access</div>}
+              element={<div>Bạn không có quyền truy cập trang này</div>}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

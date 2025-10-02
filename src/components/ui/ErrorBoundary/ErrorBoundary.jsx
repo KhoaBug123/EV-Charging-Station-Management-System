@@ -51,18 +51,18 @@ class ErrorBoundary extends React.Component {
             }}
           >
             <Typography variant="h6" gutterBottom>
-              Oops! Something went wrong
+              Ôi! Đã xảy ra lỗi
             </Typography>
             <Typography variant="body2">
               {this.props.fallbackMessage ||
-                "An unexpected error occurred. Please try refreshing the page."}
+                "Đã xảy ra lỗi không mong muốn. Vui lòng thử làm mới trang."}
             </Typography>
 
             {process.env.NODE_ENV === "development" && this.state.error && (
               <Box mt={2}>
                 <Typography variant="caption" component="details">
                   <summary style={{ cursor: "pointer" }}>
-                    Error Details (Development)
+                    Chi tiết lỗi (Development)
                   </summary>
                   <pre
                     style={{
@@ -89,11 +89,11 @@ class ErrorBoundary extends React.Component {
               startIcon={<Refresh />}
               onClick={this.handleRetry}
             >
-              Try Again
+              Thử lại
             </Button>
 
             <Button variant="outlined" onClick={() => window.location.reload()}>
-              Reload Page
+              Tải lại trang
             </Button>
           </Box>
         </Box>

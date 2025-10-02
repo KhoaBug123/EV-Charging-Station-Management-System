@@ -5,11 +5,14 @@ import { Outlet } from "react-router-dom";
 
 import Header from "../Header/Header";
 import Sidebar from "../Sidebar/Sidebar";
+import CustomerDataSync from "../../customer/CustomerDataSync";
+import useAuthStore from "../../../store/authStore";
 
 const AppLayout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuthStore();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -60,7 +63,14 @@ const AppLayout = () => {
             backgroundColor: "grey.50",
           }}
         >
-          <Outlet />
+          {/* Wrap content with CustomerDataSync for customer users */}
+          {user?.role === 'customer' ? (
+            <CustomerDataSync>
+              <Outlet />
+            </CustomerDataSync>
+          ) : (
+            <Outlet />
+          )}
         </Box>
       </Box>
     </Box>

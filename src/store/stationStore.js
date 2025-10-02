@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { mockStations, mockBookings } from "../data/mockData";
+import { mockStations } from "../data/mockData";
+import { calculateDistance } from "../utils/helpers";
 
 const useStationStore = create((set, get) => ({
   // State
-  stations: mockStations,
+  stations: mockStations, // Initialize with data immediately
   selectedStation: null,
   nearbyStations: [],
   loading: false,
@@ -12,6 +13,16 @@ const useStationStore = create((set, get) => ({
     maxDistance: 20, // km
     connectorTypes: [],
     maxPrice: null,
+  },
+
+  // Initialize mock data on store creation
+  initializeData: () => {
+    console.log("🚀 Initializing stations:", mockStations.length);
+    console.log("📊 All station connector types:");
+    mockStations.forEach((station, index) => {
+      console.log(`  ${index + 1}. ${station.name}: ${JSON.stringify(station.charging?.connectorTypes)}`);
+    });
+    set({ stations: mockStations, loading: false, error: null });
   },
 
   // Actions
@@ -51,16 +62,29 @@ const useStationStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Mock: filter stations by distance (simplified)
-      const nearby = mockStations.filter((station) => {
-        // Simple distance calculation (in real app, use proper geo calculation)
-        const distance = Math.random() * 25; // Mock distance
-        return distance <= radius;
+      // Calculate distance for each station
+      const stationsWithDistance = mockStations.map((station) => {
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          station.location.coordinates.lat,
+          station.location.coordinates.lng
+        );
+        return { ...station, distance };
       });
 
-      set({ nearbyStations: nearby, loading: false });
+      // Filter by radius and sort by distance
+      const nearby = stationsWithDistance
+        .filter((station) => station.distance <= radius)
+        .sort((a, b) => a.distance - b.distance);
+
+      set({
+        nearbyStations: nearby,
+        stations: mockStations, // Ensure stations are also set
+        loading: false
+      });
     } catch (error) {
       set({ error: error.message, loading: false });
     }
@@ -69,26 +93,66 @@ const useStationStore = create((set, get) => ({
   getFilteredStations: () => {
     const { stations, filters } = get();
 
-    return stations.filter((station) => {
+    console.log("🔍 FILTERING DEBUG:", {
+      totalStations: stations.length,
+      selectedConnectorTypes: filters.connectorTypes,
+      filtersObject: filters
+    });
+
+    if (stations.length === 0) {
+      console.warn("⚠️ No stations available for filtering");
+      return [];
+    }
+
+    const filtered = stations.filter((station) => {
+      console.log(`\n📍 Checking station: ${station.name}`);
+      console.log(`   - Available connectors: ${JSON.stringify(station.charging?.connectorTypes)}`);
+      console.log(`   - Station status: ${station.status}`);
+
+      // Filter by station status - only active stations
+      if (station.status !== "active") {
+        console.log(`   ❌ Station not active: ${station.status}`);
+        return false;
+      }
+
       // Filter by connector types
-      if (filters.connectorTypes.length > 0) {
-        const hasMatchingConnector = filters.connectorTypes.some((type) =>
-          station.charging.connectorTypes.includes(type)
-        );
+      if (filters.connectorTypes && filters.connectorTypes.length > 0) {
+        const stationConnectors = station.charging?.connectorTypes || [];
+        console.log(`   - Filter connectors: ${JSON.stringify(filters.connectorTypes)}`);
+        console.log(`   - Station connectors: ${JSON.stringify(stationConnectors)}`);
+
+        const hasMatchingConnector = filters.connectorTypes.some((filterType) => {
+          const match = stationConnectors.includes(filterType);
+          console.log(`     Checking ${filterType}: ${match ? '✅' : '❌'}`);
+          return match;
+        });
+
+        console.log(`   - Has matching connector: ${hasMatchingConnector ? '✅' : '❌'}`);
         if (!hasMatchingConnector) return false;
       }
 
       // Filter by max price
       if (filters.maxPrice) {
         const maxStationPrice = Math.max(
-          station.charging.pricing.acRate || 0,
-          station.charging.pricing.dcRate || 0
+          station.charging?.pricing?.acRate || 0,
+          station.charging?.pricing?.dcRate || 0,
+          station.charging?.pricing?.dcFastRate || 0
         );
-        if (maxStationPrice > filters.maxPrice) return false;
+        console.log(`   - Max station price: ${maxStationPrice}, Filter max: ${filters.maxPrice}`);
+        if (maxStationPrice > filters.maxPrice) {
+          console.log(`   ❌ Price too high: ${maxStationPrice} > ${filters.maxPrice}`);
+          return false;
+        }
       }
 
+      console.log(`   ✅ Station passed all filters`);
       return true;
     });
+
+    console.log(`\n🎯 FILTER RESULT: ${filtered.length}/${stations.length} stations matched`);
+    console.log(`Matched stations: ${filtered.map(s => s.name).join(', ')}`);
+
+    return filtered;
   },
 
   // Station availability helpers
@@ -114,7 +178,7 @@ const useStationStore = create((set, get) => ({
   getMockQRCodes: () => {
     return {
       'station-001': 'SKAEV:STATION:station-001:A01',
-      'station-002': 'SKAEV:STATION:station-002:B02', 
+      'station-002': 'SKAEV:STATION:station-002:B02',
       'station-003': 'SKAEV:STATION:station-003:C01',
     };
   },
