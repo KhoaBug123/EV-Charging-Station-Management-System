@@ -40,6 +40,7 @@ import AdvancedAnalytics from "./pages/admin/AdvancedAnalytics";
 import AdminStationManagement from "./pages/admin/StationManagement";
 import AdminSystemReports from "./pages/admin/SystemReports";
 import AdminSettings from "./pages/admin/Settings";
+import NotificationDashboard from "./pages/admin/NotificationDashboard";
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -160,6 +161,7 @@ function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="analytics" element={<AdvancedAnalytics />} />
               <Route path="stations" element={<AdminStationManagement />} />
+              <Route path="notifications" element={<NotificationDashboard />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="reports" element={<AdminSystemReports />} />
               <Route path="settings" element={<AdminSettings />} />
