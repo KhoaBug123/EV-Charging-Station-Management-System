@@ -40,7 +40,11 @@ const ChargingDateTimePicker = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState(initialDateTime?.date || null);
   const [selectedTime, setSelectedTime] = useState(initialDateTime?.time || null);
+<<<<<<< HEAD
   const [schedulingType] = useState('scheduled'); // Always use scheduled mode
+=======
+  const [schedulingType, setSchedulingType] = useState('scheduled'); // Always scheduled
+>>>>>>> 685478a137d6f65c6ca06443483b4b69e6ae7980
   const [errors, setErrors] = useState({});
   const [availableSlots, setAvailableSlots] = useState([]);
 
@@ -185,6 +189,7 @@ const ChargingDateTimePicker = ({
             Lên lịch sạc
           </Typography>
 
+<<<<<<< HEAD
           {/* Info message for scheduling */}
           <Box sx={{ mb: 3 }}>
             <Alert severity="info" sx={{ mb: 2 }}>
@@ -194,9 +199,10 @@ const ChargingDateTimePicker = ({
             </Alert>
           </Box>
 
+=======
+>>>>>>> 685478a137d6f65c6ca06443483b4b69e6ae7980
           {/* Scheduled DateTime Selection */}
-          {schedulingType === 'scheduled' && (
-            <Box>
+          <Box>
               {/* Quick Date Selection */}
               <Typography variant="subtitle2" gutterBottom>
                 Chọn nhanh:
@@ -321,10 +327,9 @@ const ChargingDateTimePicker = ({
                 </Alert>
               )}
             </Box>
-          )}
 
           {/* Summary */}
-          {schedulingType === 'scheduled' && selectedDate && selectedTime && Object.keys(errors).length === 0 && (
+          {selectedDate && selectedTime && Object.keys(errors).length === 0 && (
             <Paper elevation={1} sx={{ p: 2, bgcolor: '#f8f9fa', border: '1px solid #e3f2fd' }}>
               <Typography variant="subtitle2" color="primary" gutterBottom>
                 📅 Tóm tắt lịch sạc
@@ -340,8 +345,11 @@ const ChargingDateTimePicker = ({
               </Typography>
             </Paper>
           )}
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 685478a137d6f65c6ca06443483b4b69e6ae7980
         </CardContent>
       </Card>
     </LocalizationProvider>
