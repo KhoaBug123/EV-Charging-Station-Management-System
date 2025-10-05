@@ -30,6 +30,7 @@ import {
 } from "@mui/icons-material";
 import useBookingStore from "../../store/bookingStore";
 import ChargingDateTimePicker from "../ui/ChargingDateTimePicker/ChargingDateTimePicker";
+import notificationService from "../../services/notificationService";
 
 const BookingModal = ({ open, onClose, station, onSuccess }) => {
   const { createBooking } = useBookingStore();
@@ -52,6 +53,11 @@ const BookingModal = ({ open, onClose, station, onSuccess }) => {
   const getChargingPosts = () => {
     if (!station?.charging?.chargingPosts) return [];
     return station.charging.chargingPosts;
+  };
+
+  const getAllSlots = () => {
+    if (!selectedChargingPost) return [];
+    return selectedChargingPost.slots || [];
   };
 
   const getAvailableSlots = () => {
@@ -130,6 +136,12 @@ const BookingModal = ({ open, onClose, station, onSuccess }) => {
         `Thời gian: ${new Date(bookingData.scheduledDateTime).toLocaleString('vi-VN')}\n\n` +
         `📱 Hãy đến trạm vào đúng giờ và quét mã QR để bắt đầu sạc!`
       );
+
+      // Send notification
+      notificationService.notifyBookingConfirmed({
+        stationName: station.name,
+        id: booking.id
+      });
 
       // Call onSuccess callback immediately after successful booking
       if (onSuccess) {
@@ -216,17 +228,12 @@ const BookingModal = ({ open, onClose, station, onSuccess }) => {
                                 {post.power} kW • {post.type} • {post.voltage}V
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                {post.availableSlots}/{post.totalSlots} cổng trống
+                                Số cổng trống: {post.availableSlots}/{post.totalSlots}
                               </Typography>
                             </Box>
                           </Box>
                           <Box sx={{ textAlign: 'right' }}>
-                            <Chip
-                              label={post.availableSlots > 0 ? "Có sẵn" : "Hết chỗ"}
-                              color={post.availableSlots > 0 ? "success" : "default"}
-                              size="small"
-                            />
-                            <Typography variant="body2" sx={{ mt: 1 }}>
+                            <Typography variant="body2">
                               {post.type === 'AC' ?
                                 `${station?.charging?.pricing?.acRate?.toLocaleString()} VNĐ/kWh` :
                                 `${(station?.charging?.pricing?.dcRate || station?.charging?.pricing?.dcUltraRate)?.toLocaleString()} VNĐ/kWh`
@@ -253,55 +260,105 @@ const BookingModal = ({ open, onClose, station, onSuccess }) => {
               <>
                 <Alert severity="success" sx={{ mb: 2 }}>
                   Đã chọn: {selectedChargingPost.name} - {selectedChargingPost.power}kW
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    Số cổng trống: {selectedChargingPost.availableSlots}/{selectedChargingPost.totalSlots}
+                  </Typography>
                 </Alert>
                 <Grid container spacing={2}>
-                  {getAvailableSlots().map((slot) => (
-                    <Grid item xs={12} sm={6} key={slot.id}>
-                      <ButtonBase
-                        onClick={() => handleSlotSelect(slot)}
-                        sx={{ width: "100%", borderRadius: 1 }}
-                      >
-                        <Card
-                          sx={{
-                            width: "100%",
-                            cursor: "pointer",
-                            border: selectedSlot?.id === slot.id ? 2 : 1,
-                            borderColor: selectedSlot?.id === slot.id
-                              ? "primary.main" : "divider",
-                            "&:hover": { boxShadow: 2 },
-                          }}
+                  {getAllSlots().map((slot) => {
+                    const isAvailable = slot.status === 'available';
+                    const isOccupied = slot.status === 'occupied';
+                    const isMaintenance = slot.status === 'maintenance';
+
+                    return (
+                      <Grid item xs={12} sm={6} key={slot.id}>
+                        <ButtonBase
+                          onClick={() => isAvailable && handleSlotSelect(slot)}
+                          disabled={!isAvailable}
+                          sx={{ width: "100%", borderRadius: 1 }}
                         >
-                          <CardContent>
-                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <Box>
-                                <Typography variant="h6" fontWeight="bold">
-                                  Cổng {slot.id}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {slot.connectorType}
-                                </Typography>
-                                {slot.lastUsed && (
-                                  <Typography variant="caption" color="text.secondary">
-                                    Sử dụng cuối: {new Date(slot.lastUsed).toLocaleDateString('vi-VN')}
+                          <Card
+                            sx={{
+                              width: "100%",
+                              cursor: isAvailable ? "pointer" : "not-allowed",
+                              border: selectedSlot?.id === slot.id ? 2 : 1,
+                              borderColor: selectedSlot?.id === slot.id
+                                ? "primary.main" : "divider",
+                              opacity: isAvailable ? 1 : 0.6,
+                              bgcolor: !isAvailable ? 'action.disabledBackground' : 'background.paper',
+                              "&:hover": isAvailable ? { boxShadow: 2 } : {},
+                            }}
+                          >
+                            <CardContent>
+                              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography variant="h6" fontWeight="bold">
+                                    Cổng {slot.id}
                                   </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Loại đầu cắm: {slot.connectorType}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                    <Chip
+                                      label={
+                                        isAvailable ? 'Sẵn sàng' :
+                                          isOccupied ? 'Đang sử dụng' :
+                                            isMaintenance ? 'Bảo trì' :
+                                              'Không khả dụng'
+                                      }
+                                      size="small"
+                                      color={
+                                        isAvailable ? 'success' :
+                                          isOccupied ? 'warning' :
+                                            isMaintenance ? 'error' :
+                                              'default'
+                                      }
+                                      sx={{ height: 20, fontSize: '0.7rem' }}
+                                    />
+                                  </Box>
+                                  {isMaintenance && slot.lastMaintenance && (
+                                    <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 0.5 }}>
+                                      Bảo trì từ: {new Date(slot.lastMaintenance).toLocaleString('vi-VN', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </Typography>
+                                  )}
+                                </Box>
+                                {isAvailable && (
+                                  <CheckCircle sx={{ color: 'success.main', fontSize: 32 }} />
+                                )}
+                                {isMaintenance && (
+                                  <Box sx={{
+                                    bgcolor: 'error.main',
+                                    color: 'white',
+                                    borderRadius: '50%',
+                                    p: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <Typography variant="caption" fontWeight="bold">⚠️</Typography>
+                                  </Box>
                                 )}
                               </Box>
-                              <Chip
-                                label="Sẵn sàng"
-                                color="success"
-                                size="small"
-                                icon={<CheckCircle />}
-                              />
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </ButtonBase>
-                    </Grid>
-                  ))}
+                            </CardContent>
+                          </Card>
+                        </ButtonBase>
+                      </Grid>
+                    );
+                  })}
                 </Grid>
-                {getAvailableSlots().length === 0 && (
+                {getAllSlots().length === 0 && (
                   <Alert severity="warning" sx={{ mt: 2 }}>
-                    Trụ sạc này hiện không có cổng trống. Vui lòng chọn trụ sạc khác.
+                    Trụ sạc này chưa có cổng nào được cấu hình.
+                  </Alert>
+                )}
+                {getAllSlots().length > 0 && getAvailableSlots().length === 0 && (
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    Tất cả {getAllSlots().length} cổng của trụ này đang bận hoặc bảo trì. Vui lòng chọn trụ sạc khác.
                   </Alert>
                 )}
               </>
@@ -393,6 +450,12 @@ const BookingModal = ({ open, onClose, station, onSuccess }) => {
                     </Grid>
                   </Grid>
                 </Paper>
+
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    💡 <strong>Lưu ý:</strong> Vui lòng có mặt tại trạm sạc trước 15 phút để tránh mất chỗ.
+                  </Typography>
+                </Alert>
 
                 <FormControlLabel
                   control={

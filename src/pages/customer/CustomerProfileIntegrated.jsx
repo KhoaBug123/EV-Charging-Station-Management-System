@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
     Box,
     Typography,
@@ -38,7 +38,7 @@ import {
     CalendarToday,
 } from "@mui/icons-material";
 import useAuthStore from "../../store/authStore";
-import useBookingStore from "../../store/bookingStore";
+import { useMasterDataSync } from "../../hooks/useMasterDataSync";
 import { formatCurrency } from "../../utils/helpers";
 
 // Tab Panel Component
@@ -58,7 +58,7 @@ function TabPanel({ children, value, index, ...other }) {
 
 const CustomerProfile = () => {
     const { user, updateProfile } = useAuthStore();
-    const { bookingHistory, initializeMockData, getBookingStats } = useBookingStore();
+    const { bookingHistory, stats: bookingStats } = useMasterDataSync();
     const [tabValue, setTabValue] = useState(0);
     const [editMode, setEditMode] = useState(false);
     const [profileData, setProfileData] = useState({
@@ -94,15 +94,7 @@ const CustomerProfile = () => {
         },
     ]);
 
-    // Initialize booking data
-    useEffect(() => {
-        if (bookingHistory.length === 0) {
-            initializeMockData();
-        }
-    }, [bookingHistory.length, initializeMockData]);
-
-    const bookingStats = getBookingStats();
-
+    // Data is now managed by master data sync hook
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
     };

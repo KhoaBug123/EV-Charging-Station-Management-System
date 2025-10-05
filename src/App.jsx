@@ -10,6 +10,7 @@ import useAuthStore from "./store/authStore";
 // Layout Components
 import AppLayout from "./components/layout/AppLayout/AppLayout";
 import ErrorBoundary from "./components/ui/ErrorBoundary/ErrorBoundary";
+import UnifiedDataSync from "./components/customer/UnifiedDataSync";
 
 // Auth Pages
 import LoginPage from "./pages/auth/Login";
@@ -149,7 +150,9 @@ function App() {
                 path="/customer"
                 element={
                   <ProtectedRoute allowedRoles={["customer"]}>
-                    <AppLayout />
+                    <UnifiedDataSync>
+                      <AppLayout />
+                    </UnifiedDataSync>
                   </ProtectedRoute>
                 }
               >

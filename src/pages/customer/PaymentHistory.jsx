@@ -45,20 +45,13 @@ import {
     LocalAtm,
 } from "@mui/icons-material";
 import { formatCurrency } from "../../utils/helpers";
-import useBookingStore from "../../store/bookingStore";
+import { useMasterDataSync } from "../../hooks/useMasterDataSync";
 
 const PaymentHistory = () => {
     const [selectedMonth, setSelectedMonth] = useState("2024-09");
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
-    const { bookingHistory, initializeMockData } = useBookingStore();
-
-    // Initialize data if needed
-    useEffect(() => {
-        if (bookingHistory.length === 0) {
-            initializeMockData();
-        }
-    }, [bookingHistory.length, initializeMockData]);
+    const { bookingHistory, completedBookings, isDataReady } = useMasterDataSync();
 
     // Transform booking data to payment history with realistic logic
     const paymentHistory = (bookingHistory || [])

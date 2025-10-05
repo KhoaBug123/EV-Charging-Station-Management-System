@@ -208,34 +208,7 @@ const PaymentPage = () => {
                 </Box>
             </Paper>
 
-            {/* Security Notice */}
-            <Paper sx={{ mt: 3, p: 3, borderRadius: 3, backgroundColor: 'warning.50' }}>
-                <Typography variant="h6" gutterBottom color="warning.main">
-                    🔒 Bảo mật thanh toán
-                </Typography>
-                <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                        <Typography variant="body2" gutterBottom>
-                            🛡️ <strong>Mã hóa dữ liệu:</strong> Tất cả thông tin thanh toán được mã hóa SSL 256-bit
-                        </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                        <Typography variant="body2" gutterBottom>
-                            📱 <strong>Xác thực 2FA:</strong> Bật xác thực 2 yếu tố để bảo mật tài khoản tối đa
-                        </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                        <Typography variant="body2" gutterBottom>
-                            💳 <strong>Không lưu trữ:</strong> Chúng tôi không lưu trữ thông tin thẻ tín dụng
-                        </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                        <Typography variant="body2" gutterBottom>
-                            ⏰ <strong>Phiên làm việc:</strong> Tự động đăng xuất sau 30 phút không hoạt động
-                        </Typography>
-                    </Grid>
-                </Grid>
-            </Paper>
+
         </Container>
     );
 };

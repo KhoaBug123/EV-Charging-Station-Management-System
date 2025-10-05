@@ -152,6 +152,7 @@ const useCustomerStore = create(
             setLoading: (loading) => set({ loading }),
             setError: (error) => set({ error }),
             clearError: () => set({ error: null }),
+            setInitialized: (initialized) => set({ initialized }),
 
             // Force re-sync
             forceSync: () => {

@@ -25,6 +25,7 @@ import {
     LocationOn
 } from '@mui/icons-material';
 import useBookingStore from '../../store/bookingStore';
+import notificationService from '../../services/notificationService';
 
 const QRScanner = ({ open, onClose, booking }) => {
     const { scanQRCode, startCharging } = useBookingStore();
@@ -73,6 +74,12 @@ const QRScanner = ({ open, onClose, booking }) => {
 
             startCharging(booking.id);
             setStep('charging');
+
+            // Send notification
+            notificationService.notifyChargingStarted({
+                stationName: booking.stationName,
+                currentSOC: 25
+            });
 
             // Close after showing success
             setTimeout(() => {

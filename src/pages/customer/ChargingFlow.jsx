@@ -37,10 +37,14 @@ import {
     LocationOn,
     Speed,
     Search,
+    Map as MapIcon,
+    ViewList,
 } from "@mui/icons-material";
 import useBookingStore from "../../store/bookingStore";
 import useStationStore from "../../store/stationStore";
 import { formatCurrency } from "../../utils/helpers";
+import StationMapLeaflet from "../../components/customer/StationMapLeaflet";
+import notificationService from "../../services/notificationService";
 
 // Helper function to format time
 const formatTime = (minutes) => {
@@ -60,7 +64,7 @@ import BookingModal from "../../components/customer/BookingModal";
 import RatingModal from "../../components/customer/RatingModal";
 
 const ChargingFlow = () => {
-    const { currentBooking, chargingSession } = useBookingStore();
+    const { currentBooking, chargingSession, resetFlowState } = useBookingStore();
     const {
         stations,
         initializeData,
@@ -72,6 +76,12 @@ const ChargingFlow = () => {
     const [flowStep, setFlowStep] = useState(0); // 0: Tìm trạm, 1: Đặt lịch, 2: QR Scan, 3: Kết nối, 4: Sạc, 5: Hoàn thành
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedStation, setSelectedStation] = useState(null);
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
+
+    // Debug searchQuery changes
+    useEffect(() => {
+        console.log('🔎 SearchQuery changed to:', searchQuery);
+    }, [searchQuery]);
     const [bookingModalOpen, setBookingModalOpen] = useState(false);
     const [qrScanOpen, setQrScanOpen] = useState(false);
     const [scanResult, setScanResult] = useState("");
@@ -79,6 +89,7 @@ const ChargingFlow = () => {
     const [completedSession, setCompletedSession] = useState(null);
     const [currentBookingData, setCurrentBookingData] = useState(null);
     const [chargingStartTime, setChargingStartTime] = useState(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
     const [sessionData, setSessionData] = useState({
         energyDelivered: 0,
         startSOC: 25,
@@ -106,67 +117,142 @@ const ChargingFlow = () => {
 
     // Combined filter for stations based on search text and connector types
     const filteredStations = React.useMemo(() => {
-        console.log('🔍 Auto filtering stations - searchQuery:', searchQuery, 'filters:', filters);
+        console.log('🔍 FILTER START - Query:', searchQuery, '| Connector:', filters.connectorTypes);
+        console.log('📊 Stations array:', stations);
 
         try {
             // Start with all stations from store
-            let stationList = stations || [];
-            console.log('📊 Total stations:', stationList.length);
+            let stationList = Array.isArray(stations) ? [...stations] : [];
+            console.log('📊 Total stations to filter:', stationList.length);
 
-            // Apply text search filter if search query exists
-            if (searchQuery.trim()) {
-                const query = searchQuery.toLowerCase();
-                stationList = stationList.filter((station) => {
-                    if (!station || !station.name || !station.location) return false;
-
-                    const matchesName = station.name.toLowerCase().includes(query);
-                    const matchesAddress = station.location.address &&
-                        station.location.address.toLowerCase().includes(query);
-                    const matchesLandmarks = station.location.landmarks &&
-                        station.location.landmarks.some(landmark =>
-                            landmark.toLowerCase().includes(query)
-                        );
-
-                    return matchesName || matchesAddress || matchesLandmarks;
-                });
-                console.log('🔤 After text filter:', stationList.length);
+            if (stationList.length === 0) {
+                console.warn('⚠️ No stations available in store!');
+                return [];
             }
 
-            // Apply connector type filtering from store filters
-            if (filters.connectorTypes && filters.connectorTypes.trim() !== '') {
-                const filterType = filters.connectorTypes;
+            // Apply text search filter if search query exists
+            if (searchQuery && searchQuery.trim()) {
+                const query = searchQuery.toLowerCase().trim();
+                console.log('🔤 Applying text search for:', query);
+
                 stationList = stationList.filter((station) => {
-                    if (!station.charging) return false;
+                    if (!station) return false;
+
+                    // Search in station name
+                    const matchesName = station.name && station.name.toLowerCase().includes(query);
+
+                    // Search in address
+                    const matchesAddress = station.location && station.location.address &&
+                        station.location.address.toLowerCase().includes(query);
+
+                    // Search in landmarks
+                    const matchesLandmarks = station.location && station.location.landmarks &&
+                        Array.isArray(station.location.landmarks) &&
+                        station.location.landmarks.some(landmark =>
+                            landmark && landmark.toLowerCase().includes(query)
+                        );
+
+                    const isMatch = matchesName || matchesAddress || matchesLandmarks;
+                    if (isMatch) {
+                        console.log('✅ Text match:', station.name);
+                    }
+                    return isMatch;
+                });
+                console.log('🔤 After text search:', stationList.length, 'stations');
+            }
+
+            // Apply connector type filter if selected (independent from text search)
+            // Handle both string and array format for connectorTypes
+            const connectorFilter = Array.isArray(filters.connectorTypes)
+                ? filters.connectorTypes[0]
+                : filters.connectorTypes;
+
+            if (connectorFilter && typeof connectorFilter === 'string' && connectorFilter.trim() !== '') {
+                const filterType = connectorFilter.trim();
+                console.log('🔌 Applying connector filter for:', filterType);
+
+                stationList = stationList.filter((station) => {
+                    if (!station || !station.charging) {
+                        console.log('❌ Station missing charging data:', station?.name);
+                        return false;
+                    }
 
                     // Check connectorTypes array first
-                    if (station.charging.connectorTypes && station.charging.connectorTypes.length > 0) {
-                        return station.charging.connectorTypes.includes(filterType);
+                    if (station.charging.connectorTypes && Array.isArray(station.charging.connectorTypes)) {
+                        const hasConnector = station.charging.connectorTypes.includes(filterType);
+                        if (hasConnector) {
+                            console.log('✅ Connector match in array:', station.name, station.charging.connectorTypes);
+                            return true;
+                        }
                     }
 
                     // Check chargingPosts if connectorTypes not available
-                    if (station.charging.chargingPosts && station.charging.chargingPosts.length > 0) {
-                        return station.charging.chargingPosts.some(post =>
-                            post.slots && post.slots.some(slot =>
-                                slot.connectorType === filterType
-                            )
+                    if (station.charging.chargingPosts && Array.isArray(station.charging.chargingPosts)) {
+                        const hasInPosts = station.charging.chargingPosts.some(post =>
+                            post && post.slots && Array.isArray(post.slots) &&
+                            post.slots.some(slot => slot && slot.connectorType === filterType)
                         );
+                        if (hasInPosts) {
+                            console.log('✅ Connector match in posts:', station.name);
+                            return true;
+                        }
                     }
 
+                    console.log('❌ No connector match:', station.name);
                     return false;
                 });
-                console.log('🔌 After connector filter:', stationList.length);
+                console.log('🔌 After connector filter:', stationList.length, 'stations');
             }
+
+            console.log('✅ FINAL RESULT:', stationList.length, 'stations');
+            if (stationList.length > 0) {
+                console.log('   Stations:', stationList.map(s => s.name).join(', '));
+            }
+
+            // Add stats to each station
+            stationList = stationList.map(station => {
+                if (!station.stats && station.charging?.chargingPosts) {
+                    let totalSlots = 0;
+                    let availableSlots = 0;
+
+                    station.charging.chargingPosts.forEach(post => {
+                        if (post.slots && Array.isArray(post.slots)) {
+                            totalSlots += post.slots.length;
+                            availableSlots += post.slots.filter(slot => slot.status === 'available').length;
+                        }
+                    });
+
+                    return {
+                        ...station,
+                        stats: {
+                            total: totalSlots,
+                            available: availableSlots,
+                            occupied: totalSlots - availableSlots
+                        }
+                    };
+                }
+                return station;
+            });
 
             return stationList;
         } catch (error) {
             console.error("❌ Error filtering stations:", error);
             return [];
         }
-    }, [searchQuery, filters, stations]);
+    }, [searchQuery, filters.connectorTypes, stations]);
 
     useEffect(() => {
+        console.log('🚀 ChargingFlow mounted - initializing data');
         initializeData();
     }, [initializeData]);
+
+    // Debug log when stations change
+    useEffect(() => {
+        console.log('📍 Stations updated in ChargingFlow:', stations?.length, 'stations');
+        if (stations && stations.length > 0) {
+            console.log('   First station:', stations[0]?.name);
+        }
+    }, [stations]);
 
     // Check if we have an active booking to determine flow step
     useEffect(() => {
@@ -237,6 +323,12 @@ const ChargingFlow = () => {
             energyDelivered: 0,
             currentCost: 0
         }));
+
+        // Thông báo bắt đầu sạc
+        notificationService.notifyChargingStarted({
+            stationName: selectedStation?.name || 'Trạm sạc',
+            currentSOC: 25
+        });
 
         console.log('⚡ Charging started for station:', selectedStation?.name);
         console.log('📊 Booking data:', currentBookingData);
@@ -309,18 +401,22 @@ const ChargingFlow = () => {
                         <Card>
                             <CardContent>
                                 <Grid container spacing={2} alignItems="center">
-                                    <Grid item xs={12} md={7}>
+                                    <Grid item xs={12} md={6}>
                                         <TextField
                                             fullWidth
                                             placeholder="Tìm kiếm theo vị trí, tên trạm..."
                                             value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value;
+                                                console.log('⌨️ TextField onChange:', newValue);
+                                                setSearchQuery(newValue);
+                                            }}
                                             InputProps={{
                                                 startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
                                             }}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} md={5}>
+                                    <Grid item xs={12} md={4}>
                                         <FormControl fullWidth>
                                             <InputLabel>Loại cổng sạc</InputLabel>
                                             <Select
@@ -341,91 +437,131 @@ const ChargingFlow = () => {
                                             </Select>
                                         </FormControl>
                                     </Grid>
+                                    <Grid item xs={12} md={2}>
+                                        <Box sx={{
+                                            display: 'flex',
+                                            gap: 1,
+                                            flexDirection: { xs: 'row', md: 'row' }
+                                        }}>
+                                            <Button
+                                                variant={viewMode === 'list' ? 'contained' : 'outlined'}
+                                                onClick={() => setViewMode('list')}
+                                                startIcon={<ViewList />}
+                                                fullWidth
+                                                sx={{ minWidth: 0 }}
+                                            >
+                                                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Danh sách</Box>
+                                            </Button>
+                                            <Button
+                                                variant={viewMode === 'map' ? 'contained' : 'outlined'}
+                                                onClick={() => setViewMode('map')}
+                                                startIcon={<MapIcon />}
+                                                fullWidth
+                                                sx={{ minWidth: 0 }}
+                                            >
+                                                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Bản đồ</Box>
+                                            </Button>
+                                        </Box>
+                                    </Grid>
                                 </Grid>
                             </CardContent>
                         </Card>
                     </Grid>
 
-                    {/* Stations List */}
+                    {/* Stations List or Map */}
                     <Grid item xs={12}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'black', mb: 3, textAlign: 'center' }}>
-                                    Danh sách trạm SkaEV
-                                </Typography>
-                                {loading ? (
-                                    <Box sx={{ textAlign: "center", py: 4 }}>
-                                        <Typography>Đang tải...</Typography>
-                                    </Box>
-                                ) : (
-                                    <List>
-                                        {filteredStations.map((station) => (
-                                            <ListItem
-                                                key={station.id}
-                                                onClick={() => handleStationSelect(station)}
-                                                sx={{
-                                                    borderRadius: 2,
-                                                    mb: 1,
-                                                    border: 1,
-                                                    borderColor: "divider",
-                                                    "&:hover": { backgroundColor: "grey.50" },
-                                                    cursor: "pointer",
-                                                }}
-                                            >
-                                                <ListItemIcon>
-                                                    <Avatar src={getStationImage(station)} sx={{ width: 60, height: 60 }}>
-                                                        <ElectricCar />
-                                                    </Avatar>
-                                                </ListItemIcon>
-                                                <ListItemText
-                                                    primary={
-                                                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                                                            <Typography variant="h6" fontWeight="bold">
-                                                                {station.name}
-                                                            </Typography>
-                                                            <Chip
-                                                                label={`${station.charging.availablePorts}/${station.charging.totalPorts} Slot có sẵn`}
-                                                                size="small"
-                                                                color="success"
-                                                            />
-                                                        </Box>
-                                                    }
-                                                    secondary={
-                                                        <Box>
-                                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                                                                <LocationOn sx={{ fontSize: 16, color: "text.secondary" }} />
-                                                                <Typography variant="body2" color="text.secondary">
-                                                                    {station.location.address}
+                        {viewMode === 'list' ? (
+                            <Card>
+                                <CardContent>
+                                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'black', mb: 3, textAlign: 'center' }}>
+                                        Danh sách trạm SkaEV ({filteredStations.length} trạm)
+                                    </Typography>
+                                    {loading ? (
+                                        <Box sx={{ textAlign: "center", py: 4 }}>
+                                            <Typography>Đang tải...</Typography>
+                                        </Box>
+                                    ) : (
+                                        <List>
+                                            {filteredStations.map((station) => (
+                                                <ListItem
+                                                    key={station.id}
+                                                    onClick={() => handleStationSelect(station)}
+                                                    sx={{
+                                                        borderRadius: 2,
+                                                        mb: 1,
+                                                        border: 1,
+                                                        borderColor: "divider",
+                                                        "&:hover": { backgroundColor: "grey.50" },
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    <ListItemIcon>
+                                                        <Avatar src={getStationImage(station)} sx={{ width: 60, height: 60 }}>
+                                                            <ElectricCar />
+                                                        </Avatar>
+                                                    </ListItemIcon>
+                                                    <ListItemText
+                                                        primary={
+                                                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                                                                <Typography variant="h6" fontWeight="bold">
+                                                                    {station.name}
                                                                 </Typography>
+                                                                <Chip
+                                                                    label={`${station.charging.availablePorts}/${station.charging.totalPorts} cổng đang trống`}
+                                                                    size="small"
+                                                                    color="success"
+                                                                />
                                                             </Box>
-                                                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                                    <Speed sx={{ fontSize: 16, color: "primary.main" }} />
-                                                                    <Typography variant="body2">
-                                                                        Sạc nhanh lên đến {station.charging.maxPower} kW
+                                                        }
+                                                        secondary={
+                                                            <Box component="span" sx={{ display: "block" }}>
+                                                                <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                                                    <LocationOn sx={{ fontSize: 16, color: "text.secondary" }} />
+                                                                    <Typography variant="body2" color="text.secondary" component="span">
+                                                                        {station.location.address}
                                                                     </Typography>
                                                                 </Box>
-                                                                <Typography variant="body2" color="success.main" fontWeight="medium">
-                                                                    Từ {formatCurrency(
-                                                                        station.id === 'station-001' ? 8500 :
-                                                                            station.id === 'station-002' ? 9500 :
-                                                                                station.id === 'station-003' ? 7500 :
-                                                                                    station.charging.pricing.acRate
-                                                                    )}/kWh
-                                                                </Typography>
+                                                                <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                                                    <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                                        <Speed sx={{ fontSize: 16, color: "primary.main" }} />
+                                                                        <Typography variant="body2" component="span">
+                                                                            Sạc nhanh lên đến {station.charging.maxPower} kW
+                                                                        </Typography>
+                                                                    </Box>
+                                                                    <Typography variant="body2" color="success.main" fontWeight="medium" component="span">
+                                                                        Từ {formatCurrency(
+                                                                            station.id === 'station-001' ? 8500 :
+                                                                                station.id === 'station-002' ? 9500 :
+                                                                                    station.id === 'station-003' ? 7500 :
+                                                                                        station.charging.pricing.acRate
+                                                                        )}/kWh
+                                                                    </Typography>
+                                                                </Box>
                                                             </Box>
-                                                        </Box>
-                                                    }
-                                                />
-                                                <Button variant="contained" sx={{ ml: 2 }}>
-                                                    Đặt ngay
-                                                </Button>
-                                            </ListItem>
-                                        ))}
-                                    </List>
-                                )}
-                            </CardContent>
-                        </Card>
+                                                        }
+                                                    />
+                                                    <Button variant="contained" sx={{ ml: 2 }}>
+                                                        Đặt ngay
+                                                    </Button>
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card>
+                                <CardContent>
+                                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'black', mb: 3, textAlign: 'center' }}>
+                                        🗺️ Bản đồ trạm sạc ({filteredStations.length} trạm)
+                                    </Typography>
+                                    <StationMapLeaflet
+                                        stations={filteredStations}
+                                        onStationSelect={handleStationSelect}
+                                    />
+                                </CardContent>
+                            </Card>
+                        )}
                     </Grid>
                 </Grid>
             )}
@@ -514,127 +650,207 @@ const ChargingFlow = () => {
                         </Box>
 
                         {/* Main Dashboard */}
-                        <Box sx={{ flex: 1, p: 4 }}>
-                            <Grid container spacing={4} sx={{ height: '100%' }}>
-                                {/* SOC Display - Large Center */}
-                                <Grid item xs={12} md={6}>
+                        <Box sx={{ flex: 1, p: { xs: 2, md: 4 } }}>
+                            <Grid container spacing={3} sx={{ height: '100%' }}>
+                                {/* Left: Battery Display */}
+                                <Grid item xs={12} md={5}>
                                     <Box sx={{
                                         textAlign: 'center',
-                                        background: 'rgba(255,255,255,0.05)',
-                                        borderRadius: 2,
+                                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
+                                        border: '2px solid rgba(16, 185, 129, 0.3)',
+                                        borderRadius: 3,
                                         p: 4,
                                         height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        justifyContent: 'center'
+                                        justifyContent: 'center',
+                                        position: 'relative',
+                                        overflow: 'hidden'
                                     }}>
-                                        <Typography variant="h3" sx={{
-                                            fontSize: '4rem',
-                                            fontWeight: 'bold',
-                                            color: '#10b981',
-                                            mb: 1
-                                        }}>
-                                            {currentSOC}%
-                                        </Typography>
-                                        <Typography variant="h6" sx={{ opacity: 0.8, mb: 3 }}>
-                                            Mức pin hiện tại
-                                        </Typography>
+                                        {/* Background glow effect */}
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            top: '-50%',
+                                            left: '-50%',
+                                            width: '200%',
+                                            height: '200%',
+                                            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%)',
+                                            animation: 'rotate 10s linear infinite',
+                                            '@keyframes rotate': {
+                                                '0%': { transform: 'rotate(0deg)' },
+                                                '100%': { transform: 'rotate(360deg)' }
+                                            }
+                                        }} />
 
-                                        {/* SOC Progress Ring Effect */}
-                                        <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
-                                            <LinearProgress
-                                                variant="determinate"
-                                                value={currentSOC}
-                                                sx={{
-                                                    height: 12,
-                                                    borderRadius: 6,
-                                                    width: '100%',
-                                                    backgroundColor: 'rgba(255,255,255,0.1)',
-                                                    '& .MuiLinearProgress-bar': {
-                                                        backgroundColor: '#10b981',
-                                                        borderRadius: 6,
-                                                    }
-                                                }}
-                                            />
+                                        <Box sx={{ position: 'relative', zIndex: 1 }}>
+                                            <Typography variant="overline" sx={{ opacity: 0.7, fontSize: '0.875rem', mb: 2 }}>
+                                                Mức pin hiện tại
+                                            </Typography>
+
+                                            <Typography variant="h1" sx={{
+                                                fontSize: { xs: '5rem', md: '6rem' },
+                                                fontWeight: 'bold',
+                                                background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                                                backgroundClip: 'text',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent',
+                                                mb: 3,
+                                                lineHeight: 1
+                                            }}>
+                                                {currentSOC}%
+                                            </Typography>
+
+                                            {/* Progress Bar */}
+                                            <Box sx={{ mb: 3, px: 2 }}>
+                                                <LinearProgress
+                                                    variant="determinate"
+                                                    value={currentSOC}
+                                                    sx={{
+                                                        height: 16,
+                                                        borderRadius: 8,
+                                                        backgroundColor: 'rgba(255,255,255,0.1)',
+                                                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)',
+                                                        '& .MuiLinearProgress-bar': {
+                                                            background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
+                                                            borderRadius: 8,
+                                                            boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)'
+                                                        }
+                                                    }}
+                                                />
+                                            </Box>
+
+                                            {/* Time to full */}
+                                            <Box sx={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 1,
+                                                background: 'rgba(245, 158, 11, 0.15)',
+                                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                                borderRadius: 2,
+                                                px: 3,
+                                                py: 1.5
+                                            }}>
+                                                <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 600 }}>
+                                                    ⏱️ {formatTime(chargingStartTime ? Math.max(0, Math.round((targetSOC - currentSOC) * 1.2)) : sessionData.estimatedDuration || 66)}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                                                    còn lại đầy
+                                                </Typography>
+                                            </Box>
                                         </Box>
-
-                                        <Typography variant="body1" sx={{ opacity: 0.7 }}>
-                                            Mục tiêu: {targetSOC}% • {chargingStartTime ? `Còn ${Math.max(0, targetSOC - currentSOC)}% nữa sạc đầy` : `Tiến trình: 0%`}
-                                        </Typography>
                                     </Box>
                                 </Grid>
 
-                                {/* Stats Cards */}
-                                <Grid item xs={12} md={6}>
+                                {/* Right: Stats Cards */}
+                                <Grid item xs={12} md={7}>
                                     <Grid container spacing={2} sx={{ height: '100%' }}>
                                         {/* Power */}
                                         <Grid item xs={6}>
                                             <Box sx={{
-                                                background: 'rgba(59, 130, 246, 0.1)',
-                                                border: '1px solid rgba(59, 130, 246, 0.3)',
-                                                borderRadius: 2,
-                                                p: 2.5,
+                                                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.05) 100%)',
+                                                border: '2px solid rgba(59, 130, 246, 0.3)',
+                                                borderRadius: 2.5,
+                                                p: 3,
                                                 textAlign: 'center',
-                                                height: 120,
+                                                height: '100%',
+                                                minHeight: 140,
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                justifyContent: 'center'
+                                                justifyContent: 'center',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: '0 8px 24px rgba(59, 130, 246, 0.3)',
+                                                    border: '2px solid rgba(59, 130, 246, 0.5)'
+                                                }
                                             }}>
-                                                <Typography variant="h3" sx={{ color: '#3b82f6', fontWeight: 'bold', mb: 0.5 }}>
+                                                <Typography variant="h2" sx={{
+                                                    color: '#3b82f6',
+                                                    fontWeight: 'bold',
+                                                    mb: 1,
+                                                    textShadow: '0 0 20px rgba(59, 130, 246, 0.3)'
+                                                }}>
                                                     {chargingStartTime ? (currentSOC < 50 ? '150' : currentSOC < 80 ? '75' : '22') : '0'}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
+                                                <Typography variant="h6" sx={{ opacity: 0.9, mb: 1, fontWeight: 600 }}>
                                                     kW
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                                                    Công suất hiện tại
+                                                <Typography variant="caption" sx={{ opacity: 0.7, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                    Công suất sạc
                                                 </Typography>
                                             </Box>
                                         </Grid>
 
-                                        {/* Energy */}
+                                        {/* Temperature */}
                                         <Grid item xs={6}>
                                             <Box sx={{
-                                                background: 'rgba(16, 185, 129, 0.1)',
-                                                border: '1px solid rgba(16, 185, 129, 0.3)',
-                                                borderRadius: 2,
-                                                p: 2.5,
+                                                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.05) 100%)',
+                                                border: '2px solid rgba(239, 68, 68, 0.3)',
+                                                borderRadius: 2.5,
+                                                p: 3,
                                                 textAlign: 'center',
-                                                height: 120,
+                                                height: '100%',
+                                                minHeight: 140,
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                justifyContent: 'center'
+                                                justifyContent: 'center',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: '0 8px 24px rgba(239, 68, 68, 0.3)',
+                                                    border: '2px solid rgba(239, 68, 68, 0.5)'
+                                                }
                                             }}>
-                                                <Typography variant="h3" sx={{ color: '#10b981', fontWeight: 'bold', mb: 0.5 }}>
-                                                    {sessionData.energyDelivered.toFixed(1)}
+                                                <Typography variant="h2" sx={{
+                                                    color: '#ef4444',
+                                                    fontWeight: 'bold',
+                                                    mb: 1,
+                                                    textShadow: '0 0 20px rgba(239, 68, 68, 0.3)'
+                                                }}>
+                                                    {chargingStartTime ? (currentSOC < 50 ? '32' : currentSOC < 80 ? '38' : '42') : '25'}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
-                                                    kWh
+                                                <Typography variant="h6" sx={{ opacity: 0.9, mb: 1, fontWeight: 600 }}>
+                                                    °C
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                                                    Đã sạc
+                                                <Typography variant="caption" sx={{ opacity: 0.7, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                    Nhiệt độ
                                                 </Typography>
                                             </Box>
                                         </Grid>
 
-                                        {/* Time */}
+                                        {/* Range */}
                                         <Grid item xs={6}>
                                             <Box sx={{
-                                                background: 'rgba(245, 158, 11, 0.1)',
-                                                border: '1px solid rgba(245, 158, 11, 0.3)',
-                                                borderRadius: 2,
-                                                p: 2.5,
+                                                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.05) 100%)',
+                                                border: '2px solid rgba(34, 197, 94, 0.3)',
+                                                borderRadius: 2.5,
+                                                p: 3,
                                                 textAlign: 'center',
-                                                height: 120,
+                                                height: '100%',
+                                                minHeight: 140,
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                justifyContent: 'center'
+                                                justifyContent: 'center',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: '0 8px 24px rgba(34, 197, 94, 0.3)',
+                                                    border: '2px solid rgba(34, 197, 94, 0.5)'
+                                                }
                                             }}>
-                                                <Typography variant="h4" sx={{ color: '#f59e0b', fontWeight: 'bold', mb: 0.5, fontSize: '1.5rem' }}>
-                                                    {formatTime(chargingStartTime ? Math.max(0, Math.round((targetSOC - currentSOC) * 1.2)) : sessionData.estimatedDuration || 66)}
+                                                <Typography variant="h2" sx={{
+                                                    color: '#22c55e',
+                                                    fontWeight: 'bold',
+                                                    mb: 1,
+                                                    textShadow: '0 0 20px rgba(34, 197, 94, 0.3)'
+                                                }}>
+                                                    {Math.round(currentSOC * 4.5)}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                                                    Thời gian sạc còn lại
+                                                <Typography variant="h6" sx={{ opacity: 0.9, mb: 1, fontWeight: 600 }}>
+                                                    km
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ opacity: 0.7, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                    Quãng đường dự kiến
                                                 </Typography>
                                             </Box>
                                         </Grid>
@@ -642,23 +858,35 @@ const ChargingFlow = () => {
                                         {/* Cost */}
                                         <Grid item xs={6}>
                                             <Box sx={{
-                                                background: 'rgba(139, 92, 246, 0.1)',
-                                                border: '1px solid rgba(139, 92, 246, 0.3)',
-                                                borderRadius: 2,
-                                                p: 2.5,
+                                                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.05) 100%)',
+                                                border: '2px solid rgba(139, 92, 246, 0.3)',
+                                                borderRadius: 2.5,
+                                                p: 3,
                                                 textAlign: 'center',
-                                                height: 120,
+                                                height: '100%',
+                                                minHeight: 140,
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                justifyContent: 'center'
+                                                justifyContent: 'center',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: '0 8px 24px rgba(139, 92, 246, 0.3)',
+                                                    border: '2px solid rgba(139, 92, 246, 0.5)'
+                                                }
                                             }}>
-                                                <Typography variant="h3" sx={{ color: '#8b5cf6', fontWeight: 'bold', mb: 0.5 }}>
+                                                <Typography variant="h2" sx={{
+                                                    color: '#8b5cf6',
+                                                    fontWeight: 'bold',
+                                                    mb: 1,
+                                                    textShadow: '0 0 20px rgba(139, 92, 246, 0.3)'
+                                                }}>
                                                     {Math.round(sessionData.currentCost / 1000)}K
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
+                                                <Typography variant="h6" sx={{ opacity: 0.9, mb: 1, fontWeight: 600 }}>
                                                     VND
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ opacity: 0.6 }}>
+                                                <Typography variant="caption" sx={{ opacity: 0.7, textTransform: 'uppercase', letterSpacing: 1 }}>
                                                     Chi phí hiện tại
                                                 </Typography>
                                             </Box>
@@ -820,6 +1048,13 @@ const ChargingFlow = () => {
                                         bookingId: currentBookingData?.id
                                     };
                                     setCompletedSession(sessionEndData);
+
+                                    // Thông báo hoàn thành sạc
+                                    notificationService.notifyChargingCompleted({
+                                        energyDelivered: sessionData.energyDelivered,
+                                        finalSOC: currentSOC
+                                    });
+
                                     setFlowStep(5); // Move to payment step
                                     console.log('🏁 Charging session completed:', sessionEndData);
                                 }}
@@ -907,36 +1142,80 @@ const ChargingFlow = () => {
                                         {/* Payment Methods */}
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                             <Button
-                                                variant="outlined"
+                                                variant={selectedPaymentMethod === 'credit-card' ? 'contained' : 'outlined'}
                                                 fullWidth
-                                                sx={{ justifyContent: 'flex-start', p: 2 }}
+                                                onClick={() => setSelectedPaymentMethod('credit-card')}
+                                                sx={{
+                                                    justifyContent: 'flex-start',
+                                                    p: 2,
+                                                    borderWidth: 2,
+                                                    '&:hover': { borderWidth: 2 }
+                                                }}
                                             >
                                                 💳 Thẻ tín dụng **** 4567
                                             </Button>
                                             <Button
-                                                variant="outlined"
+                                                variant={selectedPaymentMethod === 'momo' ? 'contained' : 'outlined'}
                                                 fullWidth
-                                                sx={{ justifyContent: 'flex-start', p: 2 }}
+                                                onClick={() => setSelectedPaymentMethod('momo')}
+                                                sx={{
+                                                    justifyContent: 'flex-start',
+                                                    p: 2,
+                                                    borderWidth: 2,
+                                                    '&:hover': { borderWidth: 2 }
+                                                }}
                                             >
                                                 📱 MoMo Wallet
                                             </Button>
                                             <Button
-                                                variant="outlined"
+                                                variant={selectedPaymentMethod === 'bank-transfer' ? 'contained' : 'outlined'}
                                                 fullWidth
-                                                sx={{ justifyContent: 'flex-start', p: 2 }}
+                                                onClick={() => setSelectedPaymentMethod('bank-transfer')}
+                                                sx={{
+                                                    justifyContent: 'flex-start',
+                                                    p: 2,
+                                                    borderWidth: 2,
+                                                    '&:hover': { borderWidth: 2 }
+                                                }}
                                             >
                                                 🏦 Chuyển khoản ngân hàng
                                             </Button>
                                         </Box>
 
+                                        {!selectedPaymentMethod && (
+                                            <Alert severity="info" sx={{ mt: 2 }}>
+                                                Vui lòng chọn phương thức thanh toán
+                                            </Alert>
+                                        )}
+
                                         <Button
                                             variant="contained"
                                             fullWidth
                                             size="large"
-                                            sx={{ mt: 3 }}
-                                            onClick={() => setFlowStep(6)}
+                                            disabled={!selectedPaymentMethod}
+                                            sx={{
+                                                mt: 3,
+                                                opacity: !selectedPaymentMethod ? 0.5 : 1
+                                            }}
+                                            onClick={() => {
+                                                if (selectedPaymentMethod) {
+                                                    // Trigger payment success notification
+                                                    const totalAmount = calculateTotalCost();
+                                                    const invoiceNumber = `INV-${Date.now()}`;
+
+                                                    notificationService.notifyPaymentSuccess({
+                                                        amount: totalAmount,
+                                                        invoiceNumber: invoiceNumber
+                                                    });
+
+                                                    setFlowStep(6);
+                                                }
+                                            }}
                                         >
-                                            Thanh toán {formatCurrency(calculateTotalCost())}
+                                            {selectedPaymentMethod
+                                                ? `Thanh toán ${formatCurrency(calculateTotalCost())}`
+                                                : 'Chọn phương thức thanh toán'
+                                            }
                                         </Button>
                                     </CardContent>
                                 </Card>
@@ -1140,10 +1419,30 @@ const ChargingFlow = () => {
                                         }
                                     }}
                                     onClick={() => {
+                                        // Reset all flow state including booking and session
+                                        resetFlowState();
                                         setFlowStep(0);
                                         setSelectedStation(null);
                                         setScanResult("");
                                         setCompletedSession(null);
+                                        setCurrentBookingData(null);
+                                        setChargingStartTime(null);
+                                        setSelectedPaymentMethod(null);
+                                        // Reset session data to initial state
+                                        setSessionData({
+                                            energyDelivered: 0,
+                                            startSOC: 25,
+                                            currentSOC: 25,
+                                            targetSOC: 80,
+                                            startTime: null,
+                                            estimatedDuration: 0,
+                                            currentCost: 0,
+                                            chargingRate: 8500,
+                                            stationId: 'ST-001',
+                                            stationName: 'Trạm sạc FPT Hà Nội',
+                                            connectorType: 'CCS2',
+                                            maxPower: 150
+                                        });
                                     }}
                                 >
                                     Sạc phiên mới

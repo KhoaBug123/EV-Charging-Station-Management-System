@@ -15,6 +15,7 @@ import { AccountCircle, Logout, Dashboard } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../../store/authStore";
 import { getText } from "../../../utils/vietnameseTexts";
+import NotificationCenter from "../NotificationCenter";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -115,6 +116,9 @@ const Header = () => {
             >
               {user.role}
             </Box>
+
+            {/* Notification Center */}
+            <NotificationCenter />
 
             {/* User Menu */}
             <Box sx={{ display: "flex", alignItems: "center" }}>

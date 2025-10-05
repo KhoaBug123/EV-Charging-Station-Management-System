@@ -217,34 +217,7 @@ const AnalyticsPage = () => {
                 </Box>
             </Paper>
 
-            {/* Additional Info */}
-            <Paper sx={{ mt: 3, p: 3, borderRadius: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    💡 Gợi ý tối ưu hóa
-                </Typography>
-                <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                        <Box sx={{ p: 2, borderRadius: 2, backgroundColor: 'success.50', border: '1px solid', borderColor: 'success.200' }}>
-                            <Typography variant="subtitle2" color="success.main" gutterBottom>
-                                🌿 Tiết kiệm năng lượng
-                            </Typography>
-                            <Typography variant="body2">
-                                Sạc vào khung giờ thấp điểm (22:00 - 06:00) để tiết kiệm đến 30% chi phí
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                        <Box sx={{ p: 2, borderRadius: 2, backgroundColor: 'info.50', border: '1px solid', borderColor: 'info.200' }}>
-                            <Typography variant="subtitle2" color="info.main" gutterBottom>
-                                ⚡ Tối ưu sạc
-                            </Typography>
-                            <Typography variant="body2">
-                                Sạc đến 80% cho việc sử dụng hàng ngày, chỉ sạc 100% khi đi xa
-                            </Typography>
-                        </Box>
-                    </Grid>
-                </Grid>
-            </Paper>
+
         </Container>
     );
 };

@@ -40,11 +40,7 @@ const ChargingDateTimePicker = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState(initialDateTime?.date || null);
   const [selectedTime, setSelectedTime] = useState(initialDateTime?.time || null);
-<<<<<<< HEAD
   const [schedulingType] = useState('scheduled'); // Always use scheduled mode
-=======
-  const [schedulingType, setSchedulingType] = useState('scheduled'); // Always scheduled
->>>>>>> 685478a137d6f65c6ca06443483b4b69e6ae7980
   const [errors, setErrors] = useState({});
   const [availableSlots, setAvailableSlots] = useState([]);
 
@@ -189,7 +185,6 @@ const ChargingDateTimePicker = ({
             Lên lịch sạc
           </Typography>
 
-<<<<<<< HEAD
           {/* Info message for scheduling */}
           <Box sx={{ mb: 3 }}>
             <Alert severity="info" sx={{ mb: 2 }}>
@@ -198,135 +193,132 @@ const ChargingDateTimePicker = ({
               </Typography>
             </Alert>
           </Box>
-
-=======
->>>>>>> 685478a137d6f65c6ca06443483b4b69e6ae7980
           {/* Scheduled DateTime Selection */}
           <Box>
-              {/* Quick Date Selection */}
-              <Typography variant="subtitle2" gutterBottom>
-                Chọn nhanh:
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                <Chip
-                  label="Hôm nay"
-                  onClick={() => handleQuickDateSelect(0)}
-                  variant={selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'filled' : 'outlined'}
-                  color="primary"
+            {/* Quick Date Selection */}
+            <Typography variant="subtitle2" gutterBottom>
+              Chọn nhanh:
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+              <Chip
+                label="Hôm nay"
+                onClick={() => handleQuickDateSelect(0)}
+                variant={selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'filled' : 'outlined'}
+                color="primary"
+                disabled={disabled}
+              />
+              <Chip
+                label="Ngày mai"
+                onClick={() => handleQuickDateSelect(1)}
+                variant={selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'filled' : 'outlined'}
+                color="primary"
+                disabled={disabled}
+              />
+              <Chip
+                label="Thứ 2 tới"
+                onClick={() => {
+                  const today = new Date();
+                  const nextMonday = new Date(today);
+                  nextMonday.setDate(today.getDate() + (1 + 7 - today.getDay()) % 7 || 7);
+                  setSelectedDate(nextMonday);
+                }}
+                variant="outlined"
+                color="primary"
+                disabled={disabled}
+              />
+            </Box>
+
+            {/* Date Picker */}
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={12} sm={6}>
+                <DatePicker
+                  label="Chọn ngày"
+                  value={selectedDate}
+                  onChange={(newDate) => setSelectedDate(newDate)}
                   disabled={disabled}
-                />
-                <Chip
-                  label="Ngày mai"
-                  onClick={() => handleQuickDateSelect(1)}
-                  variant={selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd') ? 'filled' : 'outlined'}
-                  color="primary"
-                  disabled={disabled}
-                />
-                <Chip
-                  label="Thứ 2 tới"
-                  onClick={() => {
-                    const today = new Date();
-                    const nextMonday = new Date(today);
-                    nextMonday.setDate(today.getDate() + (1 + 7 - today.getDay()) % 7 || 7);
-                    setSelectedDate(nextMonday);
+                  minDate={new Date()}
+                  maxDate={addDays(new Date(), 7)}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.date,
+                      helperText: getDateHelperText(),
+                      InputProps: {
+                        startAdornment: <CalendarToday sx={{ mr: 1, color: 'action.active' }} />
+                      }
+                    }
                   }}
-                  variant="outlined"
-                  color="primary"
-                  disabled={disabled}
                 />
-              </Box>
-
-              {/* Date Picker */}
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12} sm={6}>
-                  <DatePicker
-                    label="Chọn ngày"
-                    value={selectedDate}
-                    onChange={(newDate) => setSelectedDate(newDate)}
-                    disabled={disabled}
-                    minDate={new Date()}
-                    maxDate={addDays(new Date(), 7)}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: !!errors.date,
-                        helperText: getDateHelperText(),
-                        InputProps: {
-                          startAdornment: <CalendarToday sx={{ mr: 1, color: 'action.active' }} />
-                        }
-                      }
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TimePicker
-                    label="Chọn giờ"
-                    value={selectedTime}
-                    onChange={(newTime) => setSelectedTime(newTime)}
-                    disabled={disabled || !selectedDate}
-                    ampm={false}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: !!errors.time,
-                        helperText: getTimeHelperText(),
-                        InputProps: {
-                          startAdornment: <AccessTime sx={{ mr: 1, color: 'action.active' }} />
-                        }
-                      }
-                    }}
-                  />
-                </Grid>
               </Grid>
 
-              {/* Quick Time Selection */}
-              {selectedDate && (
-                <Box>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Khung giờ phổ biến:
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                    {['07:00', '09:00', '12:00', '15:00', '18:00', '20:00'].map((time) => (
-                      <Chip
-                        key={time}
-                        label={time}
-                        onClick={() => handleQuickTimeSelect(time)}
-                        variant={selectedTime && format(selectedTime, 'HH:mm') === time ? 'filled' : 'outlined'}
-                        color={availableSlots.includes(time) ? 'primary' : 'default'}
-                        disabled={disabled || !availableSlots.includes(time)}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-
-              {/* Station Operating Hours Info */}
-              {station?.operatingHours && (
-                <Alert
-                  severity="info"
-                  sx={{ mb: 2 }}
-                  icon={<AccessTime />}
-                >
-                  <Typography variant="body2">
-                    <strong>Giờ hoạt động của trạm:</strong>{' '}
-                    {station.operatingHours === '24/7'
-                      ? '24/7'
-                      : `${station.operatingHours.open} - ${station.operatingHours.close}`
+              <Grid item xs={12} sm={6}>
+                <TimePicker
+                  label="Chọn giờ"
+                  value={selectedTime}
+                  onChange={(newTime) => setSelectedTime(newTime)}
+                  disabled={disabled || !selectedDate}
+                  ampm={false}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.time,
+                      helperText: getTimeHelperText(),
+                      InputProps: {
+                        startAdornment: <AccessTime sx={{ mr: 1, color: 'action.active' }} />
+                      }
                     }
-                  </Typography>
-                </Alert>
-              )}
+                  }}
+                />
+              </Grid>
+            </Grid>
 
-              {/* Validation Messages */}
-              {Object.keys(errors).length > 0 && (
-                <Alert severity="warning" sx={{ mb: 2 }} icon={<Warning />}>
-                  <Typography variant="body2">
-                    Vui lòng kiểm tra lại thông tin đã chọn
-                  </Typography>
-                </Alert>
-              )}
-            </Box>
+            {/* Quick Time Selection */}
+            {selectedDate && (
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Khung giờ phổ biến:
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                  {['07:00', '09:00', '12:00', '15:00', '18:00', '20:00'].map((time) => (
+                    <Chip
+                      key={time}
+                      label={time}
+                      onClick={() => handleQuickTimeSelect(time)}
+                      variant={selectedTime && format(selectedTime, 'HH:mm') === time ? 'filled' : 'outlined'}
+                      color={availableSlots.includes(time) ? 'primary' : 'default'}
+                      disabled={disabled || !availableSlots.includes(time)}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* Station Operating Hours Info */}
+            {station?.operatingHours && (
+              <Alert
+                severity="info"
+                sx={{ mb: 2 }}
+                icon={<AccessTime />}
+              >
+                <Typography variant="body2">
+                  <strong>Giờ hoạt động của trạm:</strong>{' '}
+                  {station.operatingHours === '24/7'
+                    ? '24/7'
+                    : `${station.operatingHours.open} - ${station.operatingHours.close}`
+                  }
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Validation Messages */}
+            {Object.keys(errors).length > 0 && (
+              <Alert severity="warning" sx={{ mb: 2 }} icon={<Warning />}>
+                <Typography variant="body2">
+                  Vui lòng kiểm tra lại thông tin đã chọn
+                </Typography>
+              </Alert>
+            )}
+          </Box>
 
           {/* Summary */}
           {selectedDate && selectedTime && Object.keys(errors).length === 0 && (
@@ -345,11 +337,6 @@ const ChargingDateTimePicker = ({
               </Typography>
             </Paper>
           )}
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 685478a137d6f65c6ca06443483b4b69e6ae7980
         </CardContent>
       </Card>
     </LocalizationProvider>

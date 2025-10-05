@@ -17,7 +17,8 @@ import {
   Container,
   Tabs,
   Tab,
-  Stack
+  Stack,
+  Alert
 } from "@mui/material";
 import {
   Person,
@@ -69,6 +70,13 @@ const CustomerProfile = () => {
     phone: user?.profile?.phone || "+84 901 234 567",
     address: "123 Nguyễn Huệ, Quận 1, TP.HCM"
   });
+  const [profileErrors, setProfileErrors] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (bookingHistory.length === 0) {
@@ -107,7 +115,50 @@ const CustomerProfile = () => {
     setTabValue(newValue);
   };
 
+  const validateProfile = () => {
+    const errors = {
+      name: '',
+      email: '',
+      phone: '',
+      address: ''
+    };
+    let isValid = true;
+
+    // Validate name
+    if (!profileData.name || profileData.name.trim().length < 3) {
+      errors.name = 'Họ tên phải có ít nhất 3 ký tự';
+      isValid = false;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!profileData.email || !emailRegex.test(profileData.email)) {
+      errors.email = 'Email không hợp lệ';
+      isValid = false;
+    }
+
+    // Validate phone (Vietnamese format)
+    const phoneRegex = /^(\+84|0)(3|5|7|8|9)[0-9]{8}$/;
+    if (!profileData.phone || !phoneRegex.test(profileData.phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ (VD: 0901234567)';
+      isValid = false;
+    }
+
+    // Validate address
+    if (!profileData.address || profileData.address.trim().length < 10) {
+      errors.address = 'Địa chỉ phải có ít nhất 10 ký tự';
+      isValid = false;
+    }
+
+    setProfileErrors(errors);
+    return isValid;
+  };
+
   const handleSaveProfile = () => {
+    if (!validateProfile()) {
+      return;
+    }
+
     // Parse name into firstName and lastName
     const nameParts = profileData.name.split(' ');
     const firstName = nameParts[0] || '';
@@ -122,6 +173,27 @@ const CustomerProfile = () => {
     };
 
     updateProfile(updatedProfile);
+    setEditMode(false);
+    setSaveSuccess(true);
+
+    // Hide success message after 3 seconds
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
+
+  const handleCancelEdit = () => {
+    // Reset to original data
+    setProfileData({
+      name: user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : "Nguyễn Văn An",
+      email: user?.email || "customer@skaev.com",
+      phone: user?.profile?.phone || "+84 901 234 567",
+      address: "123 Nguyễn Huệ, Quận 1, TP.HCM"
+    });
+    setProfileErrors({
+      name: '',
+      email: '',
+      phone: '',
+      address: ''
+    });
     setEditMode(false);
   };
 
@@ -205,23 +277,66 @@ const CustomerProfile = () => {
               <CardContent>
                 <Typography variant="h6" gutterBottom>Thông tin chi tiết</Typography>
                 <Divider sx={{ mb: 3 }} />
+
+                {saveSuccess && (
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    ✅ Cập nhật thông tin thành công!
+                  </Alert>
+                )}
+
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="Họ và tên" value={profileData.name} disabled={!editMode} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} InputProps={{ startAdornment: <Person sx={{ mr: 1, color: "text.secondary" }} /> }} />
+                    <TextField
+                      fullWidth
+                      label="Họ và tên"
+                      value={profileData.name}
+                      disabled={!editMode}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      error={editMode && !!profileErrors.name}
+                      helperText={editMode ? profileErrors.name : ''}
+                      InputProps={{ startAdornment: <Person sx={{ mr: 1, color: "text.secondary" }} /> }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="Email" value={profileData.email} disabled={!editMode} onChange={(e) => setProfileData({ ...profileData, email: e.target.value })} InputProps={{ startAdornment: <Email sx={{ mr: 1, color: "text.secondary" }} /> }} />
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      value={profileData.email}
+                      disabled={!editMode}
+                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                      error={editMode && !!profileErrors.email}
+                      helperText={editMode ? profileErrors.email : ''}
+                      InputProps={{ startAdornment: <Email sx={{ mr: 1, color: "text.secondary" }} /> }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="Số điện thoại" value={profileData.phone} disabled={!editMode} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} InputProps={{ startAdornment: <Phone sx={{ mr: 1, color: "text.secondary" }} /> }} />
+                    <TextField
+                      fullWidth
+                      label="Số điện thoại"
+                      value={profileData.phone}
+                      disabled={!editMode}
+                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                      error={editMode && !!profileErrors.phone}
+                      helperText={editMode ? (profileErrors.phone || 'VD: 0901234567 hoặc +84901234567') : ''}
+                      InputProps={{ startAdornment: <Phone sx={{ mr: 1, color: "text.secondary" }} /> }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="Địa chỉ" value={profileData.address} disabled={!editMode} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} InputProps={{ startAdornment: <LocationOn sx={{ mr: 1, color: "text.secondary" }} /> }} />
+                    <TextField
+                      fullWidth
+                      label="Địa chỉ"
+                      value={profileData.address}
+                      disabled={!editMode}
+                      onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
+                      error={editMode && !!profileErrors.address}
+                      helperText={editMode ? profileErrors.address : ''}
+                      InputProps={{ startAdornment: <LocationOn sx={{ mr: 1, color: "text.secondary" }} /> }}
+                    />
                   </Grid>
                 </Grid>
                 {editMode && (
                   <Box sx={{ mt: 3, display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                    <Button variant="outlined" onClick={() => setEditMode(false)}>Hủy</Button>
+                    <Button variant="outlined" onClick={handleCancelEdit}>Hủy</Button>
                     <Button variant="contained" onClick={handleSaveProfile}>Lưu thay đổi</Button>
                   </Box>
                 )}

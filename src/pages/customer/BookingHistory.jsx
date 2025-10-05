@@ -34,21 +34,13 @@ import {
 } from "@mui/icons-material";
 import { formatCurrency, formatDate } from "../../utils/helpers";
 import { mockData } from "../../data/mockData";
-import useBookingStore from "../../store/bookingStore";
+import { useMasterDataSync } from "../../hooks/useMasterDataSync";
 import { getText } from "../../utils/vietnameseTexts";
 
 const BookingHistory = () => {
-  const { bookingHistory, initializeMockData } =
-    useBookingStore();
+  const { bookingHistory, isDataReady } = useMasterDataSync();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-
-  // Initialize mock data if no bookings exist
-  React.useEffect(() => {
-    if (bookingHistory.length === 0) {
-      initializeMockData();
-    }
-  }, [bookingHistory.length, initializeMockData]);
 
   // Use bookings from store
   const userBookings = bookingHistory;

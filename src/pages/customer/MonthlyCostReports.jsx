@@ -35,18 +35,30 @@ import {
     Assessment,
 } from "@mui/icons-material";
 import { formatCurrency } from "../../utils/helpers";
+import useBookingStore from "../../store/bookingStore";
 
 const MonthlyCostReports = () => {
     const [selectedMonth, setSelectedMonth] = useState("2024-09");
+    const { bookingHistory, getBookingStats, initializeMockData } = useBookingStore();
 
-    // Mock monthly data
+    // Initialize data if needed
+    React.useEffect(() => {
+        if (bookingHistory.length === 0) {
+            initializeMockData();
+        }
+    }, [bookingHistory.length, initializeMockData]);
+
+    // Calculate monthly data from booking store
+    const bookingStats = getBookingStats();
+    const completedBookings = bookingHistory.filter(b => b.status === 'completed');
+
     const monthlyReports = {
         "2024-09": {
-            totalCost: 2450000,
-            totalSessions: 15,
-            totalEnergy: 450,
-            avgCostPerKwh: 5444,
-            avgSessionCost: 163333,
+            totalCost: bookingStats.totalAmount || 2450000,
+            totalSessions: bookingStats.total || 15,
+            totalEnergy: bookingStats.totalEnergyCharged || 450,
+            avgCostPerKwh: bookingStats.totalEnergyCharged > 0 ? Math.round(bookingStats.totalAmount / bookingStats.totalEnergyCharged) : 5444,
+            avgSessionCost: bookingStats.total > 0 ? Math.round(bookingStats.totalAmount / bookingStats.total) : 163333,
             comparedToLastMonth: {
                 costChange: 12.5,
                 sessionsChange: -6.7,

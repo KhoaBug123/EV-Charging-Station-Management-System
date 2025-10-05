@@ -167,8 +167,8 @@ export const mockStations = [
           type: "AC",
           power: 7, // kW
           voltage: 230, // V
-          totalSlots: 3,
-          availableSlots: 2,
+          totalSlots: 2,
+          availableSlots: 1,
           slots: [
             {
               id: "A1",
@@ -182,12 +182,6 @@ export const mockStations = [
               status: "occupied",
               currentBooking: "booking-123",
               lastUsed: "2024-12-26T08:15:00Z"
-            },
-            {
-              id: "A3",
-              connectorType: "Type 2",
-              status: "available",
-              lastUsed: "2024-12-25T16:45:00Z"
             }
           ]
         },
@@ -239,8 +233,8 @@ export const mockStations = [
         }
       ],
       // Thống kê tổng quan
-      totalPorts: 7, // Tổng tất cả slots
-      availablePorts: 5, // Tổng slots available
+      totalPorts: 6, // Tổng tất cả slots
+      availablePorts: 4, // Tổng slots available
       maxPower: 150, // Công suất cao nhất
       connectorTypes: ["Type 2", "CCS2", "CHAdeMO"], // Tất cả loại connector
       pricing: {
@@ -288,8 +282,8 @@ export const mockStations = [
           type: "DC",
           power: 250, // kW
           voltage: 800, // V
-          totalSlots: 3,
-          availableSlots: 3,
+          totalSlots: 2,
+          availableSlots: 2,
           slots: [
             {
               id: "D1",
@@ -302,12 +296,6 @@ export const mockStations = [
               connectorType: "CCS2",
               status: "available",
               lastUsed: "2024-12-25T19:15:00Z"
-            },
-            {
-              id: "D3",
-              connectorType: "CHAdeMO",
-              status: "available",
-              lastUsed: "2024-12-25T17:45:00Z"
             }
           ]
         },
@@ -317,8 +305,8 @@ export const mockStations = [
           type: "DC",
           power: 120, // kW
           voltage: 400, // V
-          totalSlots: 3,
-          availableSlots: 3,
+          totalSlots: 2,
+          availableSlots: 2,
           slots: [
             {
               id: "E1",
@@ -328,22 +316,16 @@ export const mockStations = [
             },
             {
               id: "E2",
-              connectorType: "CCS2",
-              status: "available",
-              lastUsed: "2024-12-25T22:30:00Z"
-            },
-            {
-              id: "E3",
               connectorType: "CHAdeMO",
               status: "available",
-              lastUsed: "2024-12-25T16:20:00Z"
+              lastUsed: "2024-12-25T22:30:00Z"
             }
           ]
         }
       ],
       // Thống kê tổng quan
-      totalPorts: 6,
-      availablePorts: 6,
+      totalPorts: 4,
+      availablePorts: 4,
       maxPower: 250,
       connectorTypes: ["CCS2", "CHAdeMO"],
       pricing: {
