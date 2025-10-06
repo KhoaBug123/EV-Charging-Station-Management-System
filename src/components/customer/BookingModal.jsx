@@ -582,16 +582,6 @@ const BookingModal = ({ open, onClose, station, onSuccess }) => {
                     trước 15 phút.
                   </Typography>
                 </Alert>
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={agreeTerms}
-                      onChange={(e) => setAgreeTerms(e.target.checked)}
-                    />
-                  }
-                  label="Tôi đồng ý với điều khoản sử dụng và chính sách thanh toán"
-                />
               </>
             )}
           </Box>

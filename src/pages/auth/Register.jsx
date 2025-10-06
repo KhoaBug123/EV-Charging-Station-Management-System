@@ -35,7 +35,8 @@ import PhoneOTPModal from "../../components/auth/PhoneOTPModal";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { loading, error, clearError, register, socialRegister } = useAuthStore();
+  const { loading, error, clearError, register, socialRegister } =
+    useAuthStore();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -140,7 +141,11 @@ const RegisterPage = () => {
       if (result.success) {
         if (result.requiresVerification) {
           // Redirect to email verification page
-          navigate(`/verify-email?email=${encodeURIComponent(formData.email)}&mode=auto`);
+          navigate(
+            `/verify-email?email=${encodeURIComponent(
+              formData.email
+            )}&mode=auto`
+          );
         } else {
           // Direct login
           navigate("/customer/dashboard");
@@ -157,7 +162,7 @@ const RegisterPage = () => {
     try {
       const googleResult = await googleAuth.signUp();
       if (googleResult.success) {
-        const authResult = await socialRegister('google', googleResult.user);
+        const authResult = await socialRegister("google", googleResult.user);
         if (authResult.success) {
           console.log("Google registration successful:", authResult.user);
           navigate("/customer/dashboard");
@@ -178,7 +183,7 @@ const RegisterPage = () => {
 
   const handlePhoneOTPSuccess = async (phoneData) => {
     try {
-      const authResult = await socialRegister('phone', {
+      const authResult = await socialRegister("phone", {
         phone: phoneData.phoneNumber,
         name: phoneData.name || "Người dùng",
         email: phoneData.email || `${phoneData.phoneNumber}@skaev.temp`,
@@ -297,23 +302,6 @@ const RegisterPage = () => {
               sx={{ mb: 2 }}
             />
 
-            {/* Role Selection */}
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>{getText("users.role")}</InputLabel>
-              <Select
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                label={getText("users.role")}
-              >
-                {roleOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
             {/* Password */}
             <TextField
               name="password"
@@ -369,29 +357,6 @@ const RegisterPage = () => {
             />
 
             {/* Terms Agreement */}
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="agreeToTerms"
-                  checked={formData.agreeToTerms}
-                  onChange={handleInputChange}
-                  color="primary"
-                />
-              }
-              label={
-                <Typography variant="body2">
-                  Tôi đồng ý với{" "}
-                  <Link href="#" color="primary">
-                    điều khoản sử dụng
-                  </Link>{" "}
-                  và{" "}
-                  <Link href="#" color="primary">
-                    chính sách bảo mật
-                  </Link>
-                </Typography>
-              }
-              sx={{ mb: 2 }}
-            />
             {formErrors.agreeToTerms && (
               <Typography
                 variant="caption"
@@ -437,33 +402,44 @@ const RegisterPage = () => {
             {/* Social Registration */}
             <Divider sx={{ my: 3 }}>
               <Typography variant="body2" color="text.secondary">
-                Hoặc đăng ký nhanh với
+                Hoặc đăng ký với
               </Typography>
             </Divider>
 
             <Typography
               variant="caption"
               color="primary.main"
-              sx={{ display: 'block', textAlign: 'center', mb: 2, fontWeight: 'medium' }}
-            >
-              ✨ Đăng ký trong 30 giây - Không cần điền form dài!
-            </Typography>
-
-
+              sx={{
+                display: "block",
+                textAlign: "center",
+                mb: 2,
+                fontWeight: "medium",
+              }}
+            ></Typography>
 
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={6}>
                 <Button
                   fullWidth
                   variant="outlined"
-                  startIcon={socialLoading.google ? <CircularProgress size={16} /> : <Google />}
+                  startIcon={
+                    socialLoading.google ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <Google />
+                    )
+                  }
                   onClick={handleGoogleRegister}
                   disabled={socialLoading.google || loading}
                   sx={{
                     textTransform: "none",
-                    borderColor: '#db4437',
-                    color: '#db4437',
-                    '&:hover': { borderColor: '#db4437', bgcolor: '#db4437', color: 'white' }
+                    borderColor: "#db4437",
+                    color: "#db4437",
+                    "&:hover": {
+                      borderColor: "#db4437",
+                      bgcolor: "#db4437",
+                      color: "white",
+                    },
                   }}
                 >
                   Google
@@ -478,9 +454,13 @@ const RegisterPage = () => {
                   disabled={loading}
                   sx={{
                     textTransform: "none",
-                    borderColor: '#28a745',
-                    color: '#28a745',
-                    '&:hover': { borderColor: '#28a745', bgcolor: '#28a745', color: 'white' }
+                    borderColor: "#28a745",
+                    color: "#28a745",
+                    "&:hover": {
+                      borderColor: "#28a745",
+                      bgcolor: "#28a745",
+                      color: "white",
+                    },
                   }}
                 >
                   Số điện thoại
