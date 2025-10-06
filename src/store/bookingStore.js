@@ -21,24 +21,24 @@ const useBookingStore = create(
           stationName: bookingData.stationName,
           chargerType: bookingData.chargerType
             ? {
-                id: bookingData.chargerType.id,
-                name: bookingData.chargerType.name,
-                power: bookingData.chargerType.power,
-                price: bookingData.chargerType.price,
-              }
+              id: bookingData.chargerType.id,
+              name: bookingData.chargerType.name,
+              power: bookingData.chargerType.power,
+              price: bookingData.chargerType.price,
+            }
             : null,
           connector: bookingData.connector
             ? {
-                id: bookingData.connector.id,
-                name: bookingData.connector.name,
-                compatible: bookingData.connector.compatible,
-              }
+              id: bookingData.connector.id,
+              name: bookingData.connector.name,
+              compatible: bookingData.connector.compatible,
+            }
             : null,
           slot: bookingData.slot
             ? {
-                id: bookingData.slot.id,
-                location: bookingData.slot.location,
-              }
+              id: bookingData.slot.id,
+              location: bookingData.slot.location,
+            }
             : null,
           bookingTime: bookingData.bookingTime,
           scannedAt: bookingData.scannedAt,
@@ -91,31 +91,31 @@ const useBookingStore = create(
           bookings: state.bookings.map((booking) =>
             booking.id === bookingId
               ? {
-                  ...booking,
-                  status,
-                  ...data,
-                  updatedAt: new Date().toISOString(),
-                }
+                ...booking,
+                status,
+                ...data,
+                updatedAt: new Date().toISOString(),
+              }
               : booking
           ),
           bookingHistory: state.bookingHistory.map((booking) =>
             booking.id === bookingId
               ? {
-                  ...booking,
-                  status,
-                  ...data,
-                  updatedAt: new Date().toISOString(),
-                }
+                ...booking,
+                status,
+                ...data,
+                updatedAt: new Date().toISOString(),
+              }
               : booking
           ),
           currentBooking:
             state.currentBooking?.id === bookingId
               ? {
-                  ...state.currentBooking,
-                  status,
-                  ...data,
-                  updatedAt: new Date().toISOString(),
-                }
+                ...state.currentBooking,
+                status,
+                ...data,
+                updatedAt: new Date().toISOString(),
+              }
               : state.currentBooking,
         }));
       },
@@ -253,15 +253,15 @@ const useBookingStore = create(
           chargingSession:
             state.chargingSession?.bookingId === bookingId
               ? {
-                  ...state.chargingSession,
-                  currentSOC,
-                  powerDelivered,
-                  energyDelivered,
-                  voltage,
-                  current,
-                  temperature,
-                  lastUpdated: new Date().toISOString(),
-                }
+                ...state.chargingSession,
+                currentSOC,
+                powerDelivered,
+                energyDelivered,
+                voltage,
+                current,
+                temperature,
+                lastUpdated: new Date().toISOString(),
+              }
               : state.chargingSession,
         }));
 
@@ -323,7 +323,7 @@ const useBookingStore = create(
               (booking.status === "confirmed" ||
                 booking.status === "scheduled") &&
               new Date(booking.scheduledDateTime || booking.estimatedArrival) >
-                now
+              now
           )
           .sort(
             (a, b) =>
@@ -375,7 +375,7 @@ const useBookingStore = create(
         set({ error: null });
       },
 
-      // Statistics
+      // Statistics - MASTER DATA SOURCE
       getBookingStats: () => {
         const { bookingHistory } = get();
         const total = bookingHistory.length;
@@ -387,10 +387,21 @@ const useBookingStore = create(
           (b) => b.status === "cancelled"
         ).length;
 
+        // Calculate totals from actual booking data
         const totalEnergyCharged = completedBookings
           .reduce((sum, b) => sum + (b.energyDelivered || 0), 0);
         const totalAmount = completedBookings
           .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const totalDuration = completedBookings
+          .reduce((sum, b) => sum + (b.chargingDuration || 0), 0);
+
+        // Debug log
+        console.log('📊 bookingStore.getBookingStats() - Calculation:', {
+          completedBookings: completed,
+          totalEnergyCharged,
+          totalAmount,
+          totalDuration
+        });
 
         return {
           total,
@@ -398,10 +409,16 @@ const useBookingStore = create(
           cancelled,
           completionRate:
             total > 0 ? ((completed / total) * 100).toFixed(1) : 0,
-          totalEnergyCharged: Math.max(totalEnergyCharged, completed * 15).toFixed(2), // Minimum 15kWh per session
-          totalAmount: Math.max(totalAmount, completed * 100000).toFixed(0), // Minimum 100k per session
-          averageSession:
-            completed > 0 ? (Math.max(totalEnergyCharged, completed * 15) / completed).toFixed(2) : 0,
+          // Return exact values, no minimum manipulation
+          totalEnergyCharged: totalEnergyCharged.toFixed(2), // "245.00"
+          totalAmount: totalAmount.toFixed(0), // "1679966"
+          totalDuration: totalDuration, // 642
+          // Averages
+          averageEnergy: completed > 0 ? (totalEnergyCharged / completed).toFixed(2) : "0", // "20.42"
+          averageAmount: completed > 0 ? Math.round(totalAmount / completed) : 0, // 139997
+          averageDuration: completed > 0 ? Math.round(totalDuration / completed) : 0, // 54
+          // Keep for backward compatibility
+          averageSession: completed > 0 ? (totalEnergyCharged / completed).toFixed(2) : "0",
         };
       },
 

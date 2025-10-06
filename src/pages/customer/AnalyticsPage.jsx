@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Container,
     Paper,
@@ -35,9 +35,17 @@ import ChargingHabitsAnalysis from './ChargingHabitsAnalysis';
 
 const AnalyticsPage = () => {
     const [activeTab, setActiveTab] = useState(0);
-    const { getBookingStats } = useBookingStore();
+    const { getBookingStats, bookingHistory, initializeMockData } = useBookingStore();
     const { user } = useAuthStore();
     const { vehicles } = useVehicleStore();
+
+    // Ensure data is initialized
+    useEffect(() => {
+        if (bookingHistory.length === 0) {
+            console.log('⚠️ AnalyticsPage - No data, initializing...');
+            initializeMockData();
+        }
+    }, [bookingHistory.length, initializeMockData]);
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
@@ -45,32 +53,38 @@ const AnalyticsPage = () => {
 
     const stats = getBookingStats();
 
-    // Quick Stats Cards
+    // Debug: Log stats để kiểm tra dữ liệu
+    console.log('📊 AnalyticsPage - Stats from getBookingStats():', {
+        stats,
+        bookingHistoryLength: bookingHistory.length
+    });
+
+    // Quick Stats Cards - Sử dụng field names đúng từ bookingStore
     const quickStats = [
         {
             title: 'Tổng phiên sạc',
-            value: stats.total || 0,
+            value: stats.completed || 0, // Chỉ đếm completed bookings
             icon: <ElectricBolt />,
             color: 'primary',
             trend: '+12%'
         },
         {
             title: 'Năng lượng tiêu thụ',
-            value: `${stats.totalEnergyDelivered || 0} kWh`,
+            value: `${parseFloat(stats.totalEnergyCharged || 0).toFixed(1)} kWh`, // ✅ Đúng field name
             icon: <TrendingUp />,
             color: 'success',
             trend: '+8.5%'
         },
         {
             title: 'Chi phí tháng này',
-            value: formatCurrency(stats.totalAmount || 0),
+            value: formatCurrency(parseFloat(stats.totalAmount || 0)),
             icon: <AccountBalanceWallet />,
             color: 'warning',
             trend: '-5.2%'
         },
         {
             title: 'Thời gian sạc TB',
-            value: `${stats.averageDuration || 0} phút`,
+            value: `${stats.averageDuration || 0} phút`, // ✅ Hiển thị phút/phiên
             icon: <Schedule />,
             color: 'info',
             trend: '+2.1%'

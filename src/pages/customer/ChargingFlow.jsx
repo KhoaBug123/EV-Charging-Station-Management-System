@@ -46,6 +46,24 @@ import { formatCurrency } from "../../utils/helpers";
 import StationMapLeaflet from "../../components/customer/StationMapLeaflet";
 import notificationService from "../../services/notificationService";
 
+// Helper to render operating hours safely (matches StationMapLeaflet)
+const formatOperatingHours = (oh) => {
+    if (!oh) return '';
+    if (typeof oh === 'string') {
+        if (oh.trim().toLowerCase() === '24/7') return `Hoạt động: Cả ngày`;
+        return `Hoạt động: ${oh}`;
+    }
+    const openRaw = oh.open || '';
+    const closeRaw = oh.close || '';
+    const open = String(openRaw).trim().toLowerCase();
+    const close = String(closeRaw).trim().toLowerCase();
+    if (open === '24/7' || close === '24/7') return `Hoạt động: Cả ngày`;
+    if (openRaw && closeRaw) return `Hoạt động: ${openRaw} - ${closeRaw}`;
+    if (openRaw) return `Hoạt động: ${openRaw}`;
+    if (closeRaw) return `Hoạt động: ${closeRaw}`;
+    return '';
+};
+
 // Helper function to format time
 const formatTime = (minutes) => {
     if (minutes < 60) {
@@ -398,10 +416,15 @@ const ChargingFlow = () => {
                 <Grid container spacing={3}>
                     {/* Search and Filters */}
                     <Grid item xs={12}>
-                        <Card>
-                            <CardContent>
-                                <Grid container spacing={2} alignItems="center">
-                                    <Grid item xs={12} md={6}>
+                        <Card sx={{
+                            borderRadius: 3,
+                            boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                            border: '1px solid rgba(0,0,0,0.06)'
+                        }}>
+                            <CardContent sx={{ p: 3 }}>
+                                <Grid container spacing={2.5} alignItems="center">
+                                    {/* Search Input - Wider on desktop */}
+                                    <Grid item xs={12} md={5}>
                                         <TextField
                                             fullWidth
                                             placeholder="Tìm kiếm theo vị trí, tên trạm..."
@@ -414,9 +437,23 @@ const ChargingFlow = () => {
                                             InputProps={{
                                                 startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
                                             }}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 2,
+                                                    backgroundColor: 'grey.50',
+                                                    '&:hover': {
+                                                        backgroundColor: 'white',
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        backgroundColor: 'white',
+                                                    }
+                                                }
+                                            }}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} md={4}>
+
+                                    {/* Connector Type Filter */}
+                                    <Grid item xs={12} sm={6} md={4}>
                                         <FormControl fullWidth>
                                             <InputLabel>Loại cổng sạc</InputLabel>
                                             <Select
@@ -424,6 +461,16 @@ const ChargingFlow = () => {
                                                 onChange={(e) => {
                                                     console.log('🔌 Connector type changed:', e.target.value);
                                                     updateFilters({ connectorTypes: e.target.value });
+                                                }}
+                                                sx={{
+                                                    borderRadius: 2,
+                                                    backgroundColor: 'grey.50',
+                                                    '&:hover': {
+                                                        backgroundColor: 'white',
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        backgroundColor: 'white',
+                                                    }
                                                 }}
                                             >
                                                 <MenuItem value="">
@@ -437,29 +484,41 @@ const ChargingFlow = () => {
                                             </Select>
                                         </FormControl>
                                     </Grid>
-                                    <Grid item xs={12} md={2}>
+
+                                    {/* View Mode Toggle Buttons */}
+                                    <Grid item xs={12} sm={6} md={3}>
                                         <Box sx={{
                                             display: 'flex',
                                             gap: 1,
-                                            flexDirection: { xs: 'row', md: 'row' }
+                                            justifyContent: { xs: 'stretch', md: 'flex-end' }
                                         }}>
                                             <Button
                                                 variant={viewMode === 'list' ? 'contained' : 'outlined'}
                                                 onClick={() => setViewMode('list')}
                                                 startIcon={<ViewList />}
                                                 fullWidth
-                                                sx={{ minWidth: 0 }}
+                                                sx={{
+                                                    borderRadius: 2,
+                                                    px: 2,
+                                                    fontWeight: viewMode === 'list' ? 600 : 400,
+                                                    boxShadow: viewMode === 'list' ? '0 2px 8px rgba(25,118,210,0.2)' : 'none',
+                                                }}
                                             >
-                                                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Danh sách</Box>
+                                                Danh sách
                                             </Button>
                                             <Button
                                                 variant={viewMode === 'map' ? 'contained' : 'outlined'}
                                                 onClick={() => setViewMode('map')}
                                                 startIcon={<MapIcon />}
                                                 fullWidth
-                                                sx={{ minWidth: 0 }}
+                                                sx={{
+                                                    borderRadius: 2,
+                                                    px: 2,
+                                                    fontWeight: viewMode === 'map' ? 600 : 400,
+                                                    boxShadow: viewMode === 'map' ? '0 2px 8px rgba(25,118,210,0.2)' : 'none',
+                                                }}
                                             >
-                                                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Bản đồ</Box>
+                                                Bản đồ
                                             </Button>
                                         </Box>
                                     </Grid>
@@ -506,11 +565,19 @@ const ChargingFlow = () => {
                                                                 <Typography variant="h6" fontWeight="bold">
                                                                     {station.name}
                                                                 </Typography>
-                                                                <Chip
-                                                                    label={`${station.charging.availablePorts}/${station.charging.totalPorts} cổng đang trống`}
-                                                                    size="small"
-                                                                    color="success"
-                                                                />
+                                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                                                                    <Chip
+                                                                        label={`${station.charging.availablePorts}/${station.charging.totalPorts} cổng đang trống`}
+                                                                        size="small"
+                                                                        color="success"
+                                                                        sx={{ borderRadius: '16px' }}
+                                                                    />
+                                                                    {station.operatingHours && (
+                                                                        <Typography variant="caption" color="text.secondary">
+                                                                            {formatOperatingHours(station.operatingHours)}
+                                                                        </Typography>
+                                                                    )}
+                                                                </Box>
                                                             </Box>
                                                         }
                                                         secondary={

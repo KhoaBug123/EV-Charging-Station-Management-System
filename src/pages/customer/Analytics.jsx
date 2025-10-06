@@ -37,23 +37,57 @@ import { useMasterDataSync } from "../../hooks/useMasterDataSync";
 
 const CustomerAnalytics = () => {
     const [timeRange, setTimeRange] = useState("month");
-    const { bookingHistory, stats: bookingStats, completedBookings, isDataReady } = useMasterDataSync();
+    const { stats: bookingStats, completedBookings } = useMasterDataSync();
+
+    // Calculate station frequency from actual booking data
+    const calculateFavoriteStations = () => {
+        const stationCounts = {};
+        completedBookings.forEach(booking => {
+            const stationName = booking.stationName;
+            stationCounts[stationName] = (stationCounts[stationName] || 0) + 1;
+        });
+
+        const sortedStations = Object.entries(stationCounts)
+            .map(([name, sessions]) => ({
+                name,
+                sessions,
+                percentage: completedBookings.length > 0 ? Math.round((sessions / completedBookings.length) * 100) : 0
+            }))
+            .sort((a, b) => b.sessions - a.sessions)
+            .slice(0, 3);
+
+        return sortedStations.length > 0 ? sortedStations : [
+            { name: "Chưa có dữ liệu", sessions: 0, percentage: 0 }
+        ];
+    };
 
     // Calculate realistic analytics from actual booking data
+    const totalAmount = parseFloat(bookingStats.totalAmount) || 0;
+    const totalEnergy = parseFloat(bookingStats.totalEnergyCharged) || 0;
+    const totalDuration = bookingStats.totalDuration || 0;
+    const completedCount = bookingStats.completed || completedBookings.length;
+    const avgDuration = bookingStats.averageDuration || 0;
+
+    // Debug: Log thực tế data đang sử dụng
+    console.log('📊 Analytics - Current Data:', {
+        totalAmount,
+        totalEnergy,
+        totalDuration,
+        completedCount,
+        avgDuration,
+        completedBookings: completedBookings.length,
+        bookingStats
+    });
+
     const analyticsData = {
         month: {
-            totalCost: bookingStats.totalAmount || 2450000,
-            totalSessions: bookingStats.total || completedBookings.length,
-            totalEnergyConsumed: bookingStats.totalEnergyCharged || 450,
-            avgSessionCost: bookingStats.total > 0 ? Math.round(bookingStats.totalAmount / bookingStats.total) : 163333,
-            avgEnergyPerSession: bookingStats.total > 0 ? Math.round(bookingStats.totalEnergyCharged / bookingStats.total) : 30,
-            avgChargingTime: completedBookings.length > 0 ?
-                Math.round(completedBookings.reduce((sum, b) => sum + (b.chargingDuration || 45), 0) / completedBookings.length) : 85,
-            favoriteStations: [
-                { name: "Vincom Mega Mall", sessions: 5, percentage: 33 },
-                { name: "AEON Mall Bình Tân", sessions: 3, percentage: 20 },
-                { name: "Lotte Mart Gò Vấp", sessions: 2, percentage: 13 },
-            ],
+            totalCost: totalAmount,
+            totalSessions: completedCount,
+            totalEnergyConsumed: totalEnergy,
+            avgSessionCost: completedCount > 0 ? Math.round(totalAmount / completedCount) : 0,
+            avgEnergyPerSession: completedCount > 0 ? (totalEnergy / completedCount).toFixed(1) : 0,
+            avgChargingTime: avgDuration, // Từ bookingStats
+            favoriteStations: calculateFavoriteStations(),
             chargingHabits: {
                 morningHours: 20, // 6-12h
                 afternoonHours: 40, // 12-18h
@@ -63,17 +97,13 @@ const CustomerAnalytics = () => {
             energyByWeek: [88, 115, 107, 140],
         },
         quarter: {
-            totalCost: 6750000,
-            totalSessions: 42,
-            totalEnergyConsumed: 1260,
-            avgSessionCost: 160714,
-            avgEnergyPerSession: 30,
-            avgChargingTime: 82,
-            favoriteStations: [
-                { name: "Vincom Mega Mall", sessions: 14, percentage: 33 },
-                { name: "AEON Mall Bình Tân", sessions: 9, percentage: 21 },
-                { name: "Lotte Mart Gò Vấp", sessions: 6, percentage: 14 },
-            ],
+            totalCost: totalAmount * 3, // Estimate x3 for quarter
+            totalSessions: completedCount * 3,
+            totalEnergyConsumed: totalEnergy * 3,
+            avgSessionCost: completedCount > 0 ? Math.round(totalAmount / completedCount) : 0,
+            avgEnergyPerSession: completedCount > 0 ? (totalEnergy / completedCount).toFixed(1) : 0,
+            avgChargingTime: avgDuration, // Từ bookingStats
+            favoriteStations: calculateFavoriteStations(),
             chargingHabits: {
                 morningHours: 24,
                 afternoonHours: 38,
@@ -81,17 +111,13 @@ const CustomerAnalytics = () => {
             },
         },
         year: {
-            totalCost: 24800000,
-            totalSessions: 156,
-            totalEnergyConsumed: 4680,
-            avgSessionCost: 158974,
-            avgEnergyPerSession: 30,
-            avgChargingTime: 78,
-            favoriteStations: [
-                { name: "Vincom Mega Mall", sessions: 52, percentage: 33 },
-                { name: "AEON Mall Bình Tân", sessions: 34, percentage: 22 },
-                { name: "Lotte Mart Gò Vấp", sessions: 23, percentage: 15 },
-            ],
+            totalCost: totalAmount * 12, // Estimate x12 for year
+            totalSessions: completedCount * 12,
+            totalEnergyConsumed: totalEnergy * 12,
+            avgSessionCost: completedCount > 0 ? Math.round(totalAmount / completedCount) : 0,
+            avgEnergyPerSession: completedCount > 0 ? (totalEnergy / completedCount).toFixed(1) : 0,
+            avgChargingTime: avgDuration, // Từ bookingStats
+            favoriteStations: calculateFavoriteStations(),
             chargingHabits: {
                 morningHours: 28,
                 afternoonHours: 36,
@@ -152,6 +178,8 @@ const CustomerAnalytics = () => {
                     </Select>
                 </FormControl>
             </Box>
+
+            {/* Debug Info removed for production */}
 
             {/* Key Metrics */}
             <Grid container spacing={3} sx={{ mb: 4 }}>

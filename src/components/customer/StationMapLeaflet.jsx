@@ -16,7 +16,9 @@ import {
     ElectricCar,
     LocationOn,
     Speed,
-    Close as CloseIcon
+    Close as CloseIcon,
+    EvStation as EvStationIcon,
+    Directions as DirectionsIcon
 } from '@mui/icons-material';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, Circle } from 'react-leaflet';
 import L from 'leaflet';
@@ -74,6 +76,29 @@ const userIcon = L.divIcon({
     iconSize: [20, 20],
     iconAnchor: [10, 10]
 });
+
+// Helper to render operating hours safely
+const formatOperatingHours = (oh) => {
+    if (!oh) return '';
+    if (typeof oh === 'string') {
+        // Map common shorthand to a friendly Vietnamese label
+        if (oh.trim().toLowerCase() === '24/7') return `Hoạt động: Cả ngày`;
+        return `Hoạt động: ${oh}`;
+    }
+    // If it's an object, check fields (support shape variations)
+    const openRaw = oh.open || '';
+    const closeRaw = oh.close || '';
+    const open = String(openRaw).trim().toLowerCase();
+    const close = String(closeRaw).trim().toLowerCase();
+
+    // If either side uses the 24/7 shorthand, show friendly label
+    if (open === '24/7' || close === '24/7') return `Hoạt động: Cả ngày`;
+
+    if (openRaw && closeRaw) return `Hoạt động: ${openRaw} - ${closeRaw}`;
+    if (openRaw) return `Hoạt động: ${openRaw}`;
+    if (closeRaw) return `Hoạt động: ${closeRaw}`;
+    return '';
+};
 
 // Component to fit map bounds
 const MapBoundsSetter = ({ bounds }) => {
@@ -265,6 +290,7 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
                         style={{ height: '100%', width: '100%' }}
                         zoomControl={true}
                         scrollWheelZoom={true}
+                        attributionControl={false}
                         whenCreated={(map) => {
                             // Prevent multiple initialization
                             setTimeout(() => {
@@ -321,22 +347,15 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
                                             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                                                 📍 {station.location?.address || station.address}
                                             </Typography>
-                                            <Stack direction="row" spacing={1} sx={{ mb: 1 }} flexWrap="wrap">
+                                            <Box sx={{ mb: 1 }}>
                                                 <Chip
-                                                    label={`${station.stats?.available} / ${station.stats?.total} cổng`}
+                                                    label={`${station.stats?.available} / ${station.stats?.total} cổng đang trống`}
                                                     size="small"
                                                     color={isAvailable ? 'success' : 'error'}
+                                                    sx={{ borderRadius: '16px', fontWeight: 600 }}
                                                 />
-                                                {station.operatingHours && (
-                                                    <Chip
-                                                        label={typeof station.operatingHours === 'string'
-                                                            ? station.operatingHours
-                                                            : `${station.operatingHours.open} - ${station.operatingHours.close}`}
-                                                        size="small"
-                                                        variant="outlined"
-                                                    />
-                                                )}
-                                            </Stack>
+                                                {/* operating hours intentionally omitted from popup - shown only in list */}
+                                            </Box>
                                             <Button
                                                 fullWidth
                                                 variant="contained"
@@ -473,19 +492,11 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
                         <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap">
                             <Chip
                                 icon={<EvStationIcon />}
-                                label={`${selectedStation.stats?.available} / ${selectedStation.stats?.total} cổng trống`}
+                                label={`${selectedStation.stats?.available} / ${selectedStation.stats?.total} cổng đang trống`}
                                 size="small"
                                 color={selectedStation.stats?.available > 0 ? 'success' : 'error'}
                             />
-                            {selectedStation.operatingHours && (
-                                <Chip
-                                    label={typeof selectedStation.operatingHours === 'string'
-                                        ? selectedStation.operatingHours
-                                        : `${selectedStation.operatingHours.open} - ${selectedStation.operatingHours.close}`}
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            )}
+                            {/* operating hours shown only in the list; removed from selected card */}
                         </Stack>
 
                         <Stack spacing={1}>
@@ -569,18 +580,27 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
                                         <Typography variant="h6" fontWeight="bold">
                                             {station.name}
                                         </Typography>
-                                        <Chip
-                                            label={`${station.stats?.available}/${station.stats?.total} cổng đang trống`}
-                                            size="small"
-                                            color={isAvailable ? 'success' : 'error'}
-                                        />
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                                            <Chip
+                                                label={`${station.stats?.available}/${station.stats?.total} cổng đang trống`}
+                                                size="small"
+                                                color={isAvailable ? 'success' : 'error'}
+                                                sx={{ borderRadius: '16px' }}
+                                            />
+                                            {station.operatingHours && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {formatOperatingHours(station.operatingHours)}
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     </Box>
 
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
                                         <LocationOn sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
                                             {station.location?.address || station.address}
                                         </Typography>
+                                        {/* operating hours displayed only under availability chip on the right */}
                                     </Box>
 
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
