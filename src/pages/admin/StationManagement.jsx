@@ -43,14 +43,13 @@ import {
   Delete,
   Visibility,
   TrendingUp,
-  Warning,
   CheckCircle,
   MapOutlined,
   Speed,
   Battery80,
   PowerSettingsNew,
   Close,
-  Save,
+  Save
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -119,9 +118,7 @@ const StationManagement = () => {
       monthlyRevenue: revenue,
       monthlyBookings: thisMonthBookings.length,
       utilization: utilization || 0,
-      avgSessionTime,
-      efficiency: Math.random() * 20 + 80, // Mock efficiency
-      issues: Math.floor(Math.random() * 3), // Mock issues count
+      avgSessionTime
     };
   });
 
@@ -423,15 +420,14 @@ const StationManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Trạm sạc</TableCell>
-                  <TableCell align="center">Trạng thái</TableCell>
-                  <TableCell align="center">Cổng</TableCell>
-                  <TableCell align="center">Sử dụng</TableCell>
-                  <TableCell align="center">Doanh thu tháng</TableCell>
-                  <TableCell align="center">Phiên</TableCell>
-                  <TableCell align="center">Phiên TB</TableCell>
-                  <TableCell align="center">Sự cố</TableCell>
-                  <TableCell align="center">Thao tác</TableCell>
+                  <TableCell width="25%">Trạm sạc</TableCell>
+                  <TableCell align="center" width="10%">Trạng thái</TableCell>
+                  <TableCell align="center" width="12%">Cổng</TableCell>
+                  <TableCell align="center" width="12%">Sử dụng</TableCell>
+                  <TableCell align="center" width="15%">Doanh thu tháng</TableCell>
+                  <TableCell align="center" width="8%">Phiên</TableCell>
+                  <TableCell align="center" width="8%">Phiên TB</TableCell>
+                  <TableCell align="center" width="10%">Thao tác</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -503,21 +499,7 @@ const StationManagement = () => {
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      {station.issues > 0 ? (
-                        <Chip
-                          label={station.issues}
-                          color="warning"
-                          size="small"
-                          icon={<Warning />}
-                        />
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          Không có
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                      <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}>
                         <IconButton
                           size="small"
                           onClick={() => handleStationClick(station)}

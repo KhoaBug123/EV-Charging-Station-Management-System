@@ -50,7 +50,6 @@ import UserManagement from "./pages/admin/UserManagement";
 import AdvancedAnalytics from "./pages/admin/AdvancedAnalytics";
 import AdminStationManagement from "./pages/admin/StationManagement";
 import AdminSystemReports from "./pages/admin/SystemReports";
-import AdminSettings from "./pages/admin/Settings";
 import NotificationDashboard from "./pages/admin/NotificationDashboard";
 
 // Create React Query client
@@ -205,7 +204,6 @@ function App() {
                 />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="reports" element={<AdminSystemReports />} />
-                <Route path="settings" element={<AdminSettings />} />
                 <Route index element={<Navigate to="dashboard" replace />} />
               </Route>
 

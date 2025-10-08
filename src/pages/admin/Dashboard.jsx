@@ -352,15 +352,7 @@ const AdminDashboard = () => {
         </Box>
       </Box>
 
-      {/* Alert for Critical Issues */}
-      <Alert severity="warning" sx={{ mb: 3 }}>
-        <Typography variant="body2">
-          <strong>Cảnh báo hệ thống:</strong> 2 trạm sạc cần được chú ý ngay lập tức.
-          <Button size="small" sx={{ ml: 1 }}>
-            Xem chi tiết
-          </Button>
-        </Typography>
-      </Alert>
+
 
       {/* Key Metrics */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -711,14 +703,6 @@ const AdminDashboard = () => {
                   onClick={() => navigate("/admin/stations")}
                 >
                   Quản lý trạm sạc
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<Settings />}
-                  fullWidth
-                  onClick={() => navigate("/admin/settings")}
-                >
-                  Cài đặt hệ thống
                 </Button>
               </Box>
             </CardContent>

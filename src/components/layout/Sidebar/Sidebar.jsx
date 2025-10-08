@@ -19,7 +19,6 @@ import {
   Business,
   Analytics,
   People,
-  Settings,
   ElectricCar,
   Notifications,
 } from "@mui/icons-material";
@@ -60,7 +59,6 @@ const Sidebar = ({ open, onClose }) => {
             icon: <Analytics />,
             path: "/admin/reports",
           },
-          { text: getText("nav.settings"), icon: <Settings />, path: "/admin/settings" },
         ];
 
       case "staff":
