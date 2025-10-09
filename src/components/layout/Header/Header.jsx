@@ -78,20 +78,34 @@ const Header = () => {
         >
           <Box
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #B5FF3D 0%, #1379FF 100%)",
+              width: 48,
+              height: 48,
+              mr: 2,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginRight: 2,
-              fontWeight: "bold",
-              color: "white",
-              fontSize: "1.2rem",
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              border: "2px solid rgba(19, 121, 255, 0.1)",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-2px)",
+                boxShadow: "0 8px 25px rgba(19, 121, 255, 0.15)",
+                border: "2px solid rgba(19, 121, 255, 0.3)",
+              },
             }}
           >
-            S
+            <img
+              src="/assets/images/skaev_logo.png"
+              alt="SkaEV Logo"
+              style={{
+                width: "150%",
+                height: "150%",
+                objectFit: "contain",
+                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+              }}
+            />
           </Box>
           <Typography variant="h6" component="div" fontWeight="bold">
             SkaEV

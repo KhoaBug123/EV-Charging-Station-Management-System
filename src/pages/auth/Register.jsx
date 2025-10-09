@@ -8,25 +8,18 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Link,
   Checkbox,
   FormControlLabel,
-  Divider,
-  Grid,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import {
-  ElectricCar,
-  PersonAdd,
   Visibility,
   VisibilityOff,
   Google,
   Phone,
+  PersonAdd,
 } from "@mui/icons-material";
-import { IconButton, InputAdornment } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import { getText } from "../../utils/vietnameseTexts";
@@ -45,7 +38,7 @@ const RegisterPage = () => {
     phone: "",
     password: "",
     confirmPassword: "",
-    role: "customer", // Default to customer
+    role: "customer",
     agreeToTerms: false,
   });
 
@@ -53,7 +46,6 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
-  // Social registration states
   const [socialLoading, setSocialLoading] = useState({
     google: false,
     phone: false,
@@ -66,56 +58,31 @@ const RegisterPage = () => {
       ...prev,
       [name]: name === "agreeToTerms" ? checked : value,
     }));
-
-    // Clear specific field error when user starts typing
-    if (formErrors[name]) {
-      setFormErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-
+    if (formErrors[name]) setFormErrors((prev) => ({ ...prev, [name]: "" }));
     if (error) clearError();
   };
 
   const validateForm = () => {
     const errors = {};
-
-    if (!formData.firstName.trim()) {
+    if (!formData.firstName.trim())
       errors.firstName = getText("errors.required");
-    }
-
-    if (!formData.lastName.trim()) {
-      errors.lastName = getText("errors.required");
-    }
-
-    if (!formData.email.trim()) {
-      errors.email = getText("errors.emailRequired");
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    if (!formData.lastName.trim()) errors.lastName = getText("errors.required");
+    if (!formData.email.trim()) errors.email = getText("errors.emailRequired");
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
       errors.email = getText("errors.emailInvalid");
-    }
-
-    if (!formData.phone.trim()) {
-      errors.phone = getText("errors.required");
-    } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ""))) {
+    if (!formData.phone.trim()) errors.phone = getText("errors.required");
+    else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, "")))
       errors.phone = getText("errors.phoneInvalid");
-    }
-
-    if (!formData.password) {
+    if (!formData.password)
       errors.password = getText("errors.passwordRequired");
-    } else if (formData.password.length < 6) {
+    else if (formData.password.length < 6)
       errors.password = getText("errors.passwordTooShort");
-    }
-
-    if (!formData.confirmPassword) {
+    if (!formData.confirmPassword)
       errors.confirmPassword = getText("errors.required");
-    } else if (formData.password !== formData.confirmPassword) {
+    else if (formData.password !== formData.confirmPassword)
       errors.confirmPassword = "Mật khẩu xác nhận không khớp";
-    }
-
-    if (!formData.agreeToTerms) {
+    if (!formData.agreeToTerms)
       errors.agreeToTerms = "Bạn phải đồng ý với điều khoản sử dụng";
-    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -123,11 +90,7 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     try {
       const result = await register({
         firstName: formData.firstName,
@@ -139,48 +102,35 @@ const RegisterPage = () => {
       });
 
       if (result.success) {
-        if (result.requiresVerification) {
-          // Redirect to email verification page
+        if (result.requiresVerification)
           navigate(
             `/verify-email?email=${encodeURIComponent(
               formData.email
             )}&mode=auto`
           );
-        } else {
-          // Direct login
-          navigate("/customer/dashboard");
-        }
+        else navigate("/customer/dashboard");
       }
-    } catch (error) {
-      console.error("Registration failed:", error);
+    } catch (err) {
+      console.error("Registration failed:", err);
     }
   };
 
-  // Social registration handlers
   const handleGoogleRegister = async () => {
     setSocialLoading({ ...socialLoading, google: true });
     try {
       const googleResult = await googleAuth.signUp();
       if (googleResult.success) {
         const authResult = await socialRegister("google", googleResult.user);
-        if (authResult.success) {
-          console.log("Google registration successful:", authResult.user);
-          navigate("/customer/dashboard");
-        }
-      } else {
-        console.error("Google registration failed:", googleResult.error);
+        if (authResult.success) navigate("/customer/dashboard");
       }
-    } catch (error) {
-      console.error("Google registration error:", error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setSocialLoading({ ...socialLoading, google: false });
     }
   };
 
-  const handlePhoneRegister = () => {
-    setPhoneModalOpen(true);
-  };
-
+  const handlePhoneRegister = () => setPhoneModalOpen(true);
   const handlePhoneOTPSuccess = async (phoneData) => {
     try {
       const authResult = await socialRegister("phone", {
@@ -189,21 +139,14 @@ const RegisterPage = () => {
         email: phoneData.email || `${phoneData.phoneNumber}@skaev.temp`,
         verified: true,
       });
-
       if (authResult.success) {
-        console.log("Phone registration successful:", authResult.user);
         setPhoneModalOpen(false);
         navigate("/customer/dashboard");
       }
-    } catch (error) {
-      console.error("Phone registration error:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
-
-  const roleOptions = [
-    { value: "customer", label: getText("users.customer") },
-    { value: "staff", label: getText("users.staff") },
-  ];
 
   return (
     <Box
@@ -225,15 +168,36 @@ const RegisterPage = () => {
         }}
       >
         <CardContent sx={{ p: 4 }}>
-          {/* Header */}
+          {/* Header with circular clickable logo */}
           <Box sx={{ textAlign: "center", mb: 3 }}>
-            <ElectricCar
+            <Box
+              onClick={() => navigate("/")}
               sx={{
-                fontSize: 48,
-                color: "primary.main",
-                mb: 1,
+                width: 80,
+                height: 80,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                border: "2px solid rgba(19, 121, 255, 0.1)",
+                cursor: "pointer",
+                overflow: "hidden",
               }}
-            />
+            >
+              <img
+                src="/assets/images/skaev_logo.png"
+                alt="SkaEV Logo"
+                style={{
+                  width: "120%",
+                  height: "120%",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                }}
+              />
+            </Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               {getText("auth.registerTitle")}
             </Typography>
@@ -242,16 +206,13 @@ const RegisterPage = () => {
             </Typography>
           </Box>
 
-          {/* Error Alert */}
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
 
-          {/* Registration Form */}
           <Box component="form" onSubmit={handleSubmit}>
-            {/* Name Fields */}
             <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
               <TextField
                 name="firstName"
@@ -275,7 +236,6 @@ const RegisterPage = () => {
               />
             </Box>
 
-            {/* Email */}
             <TextField
               name="email"
               label={getText("auth.email")}
@@ -289,7 +249,6 @@ const RegisterPage = () => {
               sx={{ mb: 2 }}
             />
 
-            {/* Phone */}
             <TextField
               name="phone"
               label={getText("auth.phone")}
@@ -302,72 +261,90 @@ const RegisterPage = () => {
               sx={{ mb: 2 }}
             />
 
-            {/* Password */}
-            <TextField
-              name="password"
-              label={getText("auth.password")}
-              type={showPassword ? "text" : "password"}
-              value={formData.password}
-              onChange={handleInputChange}
-              error={!!formErrors.password}
-              helperText={formErrors.password}
-              fullWidth
-              required
-              sx={{ mb: 2 }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+              <TextField
+                name="password"
+                label={getText("auth.password")}
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleInputChange}
+                error={!!formErrors.password}
+                helperText={formErrors.password}
+                fullWidth
+                required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
-            {/* Confirm Password */}
-            <TextField
-              name="confirmPassword"
-              label={getText("auth.confirmPassword")}
-              type={showConfirmPassword ? "text" : "password"}
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              error={!!formErrors.confirmPassword}
-              helperText={formErrors.confirmPassword}
-              fullWidth
-              required
-              sx={{ mb: 2 }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      edge="end"
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+              <TextField
+                name="confirmPassword"
+                label={getText("auth.confirmPassword")}
+                type={showConfirmPassword ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                error={!!formErrors.confirmPassword}
+                helperText={formErrors.confirmPassword}
+                fullWidth
+                required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        edge="end"
+                      >
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
 
-            {/* Terms Agreement */}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="agreeToTerms"
+                  checked={formData.agreeToTerms}
+                  onChange={handleInputChange}
+                />
+              }
+              label={
+                <Typography variant="body2">
+                  Tôi đồng ý với{" "}
+                  <a href="/terms" target="_blank" rel="noreferrer">
+                    Điều khoản
+                  </a>
+                </Typography>
+              }
+              sx={{ mb: 2 }}
+            />
             {formErrors.agreeToTerms && (
               <Typography
                 variant="caption"
                 color="error"
-                sx={{ mb: 2, display: "block" }}
+                sx={{ display: "block", mb: 1 }}
               >
                 {formErrors.agreeToTerms}
               </Typography>
             )}
 
-            {/* Submit Button */}
             <Button
               type="submit"
               fullWidth
@@ -377,122 +354,34 @@ const RegisterPage = () => {
               startIcon={
                 loading ? <CircularProgress size={20} /> : <PersonAdd />
               }
-              sx={{
-                mb: 3,
-                py: 1.5,
-                fontWeight: "bold",
-                color: "white",
-                textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                background: "linear-gradient(135deg, #1379FF 0%, #B5FF3D 100%)",
-                "&:hover": {
-                  background:
-                    "linear-gradient(135deg, #0d5fd6 0%, #9FE830 100%)",
-                  color: "white",
-                  textShadow: "0 1px 2px rgba(0,0,0,0.4)",
-                },
-                "&:disabled": {
-                  color: "rgba(255, 255, 255, 0.6)",
-                  textShadow: "none",
-                },
-              }}
+              sx={{ mb: 2, py: 1.5, fontWeight: "bold" }}
             >
               {loading ? getText("auth.registering") : getText("auth.register")}
             </Button>
 
-            {/* Social Registration */}
-            <Divider sx={{ my: 3 }}>
+            <Box sx={{ mt: 2, textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary">
-                Hoặc đăng ký với
-              </Typography>
-            </Divider>
-
-            <Typography
-              variant="caption"
-              color="primary.main"
-              sx={{
-                display: "block",
-                textAlign: "center",
-                mb: 2,
-                fontWeight: "medium",
-              }}
-            ></Typography>
-
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={6}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={
-                    socialLoading.google ? (
-                      <CircularProgress size={16} />
-                    ) : (
-                      <Google />
-                    )
-                  }
-                  onClick={handleGoogleRegister}
-                  disabled={socialLoading.google || loading}
-                  sx={{
-                    textTransform: "none",
-                    borderColor: "#db4437",
-                    color: "#db4437",
-                    "&:hover": {
-                      borderColor: "#db4437",
-                      bgcolor: "#db4437",
-                      color: "white",
-                    },
-                  }}
-                >
-                  Google
-                </Button>
-              </Grid>
-              <Grid item xs={6}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<Phone />}
-                  onClick={handlePhoneRegister}
-                  disabled={loading}
-                  sx={{
-                    textTransform: "none",
-                    borderColor: "#28a745",
-                    color: "#28a745",
-                    "&:hover": {
-                      borderColor: "#28a745",
-                      bgcolor: "#28a745",
-                      color: "white",
-                    },
-                  }}
-                >
-                  Số điện thoại
-                </Button>
-              </Grid>
-            </Grid>
-
-            {/* Login Link */}
-            <Box sx={{ textAlign: "center", mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                {getText("auth.alreadyHaveAccount")}{" "}
-                <Link
-                  component="button"
-                  type="button"
+                Đã có tài khoản?{" "}
+                <span
                   onClick={() => navigate("/login")}
-                  color="primary"
-                  sx={{ textDecoration: "none", fontWeight: "bold" }}
+                  style={{
+                    color: "#1379FF",
+                    textDecoration: "none",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
                 >
-                  {getText("auth.loginHere")}
-                </Link>
+                  Đăng nhập
+                </span>
               </Typography>
             </Box>
           </Box>
         </CardContent>
       </Card>
-
-      {/* Phone OTP Modal */}
       <PhoneOTPModal
         open={phoneModalOpen}
         onClose={() => setPhoneModalOpen(false)}
         onSuccess={handlePhoneOTPSuccess}
-        mode="register"
       />
     </Box>
   );

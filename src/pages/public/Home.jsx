@@ -104,7 +104,32 @@ const HomePage = () => {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center" }}>
-              <ElectricCar sx={{ fontSize: 32, mr: 1 }} />
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  mr: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "18px",
+                  background: "rgba(255, 255, 255, 0.15)",
+                  backdropFilter: "blur(10px)",
+                  border: "2px solid rgba(255, 255, 255, 0.2)",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                }}
+              >
+                <img
+                  src="/assets/images/skaev_logo.png"
+                  alt="SkaEV Logo"
+                  style={{
+                    width: "150%",
+                    height: "150%",
+                    objectFit: "contain",
+                    filter: "brightness(1.1) contrast(1.1)",
+                  }}
+                />
+              </Box>
               <Typography variant="h5" fontWeight="bold">
                 SkaEV
               </Typography>

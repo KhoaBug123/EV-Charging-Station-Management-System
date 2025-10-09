@@ -12,7 +12,7 @@ import {
   Grid,
   Chip,
   Link,
-  IconButton
+  IconButton,
 } from "@mui/material";
 import { ElectricCar, Login, Google, Phone } from "@mui/icons-material";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
@@ -31,7 +31,7 @@ const LoginPage = () => {
   });
 
   const [socialLoading, setSocialLoading] = useState({
-    google: false
+    google: false,
   });
 
   const [phoneModalOpen, setPhoneModalOpen] = useState(false);
@@ -57,34 +57,32 @@ const LoginPage = () => {
 
   // Social login handlers
   const handleGoogleLogin = async () => {
-    setSocialLoading(prev => ({ ...prev, google: true }));
+    setSocialLoading((prev) => ({ ...prev, google: true }));
     try {
       const response = await googleAuth.signIn();
       if (response.success && response.user) {
-        await login(response.user.email, 'social-login');
-        console.log('Google login successful:', response.user.name);
+        await login(response.user.email, "social-login");
+        console.log("Google login successful:", response.user.name);
         // Show success message
         alert(`Chào mừng ${response.user.name}! Đăng nhập Google thành công.`);
       } else if (!response.success) {
-        console.error('Google login failed:', response.error);
+        console.error("Google login failed:", response.error);
       }
     } catch (error) {
-      console.error('Google login failed:', error.message);
+      console.error("Google login failed:", error.message);
       // Show user-friendly error
-      if (error.message.includes('cancelled')) {
+      if (error.message.includes("cancelled")) {
         // User cancelled, no need to show error
         return;
       }
       alert(`Đăng nhập Google thất bại: ${error.message}`);
     } finally {
-      setSocialLoading(prev => ({ ...prev, google: false }));
+      setSocialLoading((prev) => ({ ...prev, google: false }));
     }
   };
 
-
-
   const handlePhoneLoginSuccess = (response) => {
-    console.log('Phone login successful:', response);
+    console.log("Phone login successful:", response);
   };
 
   const demoAccounts = [
@@ -141,26 +139,35 @@ const LoginPage = () => {
             <Box
               onClick={() => navigate("/")}
               sx={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #1379FF 0%, #B5FF3D 100%)",
+                width: 80,
+                height: 80,
+                borderRadius: "20px",
+                background: "linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "0 auto 16px",
-                color: "white",
-                fontSize: "2rem",
-                fontWeight: "bold",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                border: "2px solid rgba(19, 121, 255, 0.1)",
                 cursor: "pointer",
                 transition: "all 0.3s ease",
                 "&:hover": {
                   transform: "scale(1.05)",
                   boxShadow: "0 8px 25px rgba(19, 121, 255, 0.3)",
+                  border: "2px solid rgba(19, 121, 255, 0.3)",
                 },
               }}
             >
-              <ElectricCar fontSize="large" />
+              <img
+                src="/assets/images/skaev_logo.png"
+                alt="SkaEV Logo"
+                style={{
+                  width: "150%",
+                  height: "150%",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                }}
+              />
             </Box>
             <Typography
               variant="h4"
@@ -181,7 +188,6 @@ const LoginPage = () => {
               {getText("auth.loginSubtitle")}
             </Typography>
           </Box>
-
           {/* Login Form */}
           <form onSubmit={handleSubmit}>
             <Box sx={{ mb: 3 }}>
@@ -228,17 +234,19 @@ const LoginPage = () => {
               {loading ? getText("auth.signingIn") : getText("auth.login")}
             </Button>
           </form>
-
           <Box sx={{ textAlign: "center", mt: 2, mb: 2 }}>
             <Link
               component={RouterLink}
               to="/forgot-password"
-              sx={{ textDecoration: "none", fontWeight: "medium", fontSize: '0.875rem' }}
+              sx={{
+                textDecoration: "none",
+                fontWeight: "medium",
+                fontSize: "0.875rem",
+              }}
             >
               Quên mật khẩu?
             </Link>
           </Box>
-
           <Box sx={{ textAlign: "center", mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
               {getText("auth.dontHaveAccount")}{" "}
@@ -251,29 +259,35 @@ const LoginPage = () => {
               </Link>
             </Typography>
           </Box>
-
           {/* Social Login */}
           <Divider sx={{ my: 3 }}>
             <Typography variant="body2" color="text.secondary">
               Hoặc đăng nhập với
             </Typography>
           </Divider>
-
-
-
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={6}>
               <Button
                 fullWidth
                 variant="outlined"
-                startIcon={socialLoading.google ? <CircularProgress size={16} /> : <Google />}
+                startIcon={
+                  socialLoading.google ? (
+                    <CircularProgress size={16} />
+                  ) : (
+                    <Google />
+                  )
+                }
                 onClick={handleGoogleLogin}
                 disabled={socialLoading.google || loading}
                 sx={{
                   textTransform: "none",
-                  borderColor: '#db4437',
-                  color: '#db4437',
-                  '&:hover': { borderColor: '#db4437', bgcolor: '#db4437', color: 'white' }
+                  borderColor: "#db4437",
+                  color: "#db4437",
+                  "&:hover": {
+                    borderColor: "#db4437",
+                    bgcolor: "#db4437",
+                    color: "white",
+                  },
                 }}
               >
                 Google
@@ -288,21 +302,25 @@ const LoginPage = () => {
                 disabled={loading}
                 sx={{
                   textTransform: "none",
-                  borderColor: '#28a745',
-                  color: '#28a745',
-                  '&:hover': { borderColor: '#28a745', bgcolor: '#28a745', color: 'white' }
+                  borderColor: "#28a745",
+                  color: "#28a745",
+                  "&:hover": {
+                    borderColor: "#28a745",
+                    bgcolor: "#28a745",
+                    color: "white",
+                  },
                 }}
               >
                 Số điện thoại
               </Button>
             </Grid>
           </Grid>
-
           <Divider sx={{ my: 3 }}>
             <Typography variant="body2" color="text.secondary">
               {getText("auth.demoAccounts")}
             </Typography>
-          </Divider>          {/* Demo Accounts */}
+          </Divider>{" "}
+          {/* Demo Accounts */}
           <Grid container spacing={2}>
             {demoAccounts.map((account, index) => (
               <Grid item xs={12} key={index}>
@@ -334,7 +352,6 @@ const LoginPage = () => {
               </Grid>
             ))}
           </Grid>
-
           <Box sx={{ textAlign: "center", mt: 3 }}>
             <Typography variant="body2" color="text.secondary">
               {getText("auth.clickToFill")}

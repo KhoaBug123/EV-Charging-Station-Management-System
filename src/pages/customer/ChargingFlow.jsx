@@ -91,6 +91,13 @@ const ChargingFlow = () => {
   const [selectedStation, setSelectedStation] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'map'
 
+  // Reset flow to step 0 on component mount - always start fresh
+  useEffect(() => {
+    console.log("🔄 Component mounted - resetting flow state");
+    resetFlowState(); // Clear any old booking/session data
+    setFlowStep(0); // Always start from step 0
+  }, []); // Empty dependency array = run only on mount
+
   // Debug searchQuery changes
   useEffect(() => {
     console.log("🔎 SearchQuery changed to:", searchQuery);
@@ -326,12 +333,8 @@ const ChargingFlow = () => {
       flowStep
     );
 
-    // Only auto-advance if we're still in the initial steps (0 or 1)
-    if (currentBooking && !chargingSession && flowStep <= 1) {
-      console.log("🔄 Auto-advancing to QR scan step after booking");
-      setFlowStep(2); // Go to QR scan step only from step 0 or 1
-    }
-    // Don't auto-advance to charging - let manual flow handle it
+    // Don't auto-advance - user must manually proceed through steps
+    // This prevents auto-jumping to QR scan on page load with persisted booking
   }, [currentBooking, chargingSession, flowStep]);
 
   const handleStationSelect = (station) => {
@@ -361,16 +364,25 @@ const ChargingFlow = () => {
   };
 
   const handleQRScan = (result) => {
+    console.log("📱 QR Scan triggered with result:", result);
+
+    // Allow QR scan even without booking for demo purposes
     if (!currentBookingData) {
-      console.error("No booking data available for QR scan");
-      return;
+      console.warn("No booking data - proceeding with demo mode");
+      // Create a temporary booking for demo
+      setCurrentBookingData({
+        id: "DEMO-" + Date.now(),
+        stationId: "ST-001",
+        stationName: "Trạm demo",
+        scheduledDateTime: new Date(),
+      });
     }
 
     setScanResult(result);
     setFlowStep(3); // Move to connect step
     setQrScanOpen(false);
 
-    console.log("📱 QR Scanned for booking:", currentBookingData.id);
+    console.log("✅ QR Scanned successfully, moving to step 3");
   };
 
   const handleStartCharging = () => {

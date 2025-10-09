@@ -20,7 +20,6 @@ import {
   Analytics,
   People,
   ElectricCar,
-  Notifications,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import useAuthStore from "../../../store/authStore";
@@ -37,7 +36,11 @@ const Sidebar = ({ open, onClose }) => {
     switch (user?.role) {
       case "admin":
         return [
-          { text: getText("nav.dashboard"), icon: <Dashboard />, path: "/admin/dashboard" },
+          {
+            text: getText("nav.dashboard"),
+            icon: <Dashboard />,
+            path: "/admin/dashboard",
+          },
           {
             text: getText("nav.advancedAnalytics"),
             icon: <Analytics />,
@@ -49,27 +52,29 @@ const Sidebar = ({ open, onClose }) => {
             path: "/admin/stations",
           },
           {
-            text: getText("nav.notifications"),
-            icon: <Notifications />,
-            path: "/admin/notifications",
-          },
-          { text: getText("nav.userManagement"), icon: <People />, path: "/admin/users" },
-          {
-            text: getText("nav.systemReports"),
-            icon: <Analytics />,
-            path: "/admin/reports",
+            text: getText("nav.userManagement"),
+            icon: <People />,
+            path: "/admin/users",
           },
         ];
 
       case "staff":
         return [
-          { text: getText("nav.dashboard"), icon: <Dashboard />, path: "/staff/dashboard" },
+          {
+            text: getText("nav.dashboard"),
+            icon: <Dashboard />,
+            path: "/staff/dashboard",
+          },
           {
             text: getText("nav.stationManagement"),
             icon: <LocationOn />,
             path: "/staff/stations",
           },
-          { text: getText("nav.profile"), icon: <Person />, path: "/staff/profile" },
+          {
+            text: getText("nav.profile"),
+            icon: <Person />,
+            path: "/staff/profile",
+          },
         ];
 
       case "customer":
@@ -78,25 +83,25 @@ const Sidebar = ({ open, onClose }) => {
           {
             text: "Hồ sơ cá nhân",
             icon: <Person />,
-            path: "/customer/profile"
+            path: "/customer/profile",
           },
           // 2. Đặt chỗ sạc (luồng sạc chính)
           {
             text: "Đặt chỗ sạc",
             icon: <ElectricCar />,
-            path: "/customer/charging"
+            path: "/customer/charging",
           },
           // 3. Thanh toán (tách riêng)
           {
             text: "Thanh toán",
             icon: <Payment />,
-            path: "/customer/payment"
+            path: "/customer/payment",
           },
           // 4. Thống kê & báo cáo (tách riêng)
           {
             text: "Thống kê & báo cáo",
             icon: <Analytics />,
-            path: "/customer/analytics"
+            path: "/customer/analytics",
           },
         ];
 
@@ -123,7 +128,36 @@ const Sidebar = ({ open, onClose }) => {
       {/* Sidebar Header */}
       <Box sx={{ p: 3, borderBottom: 1, borderColor: "divider" }}>
         <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-          <ElectricCar sx={{ color: "primary.main", mr: 1 }} />
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              mr: 1.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "16px",
+              background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+              boxShadow: "0 3px 8px rgba(0,0,0,0.08)",
+              border: "1.5px solid rgba(19, 121, 255, 0.08)",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                boxShadow: "0 5px 15px rgba(19, 121, 255, 0.12)",
+                border: "1.5px solid rgba(19, 121, 255, 0.2)",
+              },
+            }}
+          >
+            <img
+              src="/assets/images/skaev_logo.png"
+              alt="SkaEV Logo"
+              style={{
+                width: "150%",
+                height: "150%",
+                objectFit: "contain",
+                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+              }}
+            />
+          </Box>
           <Typography variant="h6" fontWeight="bold">
             SkaEV
           </Typography>
@@ -140,114 +174,141 @@ const Sidebar = ({ open, onClose }) => {
         {user?.role === "customer" ? (
           <>
             {/* Trang chủ */}
-            {navigationItems.filter(item => !item.category).map((item) => (
-              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => handleNavigation(item.path)}
-                  selected={isActivePath(item.path)}
-                  sx={{
-                    borderRadius: 2,
-                    "&.Mui-selected": {
-                      backgroundColor: "primary.main",
-                      color: "white",
-                      "& .MuiListItemIcon-root": {
+            {navigationItems
+              .filter((item) => !item.category)
+              .map((item) => (
+                <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    onClick={() => handleNavigation(item.path)}
+                    selected={isActivePath(item.path)}
+                    sx={{
+                      borderRadius: 2,
+                      "&.Mui-selected": {
+                        backgroundColor: "primary.main",
                         color: "white",
+                        "& .MuiListItemIcon-root": {
+                          color: "white",
+                        },
+                        "&:hover": {
+                          backgroundColor: "primary.dark",
+                        },
                       },
-                      "&:hover": {
-                        backgroundColor: "primary.dark",
-                      },
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: "0.9rem",
-                      fontWeight: isActivePath(item.path) ? 600 : 400,
                     }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: "0.9rem",
+                        fontWeight: isActivePath(item.path) ? 600 : 400,
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
 
             <Divider sx={{ my: 2 }} />
 
             {/* Quản lý tài khoản */}
-            <Typography variant="overline" sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600, display: 'none' }}>
+            <Typography
+              variant="overline"
+              sx={{
+                px: 2,
+                py: 1,
+                color: "text.secondary",
+                fontWeight: 600,
+                display: "none",
+              }}
+            >
               Tài khoản
             </Typography>
-            {navigationItems.filter(item => item.category === "account").map((item) => (
-              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => handleNavigation(item.path)}
-                  selected={isActivePath(item.path)}
-                  sx={{
-                    borderRadius: 2,
-                    pl: 2,
-                    "&.Mui-selected": {
-                      backgroundColor: "primary.main",
-                      color: "white",
-                      "& .MuiListItemIcon-root": {
+            {navigationItems
+              .filter((item) => item.category === "account")
+              .map((item) => (
+                <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    onClick={() => handleNavigation(item.path)}
+                    selected={isActivePath(item.path)}
+                    sx={{
+                      borderRadius: 2,
+                      pl: 2,
+                      "&.Mui-selected": {
+                        backgroundColor: "primary.main",
                         color: "white",
+                        "& .MuiListItemIcon-root": {
+                          color: "white",
+                        },
+                        "&:hover": {
+                          backgroundColor: "primary.dark",
+                        },
                       },
-                      "&:hover": {
-                        backgroundColor: "primary.dark",
-                      },
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 35 }}>{item.icon}</ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: "0.9rem",
-                      fontWeight: isActivePath(item.path) ? 600 : 400,
                     }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
+                  >
+                    <ListItemIcon sx={{ minWidth: 35 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: "0.9rem",
+                        fontWeight: isActivePath(item.path) ? 600 : 400,
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
 
             {/* Sạc xe */}
-            <Typography variant="overline" sx={{ px: 2, py: 1, mt: 2, color: "text.secondary", fontWeight: 600, display: 'none' }}>
+            <Typography
+              variant="overline"
+              sx={{
+                px: 2,
+                py: 1,
+                mt: 2,
+                color: "text.secondary",
+                fontWeight: 600,
+                display: "none",
+              }}
+            >
               Sạc xe
             </Typography>
-            {navigationItems.filter(item => item.category === "charging").map((item) => (
-              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => handleNavigation(item.path)}
-                  selected={isActivePath(item.path)}
-                  sx={{
-                    borderRadius: 2,
-                    pl: 2,
-                    "&.Mui-selected": {
-                      backgroundColor: "primary.main",
-                      color: "white",
-                      "& .MuiListItemIcon-root": {
+            {navigationItems
+              .filter((item) => item.category === "charging")
+              .map((item) => (
+                <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    onClick={() => handleNavigation(item.path)}
+                    selected={isActivePath(item.path)}
+                    sx={{
+                      borderRadius: 2,
+                      pl: 2,
+                      "&.Mui-selected": {
+                        backgroundColor: "primary.main",
                         color: "white",
+                        "& .MuiListItemIcon-root": {
+                          color: "white",
+                        },
+                        "&:hover": {
+                          backgroundColor: "primary.dark",
+                        },
                       },
-                      "&:hover": {
-                        backgroundColor: "primary.dark",
-                      },
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 35 }}>{item.icon}</ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: "0.9rem",
-                      fontWeight: isActivePath(item.path) ? 600 : 400,
                     }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-
-
-
-
+                  >
+                    <ListItemIcon sx={{ minWidth: 35 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: "0.9rem",
+                        fontWeight: isActivePath(item.path) ? 600 : 400,
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
           </>
         ) : (
           // For other roles (admin, staff)
