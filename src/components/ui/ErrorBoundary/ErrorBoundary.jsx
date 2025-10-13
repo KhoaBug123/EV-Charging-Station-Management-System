@@ -8,13 +8,14 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(_error) {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
     // Log error to console in development
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+    const isDev = import.meta.env?.DEV;
+    if (isDev) {
       console.error("Error caught by boundary:", error, errorInfo);
     }
     this.setState({
@@ -57,7 +58,7 @@ class ErrorBoundary extends React.Component {
                 "Đã xảy ra lỗi không mong muốn. Vui lòng thử làm mới trang."}
             </Typography>
 
-            {process.env.NODE_ENV === "development" && this.state.error && (
+            {import.meta.env?.DEV && this.state.error && (
               <Box mt={2}>
                 <Typography variant="caption" component="details">
                   <summary style={{ cursor: "pointer" }}>

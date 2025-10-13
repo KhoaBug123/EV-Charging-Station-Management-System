@@ -1,3 +1,4 @@
+/* eslint-disable */
 // Mock API services for development environment
 import { mockData } from "./mockData.js";
 

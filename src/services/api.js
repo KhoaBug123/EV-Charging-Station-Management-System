@@ -124,7 +124,7 @@ class MockApiClient {
     }
   }
 
-  _handleBookings(method, url, data, _params) {
+  _handleBookings(method, url, data) {
     switch (method) {
       case "GET":
         // Get user bookings or all bookings based on user role
@@ -159,7 +159,7 @@ class MockApiClient {
     }
   }
 
-  _handleUsers(method, _url, _data, _params) {
+  _handleUsers(method) {
     switch (method) {
       case "GET":
         return {

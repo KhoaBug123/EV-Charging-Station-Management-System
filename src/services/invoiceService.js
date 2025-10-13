@@ -457,8 +457,9 @@ export class InvoiceService {
         };
     }
 
-    static getInvoicesByDateRange(_startDate, _endDate) {
-        // Mock data - in real app, fetch from database
+    static getInvoicesByDateRange() {
+        // Mock data - in real app, fetch from database with date range filtering
+        // Parameters startDate and endDate would be used in production
         return [
             // This would return filtered invoices from database
         ];

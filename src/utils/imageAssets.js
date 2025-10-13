@@ -158,9 +158,9 @@ export const getStationImage = (station, imageIndex = 0) => {
 };
 
 // Image optimization helpers
-export const getOptimizedImageUrl = (url, width, height, _quality = 80) => {
-  // In a real app, you might use a service like Cloudinary or ImageKit
-  // For now, just return the original URL with width/height (unused in mock)
+export const getOptimizedImageUrl = (url, width, height) => {
+  // In a real app, you might use a service like Cloudinary or ImageKit with quality param
+  // For now, just return the original URL with width/height (quality unused in mock)
   console.log(`Optimizing image: ${url} to ${width}x${height}`);
   return url;
 };

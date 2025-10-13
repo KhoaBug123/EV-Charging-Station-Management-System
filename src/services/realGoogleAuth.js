@@ -176,7 +176,7 @@ class RealGoogleAuthService {
                     .join('')
             );
             return JSON.parse(jsonPayload);
-        } catch (_error) {
+        } catch {
             throw new Error('Invalid JWT token');
         }
     }

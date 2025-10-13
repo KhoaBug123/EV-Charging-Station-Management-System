@@ -508,7 +508,7 @@ const AddStation = () => {
       {/* Stepper */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Stepper activeStep={activeStep} orientation="horizontal">
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <Step key={step.label}>
               <StepLabel icon={step.icon}>
                 {step.label}
