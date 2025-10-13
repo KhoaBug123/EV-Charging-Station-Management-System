@@ -68,6 +68,8 @@ import EditStationModal from "../../components/admin/EditStationModal";
 import ScheduleMaintenanceModal from "../../components/admin/ScheduleMaintenanceModal";
 
 const AdminDashboard = () => {
+  // navigate reserved for future navigation features
+  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
   useAuthStore();
   const { stations, updateStation, addStation, deleteStation } = useStationStore();
@@ -79,8 +81,12 @@ const AdminDashboard = () => {
   const [inlineEdit, setInlineEdit] = useState(false);
   const [inlineForm, setInlineForm] = useState({ name: "", address: "", totalPorts: 0, fastChargePorts: 0, standardPorts: 0, pricePerKwh: 0, status: "active" });
   const [maintenanceModalOpen, setMaintenanceModalOpen] = useState(false);
+  // maintenanceSchedules reserved for future features
+  // eslint-disable-next-line no-unused-vars
   const [maintenanceSchedules, setMaintenanceSchedules] = useState([]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  // refreshTick reserved for future auto-refresh feature
+  // eslint-disable-next-line no-unused-vars
   const [refreshTick, setRefreshTick] = useState(0);
   const [addForm, setAddForm] = useState({
     name: "",

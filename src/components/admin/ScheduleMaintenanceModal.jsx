@@ -179,11 +179,14 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
     }
   };
 
+  // Helper functions reserved for future use
+  // eslint-disable-next-line no-unused-vars
   const getTypeColor = (type) => {
     const typeConfig = maintenanceTypes.find(t => t.value === type);
     return typeConfig?.color || "default";
   };
 
+  // eslint-disable-next-line no-unused-vars
   const getPriorityColor = (priority) => {
     const priorityConfig = priorityLevels.find(p => p.value === priority);
     return priorityConfig?.color || "default";

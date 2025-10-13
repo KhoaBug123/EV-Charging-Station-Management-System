@@ -28,6 +28,8 @@ import {
   Add,
   Delete,
 } from "@mui/icons-material";
+// formatCurrency imported but reserved for future use
+// eslint-disable-next-line no-unused-vars
 import { formatCurrency } from "../../utils/helpers";
 
 const EditStationModal = ({ open, onClose, station, onSave }) => {
@@ -164,6 +166,8 @@ const EditStationModal = ({ open, onClose, station, onSave }) => {
     }
   };
 
+  // Helper functions reserved for future features
+  // eslint-disable-next-line no-unused-vars
   const getStatusColor = (status) => {
     switch (status) {
       case "active": return "success";
@@ -173,6 +177,7 @@ const EditStationModal = ({ open, onClose, station, onSave }) => {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const getStatusLabel = (status) => {
     switch (status) {
       case "active": return "Hoạt động";

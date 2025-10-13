@@ -85,8 +85,8 @@ class MockApiClient {
       case "GET":
         if (url.includes("/nearby")) {
           // Filter stations by distance (mock)
-          // params.lat/lng unused in mock implementation; rename to _lat/_lng to avoid lint warnings
-          const { lat: _lat, lng: _lng, radius = 20 } = params || {};
+          // params.lat/lng/radius unused in mock implementation; rename with _ prefix to avoid lint warnings
+          const { lat: _lat, lng: _lng, radius: _radius = 20 } = params || {};
           const nearbyStations = mockData.stations.filter(
             () => Math.random() > 0.3
           );
@@ -124,7 +124,7 @@ class MockApiClient {
     }
   }
 
-  _handleBookings(method, url, data, params) {
+  _handleBookings(method, url, data, _params) {
     switch (method) {
       case "GET":
         // Get user bookings or all bookings based on user role
@@ -159,7 +159,7 @@ class MockApiClient {
     }
   }
 
-  _handleUsers(method, url, data, params) {
+  _handleUsers(method, _url, _data, _params) {
     switch (method) {
       case "GET":
         return {
