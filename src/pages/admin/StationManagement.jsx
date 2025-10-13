@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -56,15 +56,18 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import useAuthStore from "../../store/authStore";
 import useStationStore from "../../store/stationStore";
 import { mockData } from "../../data/mockData";
-import { formatCurrency, formatDate } from "../../utils/helpers";
+import { formatCurrency } from "../../utils/helpers";
 
 const StationManagement = () => {
+  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
+  // eslint-disable-next-line no-unused-vars
   const { user } = useAuthStore();
   const { stations, addStation, updateStation, deleteStation, remoteDisableStation, remoteEnableStation } =
     useStationStore();
   const [selectedStation, setSelectedStation] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'map'
   const [filterStatus, setFilterStatus] = useState("all");
   const [deleteDialog, setDeleteDialog] = useState({

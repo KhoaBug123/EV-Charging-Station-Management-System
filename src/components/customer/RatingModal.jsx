@@ -191,6 +191,7 @@ const RatingModal = ({ open, onClose, chargingSession, station, onSubmit }) => {
   ];
 
   // Chỉ giữ các tiêu chí đánh giá quan trọng
+  // eslint-disable-next-line no-unused-vars
   const ratingCategories = [
     {
       key: "overall",
