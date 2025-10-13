@@ -247,13 +247,6 @@ const AdvancedAnalytics = () => {
             </Select>
           </FormControl>
 
-          <Button
-            variant="outlined"
-            startIcon={<Download />}
-            onClick={() => console.log("Export report")}
-          >
-            Xuất báo cáo
-          </Button>
 
           <Button
             variant="contained"
