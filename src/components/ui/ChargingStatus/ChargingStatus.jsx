@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import useBookingStore from '../../../store/bookingStore';
-import { mockAPI } from '../../../data/mockAPI';
 import './ChargingStatus.css';
 
 const ChargingStatus = ({ bookingId, compact = false }) => {
@@ -14,77 +13,42 @@ const ChargingStatus = ({ bookingId, compact = false }) => {
   const [chargingSession, setChargingSession] = useState(null);
   const [currentBooking, setCurrentBooking] = useState(null);
 
-  // Real-time SOC updates using Mock API
+  // Real-time SOC updates from booking store
   useEffect(() => {
     if (!bookingId) return;
 
-    let simulationInterval = null;
+    let pollingInterval = null;
 
-    const initializeSOCWithAPI = async () => {
-      try {
-        // Initialize SOC session via API
-        await mockAPI.soc.initializeSOCSession(bookingId, {
-          initialSOC: 25 + Math.random() * 40, // 25-65%
-          targetSOC: 80,
-          batteryCapacity: 60,
-          vehicleId: `vehicle-${bookingId}`
-        });
-
-        // Check if charging is already started (via QR scan)
-        const session = getChargingSession();
-        const booking = getCurrentBooking();
-
-        // Only start simulation if charging has been properly initiated with QR scan
-        if (session?.bookingId === bookingId && session?.status === 'active' &&
-          booking?.qrScanned === true && booking?.chargingStarted === true) {
-
-          // Start real-time simulation for already started charging
-          simulationInterval = mockAPI.soc.simulateRealTimeUpdates(bookingId, (updatedSession) => {
-            setSocData({
-              initialSOC: updatedSession.initialSOC,
-              currentSOC: updatedSession.currentSOC,
-              targetSOC: updatedSession.targetSOC,
-              chargingRate: updatedSession.chargingRate,
-              estimatedTimeToTarget: updatedSession.estimatedTimeToTarget,
-              lastUpdated: updatedSession.lastUpdated,
-            });
-
-            setChargingSession({
-              ...session,
-              currentSOC: updatedSession.currentSOC,
-              powerDelivered: updatedSession.chargingHistory[updatedSession.chargingHistory.length - 1]?.power || 0,
-              energyDelivered: (updatedSession.currentSOC - updatedSession.initialSOC) * 0.6, // Rough calculation
-              voltage: updatedSession.chargingHistory[updatedSession.chargingHistory.length - 1]?.voltage || 0,
-              current: updatedSession.chargingHistory[updatedSession.chargingHistory.length - 1]?.current || 0,
-              temperature: updatedSession.chargingHistory[updatedSession.chargingHistory.length - 1]?.temperature || 25,
-              lastUpdated: updatedSession.lastUpdated,
-            });
-          });
-        }
-
-      } catch (error) {
-        console.error('Failed to initialize SOC with API:', error);
-        // Fallback to store data
-        updateDataFromStore();
-      }
-    };
-
-    const updateDataFromStore = () => {
-      const progress = getSOCProgress(bookingId);
+    const updateChargingStatus = () => {
+      // Get data from booking store (which fetches from API)
+      const socProgress = getSOCProgress(bookingId);
       const session = getChargingSession();
       const booking = getCurrentBooking();
 
-      setSocData(progress);
-      setChargingSession(session);
-      setCurrentBooking(booking);
+      if (socProgress) {
+        setSocData(socProgress);
+      }
+
+      if (session?.bookingId === bookingId) {
+        setChargingSession(session);
+      }
+
+      if (booking?.id === bookingId) {
+        setCurrentBooking(booking);
+      }
     };
 
-    // Try API first, fallback to store
-    initializeSOCWithAPI();
+    // Initial update
+    updateChargingStatus();
+
+    // Poll for updates every 5 seconds when charging is active
+    if (bookingId) {
+      pollingInterval = setInterval(updateChargingStatus, 5000);
+    }
 
     return () => {
-      if (simulationInterval) {
-        clearInterval(simulationInterval);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
       }
     };
   }, [bookingId, getSOCProgress, getChargingSession, getCurrentBooking]);

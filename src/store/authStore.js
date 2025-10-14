@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { mockUsers } from "../data/mockData";
+import { authAPI } from "../services/api";
 
 const useAuthStore = create(
   persist(
@@ -16,34 +16,27 @@ const useAuthStore = create(
         set({ loading: true, error: null });
 
         try {
-          // Mock API call - find user in mock data
-          const user = mockUsers.find(
-            (u) => u.email === email && u.password === password
-          );
+          // Real API call
+          const response = await authAPI.login({ email, password });
 
-          if (!user) {
-            throw new Error("Email hoặc mật khẩu không đúng");
+          if (response.success && response.data) {
+            set({
+              user: response.data.user,
+              isAuthenticated: true,
+              loading: false,
+            });
+
+            return { success: true, data: response.data };
+          } else {
+            throw new Error(
+              response.message || "Email hoặc mật khẩu không đúng"
+            );
           }
-
-          // Simulate API delay
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          set({
-            user: {
-              id: user.id,
-              email: user.email,
-              role: user.role,
-              profile: user.profile,
-              business: user.business || null,
-            },
-            isAuthenticated: true,
-            loading: false,
-          });
-
-          return { success: true };
         } catch (error) {
-          set({ loading: false, error: error.message });
-          return { success: false, error: error.message };
+          const errorMessage =
+            error.message || "Đã xảy ra lỗi khi đăng nhập";
+          set({ loading: false, error: errorMessage });
+          return { success: false, error: errorMessage };
         }
       },
 
@@ -51,37 +44,28 @@ const useAuthStore = create(
         set({ loading: true, error: null });
 
         try {
-          // Mock API call - simulate user registration
-          await new Promise((resolve) => setTimeout(resolve, 1500));
+          // Real API call
+          const response = await authAPI.register(userData);
 
-          // Create new user object
-          const newUser = {
-            id: `user_${Date.now()}`,
-            email: userData.email,
-            role: userData.role || "customer",
-            profile: {
-              firstName: userData.firstName,
-              lastName: userData.lastName,
-              phone: userData.phone,
-              avatar: null,
-              createdAt: new Date().toISOString(),
-              lastLogin: new Date().toISOString(),
-              verified: false, // New users need verification
-            },
-          };
+          if (response.success && response.data) {
+            set({
+              user: response.data.user,
+              isAuthenticated: false, // May require verification
+              loading: false,
+            });
 
-          // In real app, this would be handled by backend
-          // For demo, we'll add to mockUsers and return success
-          set({
-            user: newUser,
-            isAuthenticated: false, // Requires verification first
-            loading: false,
-          });
-
-          return { success: true, user: newUser, requiresVerification: true };
+            return {
+              success: true,
+              user: response.data.user,
+              requiresVerification: response.data.requiresVerification,
+            };
+          } else {
+            throw new Error(response.message || "Đăng ký thất bại");
+          }
         } catch (error) {
-          set({ loading: false, error: error.message });
-          return { success: false, error: error.message };
+          const errorMessage = error.message || "Đã xảy ra lỗi khi đăng ký";
+          set({ loading: false, error: errorMessage });
+          return { success: false, error: errorMessage };
         }
       },
 
@@ -89,48 +73,48 @@ const useAuthStore = create(
         set({ loading: true, error: null });
 
         try {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          const newUser = {
-            id: `${provider}_${Date.now()}`,
-            email: socialData.email,
+          // For social auth, backend should handle this endpoint
+          const response = await authAPI.register({
+            ...socialData,
+            provider,
             role: "customer",
-            profile: {
-              firstName:
-                socialData.firstName || socialData.name?.split(" ")[0] || "",
-              lastName:
-                socialData.lastName ||
-                socialData.name?.split(" ").slice(1).join(" ") ||
-                "",
-              phone: socialData.phone || "",
-              avatar: socialData.picture || socialData.avatar,
-              createdAt: new Date().toISOString(),
-              lastLogin: new Date().toISOString(),
-              verified: true, // Social accounts are pre-verified
-            },
-            socialProvider: provider,
-          };
-
-          set({
-            user: newUser,
-            isAuthenticated: true, // Social registration is immediate
-            loading: false,
           });
 
-          return { success: true, user: newUser };
+          if (response.success && response.data) {
+            set({
+              user: response.data.user,
+              isAuthenticated: true, // Social registration is immediate
+              loading: false,
+            });
+
+            return { success: true, user: response.data.user };
+          } else {
+            throw new Error(response.message || "Đăng ký thất bại");
+          }
         } catch (error) {
-          set({ loading: false, error: error.message });
-          return { success: false, error: error.message };
+          const errorMessage =
+            error.message || "Đã xảy ra lỗi khi đăng ký qua mạng xã hội";
+          set({ loading: false, error: errorMessage });
+          return { success: false, error: errorMessage };
         }
       },
 
-      logout: () => {
-        set({
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-          error: null,
-        });
+      logout: async () => {
+        set({ loading: true });
+        try {
+          // Call logout API to invalidate token on backend
+          await authAPI.logout();
+        } catch (error) {
+          console.error("Logout API error:", error);
+          // Continue with local logout even if API fails
+        } finally {
+          set({
+            user: null,
+            isAuthenticated: false,
+            loading: false,
+            error: null,
+          });
+        }
       },
 
       clearError: () => {

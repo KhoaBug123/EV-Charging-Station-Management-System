@@ -1,10 +1,10 @@
 import { create } from "zustand";
-import { mockStations } from "../data/mockData";
+import { stationsAPI } from "../services/api";
 import { calculateDistance } from "../utils/helpers";
 
 const useStationStore = create((set, get) => ({
   // State
-  stations: mockStations, // Initialize with data immediately
+  stations: [], // Will be fetched from API
   selectedStation: null,
   nearbyStations: [],
   loading: false,
@@ -15,14 +15,10 @@ const useStationStore = create((set, get) => ({
     maxPrice: null,
   },
 
-  // Initialize mock data on store creation
-  initializeData: () => {
-    console.log("🚀 Initializing stations:", mockStations.length);
-    console.log("📊 All station connector types:");
-    mockStations.forEach((station, index) => {
-      console.log(`  ${index + 1}. ${station.name}: ${JSON.stringify(station.charging?.connectorTypes)}`);
-    });
-    set({ stations: mockStations, loading: false, error: null });
+  // Initialize data from API
+  initializeData: async () => {
+    console.log("🚀 Initializing stations from API...");
+    await get().fetchStations();
   },
 
   // Actions
@@ -46,47 +42,68 @@ const useStationStore = create((set, get) => ({
       },
     }),
 
-  // Mock API calls
+  // Real API calls
   fetchStations: async () => {
     set({ loading: true, error: null });
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      set({ stations: mockStations, loading: false });
+      const response = await stationsAPI.getAll();
+
+      if (response.success && response.data) {
+        const stations = Array.isArray(response.data)
+          ? response.data
+          : response.data.stations || [];
+
+        console.log("✅ Stations loaded from API:", stations.length);
+        set({ stations, loading: false });
+        return { success: true, data: stations };
+      } else {
+        throw new Error(response.message || "Không thể tải danh sách trạm");
+      }
     } catch (error) {
-      set({ error: error.message, loading: false });
+      const errorMessage = error.message || "Đã xảy ra lỗi khi tải trạm sạc";
+      console.error("❌ Fetch stations error:", errorMessage);
+      set({ error: errorMessage, loading: false, stations: [] });
+      return { success: false, error: errorMessage };
     }
   },
 
   fetchNearbyStations: async (userLocation, radius = 20) => {
     set({ loading: true, error: null });
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      const response = await stationsAPI.getNearby(userLocation, radius);
 
-      // Calculate distance for each station
-      const stationsWithDistance = mockStations.map((station) => {
-        const distance = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          station.location.coordinates.lat,
-          station.location.coordinates.lng
-        );
-        return { ...station, distance };
-      });
+      if (response.success && response.data) {
+        const nearby = Array.isArray(response.data)
+          ? response.data
+          : response.data.stations || [];
 
-      // Filter by radius and sort by distance
-      const nearby = stationsWithDistance
-        .filter((station) => station.distance <= radius)
-        .sort((a, b) => a.distance - b.distance);
+        // If API doesn't provide distance, calculate it locally
+        const nearbyWithDistance = nearby.map((station) => {
+          if (!station.distance) {
+            station.distance = calculateDistance(
+              userLocation.lat,
+              userLocation.lng,
+              station.location.coordinates.lat,
+              station.location.coordinates.lng
+            );
+          }
+          return station;
+        });
 
-      set({
-        nearbyStations: nearby,
-        stations: mockStations, // Ensure stations are also set
-        loading: false
-      });
+        // Sort by distance
+        nearbyWithDistance.sort((a, b) => a.distance - b.distance);
+
+        console.log("✅ Nearby stations loaded:", nearbyWithDistance.length);
+        set({ nearbyStations: nearbyWithDistance, loading: false });
+        return { success: true, data: nearbyWithDistance };
+      } else {
+        throw new Error(response.message || "Không thể tải trạm gần bạn");
+      }
     } catch (error) {
-      set({ error: error.message, loading: false });
+      const errorMessage = error.message || "Đã xảy ra lỗi khi tải trạm gần bạn";
+      console.error("❌ Fetch nearby stations error:", errorMessage);
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
     }
   },
 
@@ -202,99 +219,81 @@ const useStationStore = create((set, get) => ({
     return { success: true };
   },
 
-  // Add new station
+  // Add new station (Admin only)
   addStation: async (stationData) => {
     set({ loading: true, error: null });
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      const newStation = {
-        id: `station-${Date.now()}`,
-        ...stationData,
-        charging: {
-          ...stationData.charging,
-          connectorTypes: ['Type 2', 'CCS2'], // Default connector types
-        },
-        analytics: {
-          totalSessions: 0,
-          totalRevenue: 0,
-          averageSessionDuration: 0,
-          utilizationRate: 0,
-          lastActivity: null,
-        },
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-      };
+      const response = await stationsAPI.create(stationData);
 
-      set((state) => ({
-        stations: [...state.stations, newStation],
-        loading: false,
-      }));
+      if (response.success && response.data) {
+        const newStation = response.data;
 
-      console.log('✅ New station added:', newStation.name);
-      return { success: true, station: newStation };
+        set((state) => ({
+          stations: [...state.stations, newStation],
+          loading: false,
+        }));
+
+        console.log("✅ New station added:", newStation.name);
+        return { success: true, station: newStation };
+      } else {
+        throw new Error(response.message || "Không thể thêm trạm mới");
+      }
     } catch (error) {
-      set({ error: error.message, loading: false });
-      return { success: false, error: error.message };
+      const errorMessage = error.message || "Đã xảy ra lỗi khi thêm trạm";
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
     }
   },
 
-  // Update existing station
+  // Update existing station (Admin/Staff)
   updateStation: async (stationId, stationData) => {
     set({ loading: true, error: null });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      set((state) => ({
-        stations: state.stations.map((station) =>
-          station.id === stationId
-            ? {
-                ...station,
-                ...stationData,
-                // Deep merge for nested objects
-                location: {
-                  ...station.location,
-                  ...stationData.location,
-                },
-                charging: {
-                  ...station.charging,
-                  ...stationData.charging,
-                },
-                contact: {
-                  ...station.contact,
-                  ...stationData.contact,
-                },
-                lastUpdated: new Date().toISOString(),
-              }
-            : station
-        ),
-        loading: false,
-      }));
+      const response = await stationsAPI.update(stationId, stationData);
 
-      console.log('✅ Station updated successfully:', stationId);
-      return { success: true };
+      if (response.success) {
+        set((state) => ({
+          stations: state.stations.map((station) =>
+            station.id === stationId
+              ? { ...station, ...stationData, lastUpdated: new Date().toISOString() }
+              : station
+          ),
+          loading: false,
+        }));
+
+        console.log("✅ Station updated successfully:", stationId);
+        return { success: true };
+      } else {
+        throw new Error(response.message || "Không thể cập nhật trạm");
+      }
     } catch (error) {
-      set({ error: error.message, loading: false });
-      return { success: false, error: error.message };
+      const errorMessage = error.message || "Đã xảy ra lỗi khi cập nhật trạm";
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
     }
   },
 
-  // Delete station
+  // Delete station (Admin only)
   deleteStation: async (stationId) => {
     set({ loading: true, error: null });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      set((state) => ({
-        stations: state.stations.filter((station) => station.id !== stationId),
-        loading: false,
-      }));
+      const response = await stationsAPI.delete(stationId);
 
-      return { success: true };
+      if (response.success) {
+        set((state) => ({
+          stations: state.stations.filter((station) => station.id !== stationId),
+          loading: false,
+        }));
+
+        console.log("✅ Station deleted:", stationId);
+        return { success: true };
+      } else {
+        throw new Error(response.message || "Không thể xóa trạm");
+      }
     } catch (error) {
-      set({ error: error.message, loading: false });
-      return { success: false, error: error.message };
+      const errorMessage = error.message || "Đã xảy ra lỗi khi xóa trạm";
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
     }
   },
 }));
