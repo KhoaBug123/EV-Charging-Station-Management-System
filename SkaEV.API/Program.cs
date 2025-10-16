@@ -91,6 +91,7 @@ builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+// builder.Services.AddScoped<IUserService, UserService>();
 
 // New Services
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
