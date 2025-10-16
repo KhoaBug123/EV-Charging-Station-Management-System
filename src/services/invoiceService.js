@@ -2,121 +2,130 @@
 import { formatCurrency } from "../utils/helpers";
 
 export class InvoiceService {
-    static generateInvoiceNumber() {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
-        return `INV-${year}-${month}-${sequence}`;
+  static generateInvoiceNumber() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(
+      3,
+      "0"
+    );
+    return `INV-${year}-${month}-${sequence}`;
+  }
+
+  static calculateTax(amount, taxRate = 0.1) {
+    const subtotal = amount / (1 + taxRate);
+    const tax = amount - subtotal;
+    return {
+      subtotal: Math.round(subtotal),
+      tax: Math.round(tax),
+      total: amount,
+    };
+  }
+
+  static generateChargingInvoice(session, pricing) {
+    const energyKwh = session.energyDelivered || 0;
+    const duration = session.duration || 0; // in minutes
+    const parkingFee = Math.ceil(duration / 60) * 5000; // 5000 VND per hour
+
+    // Calculate energy cost based on connector type
+    let energyCost = 0;
+    if (session.connectorType === "Type 2") {
+      energyCost = energyKwh * pricing.ac;
+    } else if (session.connectorType === "CCS2") {
+      energyCost = energyKwh * pricing.dc;
+    } else if (session.connectorType === "CHAdeMO") {
+      energyCost = energyKwh * pricing.ultra;
     }
 
-    static calculateTax(amount, taxRate = 0.1) {
-        const subtotal = amount / (1 + taxRate);
-        const tax = amount - subtotal;
-        return {
-            subtotal: Math.round(subtotal),
-            tax: Math.round(tax),
-            total: amount
-        };
-    }
+    const totalBeforeTax = energyCost + parkingFee;
+    const taxInfo = this.calculateTax(totalBeforeTax);
 
-    static generateChargingInvoice(session, pricing) {
-        const energyKwh = session.energyDelivered || 0;
-        const duration = session.duration || 0; // in minutes
-        const parkingFee = Math.ceil(duration / 60) * 5000; // 5000 VND per hour
+    return {
+      invoiceNumber: this.generateInvoiceNumber(),
+      date: new Date().toISOString().split("T")[0],
+      session: {
+        id: session.id,
+        stationName: session.stationName,
+        stationAddress: session.stationAddress,
+        connectorType: session.connectorType,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        duration: `${Math.floor(duration / 60)}h ${duration % 60}m`,
+        energyDelivered: `${energyKwh.toFixed(1)} kWh`,
+        powerOutput: session.powerOutput || "0 kW",
+      },
+      pricing: {
+        energyRate:
+          pricing[
+            session.connectorType?.toLowerCase()?.includes("type")
+              ? "ac"
+              : session.connectorType?.toLowerCase()?.includes("ccs")
+              ? "dc"
+              : "ultra"
+          ],
+        energyCost,
+        parkingRate: 5000,
+        parkingCost: parkingFee,
+        totalBeforeTax,
+        ...taxInfo,
+      },
+      customer: {
+        name: session.customerName || "Khách hàng",
+        email: session.customerEmail || "",
+        phone: session.customerPhone || "",
+        vehicleInfo: session.vehicleInfo || "",
+      },
+      status: "completed",
+    };
+  }
 
-        // Calculate energy cost based on connector type
-        let energyCost = 0;
-        if (session.connectorType === 'Type 2') {
-            energyCost = energyKwh * pricing.ac;
-        } else if (session.connectorType === 'CCS2') {
-            energyCost = energyKwh * pricing.dc;
-        } else if (session.connectorType === 'CHAdeMO') {
-            energyCost = energyKwh * pricing.ultra;
-        }
+  static generateSubscriptionInvoice(subscription, customer) {
+    const taxInfo = this.calculateTax(subscription.price);
 
-        const totalBeforeTax = energyCost + parkingFee;
-        const taxInfo = this.calculateTax(totalBeforeTax);
+    return {
+      invoiceNumber: this.generateInvoiceNumber(),
+      date: new Date().toISOString().split("T")[0],
+      subscription: {
+        packageName: subscription.name,
+        packageType: subscription.type,
+        period: subscription.period,
+        sessionsIncluded: subscription.sessionsPerMonth,
+        discount: subscription.discount,
+        features: subscription.features || [],
+      },
+      pricing: {
+        packagePrice: subscription.price,
+        ...taxInfo,
+      },
+      customer: {
+        name: customer.name || "Khách hàng",
+        email: customer.email || "",
+        phone: customer.phone || "",
+        membershipLevel: customer.membershipLevel || "Cơ bản",
+      },
+      status: "completed",
+    };
+  }
 
-        return {
-            invoiceNumber: this.generateInvoiceNumber(),
-            date: new Date().toISOString().split('T')[0],
-            session: {
-                id: session.id,
-                stationName: session.stationName,
-                stationAddress: session.stationAddress,
-                connectorType: session.connectorType,
-                startTime: session.startTime,
-                endTime: session.endTime,
-                duration: `${Math.floor(duration / 60)}h ${duration % 60}m`,
-                energyDelivered: `${energyKwh.toFixed(1)} kWh`,
-                powerOutput: session.powerOutput || '0 kW'
-            },
-            pricing: {
-                energyRate: pricing[session.connectorType?.toLowerCase()?.includes('type') ? 'ac' :
-                    session.connectorType?.toLowerCase()?.includes('ccs') ? 'dc' : 'ultra'],
-                energyCost,
-                parkingRate: 5000,
-                parkingCost: parkingFee,
-                totalBeforeTax,
-                ...taxInfo
-            },
-            customer: {
-                name: session.customerName || 'Khách hàng',
-                email: session.customerEmail || '',
-                phone: session.customerPhone || '',
-                vehicleInfo: session.vehicleInfo || ''
-            },
-            status: 'completed'
-        };
-    }
+  static generateInvoicePDF(invoiceData) {
+    // Mock PDF generation - in real app, use libraries like jsPDF or html2pdf
+    const pdfContent = this.formatInvoiceHTML(invoiceData);
 
-    static generateSubscriptionInvoice(subscription, customer) {
-        const taxInfo = this.calculateTax(subscription.price);
+    // Create blob and download
+    const blob = new Blob([pdfContent], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${invoiceData.invoiceNumber}.html`;
+    link.click();
+    URL.revokeObjectURL(url);
 
-        return {
-            invoiceNumber: this.generateInvoiceNumber(),
-            date: new Date().toISOString().split('T')[0],
-            subscription: {
-                packageName: subscription.name,
-                packageType: subscription.type,
-                period: subscription.period,
-                sessionsIncluded: subscription.sessionsPerMonth,
-                discount: subscription.discount,
-                features: subscription.features || []
-            },
-            pricing: {
-                packagePrice: subscription.price,
-                ...taxInfo
-            },
-            customer: {
-                name: customer.name || 'Khách hàng',
-                email: customer.email || '',
-                phone: customer.phone || '',
-                membershipLevel: customer.membershipLevel || 'Cơ bản'
-            },
-            status: 'completed'
-        };
-    }
+    return invoiceData.invoiceNumber;
+  }
 
-    static generateInvoicePDF(invoiceData) {
-        // Mock PDF generation - in real app, use libraries like jsPDF or html2pdf
-        const pdfContent = this.formatInvoiceHTML(invoiceData);
-
-        // Create blob and download
-        const blob = new Blob([pdfContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${invoiceData.invoiceNumber}.html`;
-        link.click();
-        URL.revokeObjectURL(url);
-
-        return invoiceData.invoiceNumber;
-    }
-
-    static formatInvoiceHTML(invoice) {
-        return `
+  static formatInvoiceHTML(invoice) {
+    return `
         <!DOCTYPE html>
         <html>
         <head>
@@ -260,11 +269,17 @@ export class InvoiceService {
                     </div>
                     <div>
                         <div class="label">Ngày lập:</div>
-                        <div class="value">${new Date(invoice.date).toLocaleDateString('vi-VN')}</div>
+                        <div class="value">${new Date(
+                          invoice.date
+                        ).toLocaleDateString("vi-VN")}</div>
                     </div>
                     <div>
                         <div class="label">Trạng thái:</div>
-                        <div class="status">${invoice.status === 'completed' ? 'Đã thanh toán' : 'Chờ xử lý'}</div>
+                        <div class="status">${
+                          invoice.status === "completed"
+                            ? "Đã thanh toán"
+                            : "Chờ xử lý"
+                        }</div>
                     </div>
                 </div>
 
@@ -284,57 +299,83 @@ export class InvoiceService {
                             <span class="label">Điện thoại:</span>
                             <span class="value">${invoice.customer.phone}</span>
                         </div>
-                        ${invoice.customer.vehicleInfo ? `
+                        ${
+                          invoice.customer.vehicleInfo
+                            ? `
                         <div class="info-item">
                             <span class="label">Thông tin xe:</span>
                             <span class="value">${invoice.customer.vehicleInfo}</span>
                         </div>
-                        ` : ''}
+                        `
+                            : ""
+                        }
                     </div>
                 </div>
 
-                ${invoice.session ? `
+                ${
+                  invoice.session
+                    ? `
                 <!-- Session Details -->
                 <div class="section">
                     <div class="section-title">Thông tin phiên sạc</div>
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="label">Trạm sạc:</span>
-                            <span class="value">${invoice.session.stationName}</span>
+                            <span class="value">${
+                              invoice.session.stationName
+                            }</span>
                         </div>
                         <div class="info-item">
                             <span class="label">Địa chỉ:</span>
-                            <span class="value">${invoice.session.stationAddress || 'N/A'}</span>
+                            <span class="value">${
+                              invoice.session.stationAddress || "N/A"
+                            }</span>
                         </div>
                         <div class="info-item">
                             <span class="label">Loại cổng:</span>
-                            <span class="value">${invoice.session.connectorType}</span>
+                            <span class="value">${
+                              invoice.session.connectorType
+                            }</span>
                         </div>
                         <div class="info-item">
                             <span class="label">Công suất:</span>
-                            <span class="value">${invoice.session.powerOutput}</span>
+                            <span class="value">${
+                              invoice.session.powerOutput
+                            }</span>
                         </div>
                         <div class="info-item">
                             <span class="label">Thời gian bắt đầu:</span>
-                            <span class="value">${invoice.session.startTime}</span>
+                            <span class="value">${
+                              invoice.session.startTime
+                            }</span>
                         </div>
                         <div class="info-item">
                             <span class="label">Thời gian kết thúc:</span>
-                            <span class="value">${invoice.session.endTime}</span>
+                            <span class="value">${
+                              invoice.session.endTime
+                            }</span>
                         </div>
                         <div class="info-item">
                             <span class="label">Tổng thời gian:</span>
-                            <span class="value">${invoice.session.duration}</span>
+                            <span class="value">${
+                              invoice.session.duration
+                            }</span>
                         </div>
                         <div class="info-item">
                             <span class="label">Năng lượng sạc:</span>
-                            <span class="value">${invoice.session.energyDelivered}</span>
+                            <span class="value">${
+                              invoice.session.energyDelivered
+                            }</span>
                         </div>
                     </div>
                 </div>
-                ` : ''}
+                `
+                    : ""
+                }
 
-                ${invoice.subscription ? `
+                ${
+                  invoice.subscription
+                    ? `
                 <!-- Subscription Details -->
                 <div class="section">
                     <div class="section-title">Thông tin gói dịch vụ</div>
@@ -361,7 +402,9 @@ export class InvoiceService {
                         </div>
                     </div>
                 </div>
-                ` : ''}
+                `
+                    : ""
+                }
 
                 <!-- Pricing Details -->
                 <div class="section">
@@ -376,41 +419,73 @@ export class InvoiceService {
                             </tr>
                         </thead>
                         <tbody>
-                            ${invoice.pricing.energyCost ? `
+                            ${
+                              invoice.pricing.energyCost
+                                ? `
                             <tr>
                                 <td>Phí sạc điện</td>
                                 <td>${invoice.session.energyDelivered}</td>
-                                <td>${formatCurrency(invoice.pricing.energyRate)}/kWh</td>
-                                <td>${formatCurrency(invoice.pricing.energyCost)}</td>
+                                <td>${formatCurrency(
+                                  invoice.pricing.energyRate
+                                )}/kWh</td>
+                                <td>${formatCurrency(
+                                  invoice.pricing.energyCost
+                                )}</td>
                             </tr>
-                            ` : ''}
-                            ${invoice.pricing.parkingCost ? `
+                            `
+                                : ""
+                            }
+                            ${
+                              invoice.pricing.parkingCost
+                                ? `
                             <tr>
                                 <td>Phí đỗ xe</td>
                                 <td>${invoice.session.duration}</td>
-                                <td>${formatCurrency(invoice.pricing.parkingRate)}/giờ</td>
-                                <td>${formatCurrency(invoice.pricing.parkingCost)}</td>
+                                <td>${formatCurrency(
+                                  invoice.pricing.parkingRate
+                                )}/giờ</td>
+                                <td>${formatCurrency(
+                                  invoice.pricing.parkingCost
+                                )}</td>
                             </tr>
-                            ` : ''}
-                            ${invoice.pricing.packagePrice ? `
+                            `
+                                : ""
+                            }
+                            ${
+                              invoice.pricing.packagePrice
+                                ? `
                             <tr>
-                                <td>Gói dịch vụ ${invoice.subscription.packageName}</td>
+                                <td>Gói dịch vụ ${
+                                  invoice.subscription.packageName
+                                }</td>
                                 <td>1 tháng</td>
-                                <td>${formatCurrency(invoice.pricing.packagePrice)}</td>
-                                <td>${formatCurrency(invoice.pricing.packagePrice)}</td>
+                                <td>${formatCurrency(
+                                  invoice.pricing.packagePrice
+                                )}</td>
+                                <td>${formatCurrency(
+                                  invoice.pricing.packagePrice
+                                )}</td>
                             </tr>
-                            ` : ''}
+                            `
+                                : ""
+                            }
                             <tr>
                                 <td colspan="3"><strong>Tạm tính:</strong></td>
-                                <td><strong>${formatCurrency(invoice.pricing.subtotal)}</strong></td>
+                                <td><strong>${formatCurrency(
+                                  invoice.pricing.subtotal
+                                )}</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="3"><strong>VAT (10%):</strong></td>
-                                <td><strong>${formatCurrency(invoice.pricing.tax)}</strong></td>
+                                <td><strong>${formatCurrency(
+                                  invoice.pricing.tax
+                                )}</strong></td>
                             </tr>
                             <tr class="total-row">
                                 <td colspan="3"><strong>TỔNG CỘNG:</strong></td>
-                                <td><strong>${formatCurrency(invoice.pricing.total)}</strong></td>
+                                <td><strong>${formatCurrency(
+                                  invoice.pricing.total
+                                )}</strong></td>
                             </tr>
                         </tbody>
                     </table>
@@ -423,88 +498,94 @@ export class InvoiceService {
                     <p>Mọi thắc mắc xin liên hệ: hotline 1900-xxxx hoặc support@skaev.com</p>
                     <br>
                     <p style="font-size: 10px; color: #999;">
-                        Hóa đơn được tạo lúc: ${new Date().toLocaleString('vi-VN')}
+                        Hóa đơn được tạo lúc: ${new Date().toLocaleString(
+                          "vi-VN"
+                        )}
                     </p>
                 </div>
             </div>
         </body>
         </html>
         `;
-    }
+  }
 
-    static async sendInvoiceEmail(invoice, recipientEmail) {
-        // Mock email service - in real app, integrate with email provider
-        const emailContent = {
-            to: recipientEmail,
-            subject: `Hóa đơn SkaEV - ${invoice.invoiceNumber}`,
-            html: this.formatInvoiceHTML(invoice),
-            attachments: [
-                {
-                    filename: `${invoice.invoiceNumber}.pdf`,
-                    content: 'Mock PDF content' // Real PDF buffer would go here
-                }
-            ]
-        };
+  static async sendInvoiceEmail(invoice, recipientEmail) {
+    // Mock email service - in real app, integrate with email provider
+    const emailContent = {
+      to: recipientEmail,
+      subject: `Hóa đơn SkaEV - ${invoice.invoiceNumber}`,
+      html: this.formatInvoiceHTML(invoice),
+      attachments: [
+        {
+          filename: `${invoice.invoiceNumber}.pdf`,
+          content: "Mock PDF content", // Real PDF buffer would go here
+        },
+      ],
+    };
 
-        // Simulate API call
-        console.log('Sending invoice email:', emailContent);
+    // Simulate API call
+    console.log("Sending invoice email:", emailContent);
 
-        // Return mock success
-        return {
-            success: true,
-            messageId: `email_${Date.now()}`,
-            invoice: invoice.invoiceNumber
-        };
-    }
+    // Return mock success
+    return {
+      success: true,
+      messageId: `email_${Date.now()}`,
+      invoice: invoice.invoiceNumber,
+    };
+  }
 
-    static getInvoicesByDateRange() {
-        // Mock data - in real app, fetch from database with date range filtering
-        // Parameters startDate and endDate would be used in production
-        return [
-            // This would return filtered invoices from database
-        ];
-    }
+  static getInvoicesByDateRange() {
+    // Mock data - in real app, fetch from database with date range filtering
+    // Parameters startDate and endDate would be used in production
+    return [
+      // This would return filtered invoices from database
+    ];
+  }
 
-    static async exportInvoicesToExcel(invoices) {
-        // Mock Excel export - in real app, use libraries like SheetJS
-        const csvContent = this.formatInvoicesCSV(invoices);
+  static async exportInvoicesToExcel(invoices) {
+    // Mock Excel export - in real app, use libraries like SheetJS
+    const csvContent = this.formatInvoicesCSV(invoices);
 
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `skaev_invoices_${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
-        URL.revokeObjectURL(url);
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `skaev_invoices_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
 
-        return `skaev_invoices_${new Date().toISOString().split('T')[0]}.csv`;
-    }
+    return `skaev_invoices_${new Date().toISOString().split("T")[0]}.csv`;
+  }
 
-    static formatInvoicesCSV(invoices) {
-        const headers = [
-            'Số hóa đơn',
-            'Ngày',
-            'Khách hàng',
-            'Dịch vụ',
-            'Tạm tính',
-            'VAT',
-            'Tổng cộng',
-            'Trạng thái'
-        ].join(',');
+  static formatInvoicesCSV(invoices) {
+    const headers = [
+      "Số hóa đơn",
+      "Ngày",
+      "Khách hàng",
+      "Dịch vụ",
+      "Tạm tính",
+      "VAT",
+      "Tổng cộng",
+      "Trạng thái",
+    ].join(",");
 
-        const rows = invoices.map(invoice => [
-            invoice.invoiceNumber,
-            invoice.date,
-            invoice.customer.name,
-            invoice.session ? 'Sạc xe điện' : 'Gói dịch vụ',
-            invoice.pricing.subtotal,
-            invoice.pricing.tax,
-            invoice.pricing.total,
-            invoice.status
-        ].join(','));
+    const rows = invoices.map((invoice) =>
+      [
+        invoice.invoiceNumber,
+        invoice.date,
+        invoice.customer.name,
+        invoice.session ? "Sạc xe điện" : "Gói dịch vụ",
+        invoice.pricing.subtotal,
+        invoice.pricing.tax,
+        invoice.pricing.total,
+        invoice.status,
+      ].join(",")
+    );
 
-        return [headers, ...rows].join('\n');
-    }
+    return [headers, ...rows].join("\n");
+  }
 }
 
 export default InvoiceService;

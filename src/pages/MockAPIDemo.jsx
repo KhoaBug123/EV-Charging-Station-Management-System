@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -11,17 +11,17 @@ import {
   TextField,
   Chip,
   CircularProgress,
-} from '@mui/material';
+} from "@mui/material";
 import {
   QrCodeScanner,
   BatteryChargingFull,
   PlayArrow,
   Stop,
   Refresh,
-  CheckCircle
-} from '@mui/icons-material';
-import { mockAPI } from '../data/mockAPI';
-import useStationStore from '../store/stationStore';
+  CheckCircle,
+} from "@mui/icons-material";
+import { mockAPI } from "../data/mockAPI";
+import useStationStore from "../store/stationStore";
 
 const MockAPIDemo = () => {
   const [qrResult, setQrResult] = useState(null);
@@ -32,13 +32,16 @@ const MockAPIDemo = () => {
 
   const { stations } = useStationStore();
 
-  const addLog = (message, type = 'info') => {
-    setLogs(prev => [{
-      id: Date.now(),
-      message,
-      type,
-      timestamp: new Date().toLocaleTimeString()
-    }, ...prev.slice(0, 9)]);
+  const addLog = (message, type = "info") => {
+    setLogs((prev) => [
+      {
+        id: Date.now(),
+        message,
+        type,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+      ...prev.slice(0, 9),
+    ]);
   };
 
   // QR API Tests
@@ -47,9 +50,12 @@ const MockAPIDemo = () => {
     try {
       const result = await mockAPI.qr.validateQRCode(qrData);
       setQrResult(result.data);
-      addLog(`✅ QR validated: ${result.data.station.name} - Port ${result.data.portId}`, 'success');
+      addLog(
+        `✅ QR validated: ${result.data.station.name} - Port ${result.data.portId}`,
+        "success"
+      );
     } catch (error) {
-      addLog(`❌ QR validation failed: ${error.message}`, 'error');
+      addLog(`❌ QR validation failed: ${error.message}`, "error");
     } finally {
       setApiLoading(false);
     }
@@ -59,26 +65,31 @@ const MockAPIDemo = () => {
     setApiLoading(true);
     try {
       const result = await mockAPI.qr.createQRBooking(qrData, {
-        userId: 'demo-user',
-        targetSOC: 85,
-        batteryCapacity: 75
-      });
-
-      addLog(`✅ QR booking created: ${result.data.booking.id}`, 'success');
-
-      // Initialize SOC session
-      const socResult = await mockAPI.soc.initializeSOCSession(result.data.booking.id, {
-        initialSOC: 30,
+        userId: "demo-user",
         targetSOC: 85,
         batteryCapacity: 75,
-        vehicleId: 'demo-vehicle'
       });
 
-      setSocSession(socResult.data);
-      addLog(`🔋 SOC session initialized: ${socResult.data.initialSOC}% → ${socResult.data.targetSOC}%`, 'info');
+      addLog(`✅ QR booking created: ${result.data.booking.id}`, "success");
 
+      // Initialize SOC session
+      const socResult = await mockAPI.soc.initializeSOCSession(
+        result.data.booking.id,
+        {
+          initialSOC: 30,
+          targetSOC: 85,
+          batteryCapacity: 75,
+          vehicleId: "demo-vehicle",
+        }
+      );
+
+      setSocSession(socResult.data);
+      addLog(
+        `🔋 SOC session initialized: ${socResult.data.initialSOC}% → ${socResult.data.targetSOC}%`,
+        "info"
+      );
     } catch (error) {
-      addLog(`❌ QR booking failed: ${error.message}`, 'error');
+      addLog(`❌ QR booking failed: ${error.message}`, "error");
     } finally {
       setApiLoading(false);
     }
@@ -87,7 +98,7 @@ const MockAPIDemo = () => {
   // SOC API Tests
   const startCharging = async () => {
     if (!socSession) {
-      addLog('❌ No SOC session to start charging', 'error');
+      addLog("❌ No SOC session to start charging", "error");
       return;
     }
 
@@ -96,22 +107,30 @@ const MockAPIDemo = () => {
       const result = await mockAPI.soc.startCharging(socSession.bookingId);
       setSocSession(result.data);
       setSimulationRunning(true);
-      addLog(`⚡ Charging started for booking ${socSession.bookingId}`, 'success');
+      addLog(
+        `⚡ Charging started for booking ${socSession.bookingId}`,
+        "success"
+      );
 
       // Start real-time simulation
-      const interval = mockAPI.soc.simulateRealTimeUpdates(socSession.bookingId, (updatedSession) => {
-        setSocSession(updatedSession);
-        if (updatedSession.status === 'completed') {
-          setSimulationRunning(false);
-          addLog(`🎉 Charging completed! Final SOC: ${updatedSession.currentSOC}%`, 'success');
+      const interval = mockAPI.soc.simulateRealTimeUpdates(
+        socSession.bookingId,
+        (updatedSession) => {
+          setSocSession(updatedSession);
+          if (updatedSession.status === "completed") {
+            setSimulationRunning(false);
+            addLog(
+              `🎉 Charging completed! Final SOC: ${updatedSession.currentSOC}%`,
+              "success"
+            );
+          }
         }
-      });
+      );
 
       // Store interval for cleanup
       window.chargingSimulation = interval;
-
     } catch (error) {
-      addLog(`❌ Start charging failed: ${error.message}`, 'error');
+      addLog(`❌ Start charging failed: ${error.message}`, "error");
     } finally {
       setApiLoading(false);
     }
@@ -130,10 +149,12 @@ const MockAPIDemo = () => {
       const result = await mockAPI.soc.stopCharging(socSession.bookingId);
       setSocSession(result.data);
       setSimulationRunning(false);
-      addLog(`⏹️ Charging stopped. Final SOC: ${result.data.finalSOC}%`, 'info');
-
+      addLog(
+        `⏹️ Charging stopped. Final SOC: ${result.data.finalSOC}%`,
+        "info"
+      );
     } catch (error) {
-      addLog(`❌ Stop charging failed: ${error.message}`, 'error');
+      addLog(`❌ Stop charging failed: ${error.message}`, "error");
     } finally {
       setApiLoading(false);
     }
@@ -146,9 +167,9 @@ const MockAPIDemo = () => {
     try {
       const result = await mockAPI.soc.getSOCStatus(socSession.bookingId);
       setSocSession(result.data);
-      addLog(`🔋 SOC status updated: ${result.data.currentSOC}%`, 'info');
+      addLog(`🔋 SOC status updated: ${result.data.currentSOC}%`, "info");
     } catch (error) {
-      addLog(`❌ Get SOC status failed: ${error.message}`, 'error');
+      addLog(`❌ Get SOC status failed: ${error.message}`, "error");
     } finally {
       setApiLoading(false);
     }
@@ -158,9 +179,12 @@ const MockAPIDemo = () => {
     setApiLoading(true);
     try {
       const result = await mockAPI.qr.generateStationQR(stationId);
-      addLog(`📱 Generated ${result.data.qrCodes.length} QR codes for ${result.data.stationName}`, 'success');
+      addLog(
+        `📱 Generated ${result.data.qrCodes.length} QR codes for ${result.data.stationName}`,
+        "success"
+      );
     } catch (error) {
-      addLog(`❌ QR generation failed: ${error.message}`, 'error');
+      addLog(`❌ QR generation failed: ${error.message}`, "error");
     } finally {
       setApiLoading(false);
     }
@@ -181,17 +205,32 @@ const MockAPIDemo = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
                 <QrCodeScanner color="primary" />
                 QR Scanner API Test
               </Typography>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Typography variant="subtitle2">Test với các QR codes mẫu:</Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Typography variant="subtitle2">
+                  Test với các QR codes mẫu:
+                </Typography>
 
                 {stations.slice(0, 3).map((station) => (
-                  <Paper key={station.id} sx={{ p: 2, border: '1px solid #e0e0e0' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Paper
+                    key={station.id}
+                    sx={{ p: 2, border: "1px solid #e0e0e0" }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <Box>
                         <Typography variant="subtitle1" fontWeight="medium">
                           {station.name}
@@ -200,11 +239,13 @@ const MockAPIDemo = () => {
                           QR: SKAEV:STATION:{station.id}:A01
                         </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Box sx={{ display: "flex", gap: 1 }}>
                         <Button
                           size="small"
                           variant="outlined"
-                          onClick={() => testQRValidation(`SKAEV:STATION:${station.id}:A01`)}
+                          onClick={() =>
+                            testQRValidation(`SKAEV:STATION:${station.id}:A01`)
+                          }
                           disabled={apiLoading}
                         >
                           Xác thực
@@ -212,7 +253,9 @@ const MockAPIDemo = () => {
                         <Button
                           size="small"
                           variant="contained"
-                          onClick={() => testQRBooking(`SKAEV:STATION:${station.id}:A01`)}
+                          onClick={() =>
+                            testQRBooking(`SKAEV:STATION:${station.id}:A01`)
+                          }
                           disabled={apiLoading}
                         >
                           Book & SOC
@@ -233,16 +276,39 @@ const MockAPIDemo = () => {
 
               {/* QR Result */}
               {qrResult && (
-                <Paper sx={{ p: 2, mt: 2, bgcolor: 'success.50', border: '1px solid', borderColor: 'success.200' }}>
-                  <Typography variant="subtitle2" color="success.main" gutterBottom>
+                <Paper
+                  sx={{
+                    p: 2,
+                    mt: 2,
+                    bgcolor: "success.50",
+                    border: "1px solid",
+                    borderColor: "success.200",
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    color="success.main"
+                    gutterBottom
+                  >
                     📱 QR Validation Result
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Station:</strong> {qrResult.station.name}<br />
-                    <strong>Port:</strong> {qrResult.portId}<br />
-                    <strong>Status:</strong> <Chip label={qrResult.portInfo.status} size="small" color="success" /><br />
-                    <strong>Power:</strong> {qrResult.portInfo.connector.maxPower.toFixed(0)} kW<br />
-                    <strong>Connector:</strong> {qrResult.portInfo.connector.type}
+                    <strong>Station:</strong> {qrResult.station.name}
+                    <br />
+                    <strong>Port:</strong> {qrResult.portId}
+                    <br />
+                    <strong>Status:</strong>{" "}
+                    <Chip
+                      label={qrResult.portInfo.status}
+                      size="small"
+                      color="success"
+                    />
+                    <br />
+                    <strong>Power:</strong>{" "}
+                    {qrResult.portInfo.connector.maxPower.toFixed(0)} kW
+                    <br />
+                    <strong>Connector:</strong>{" "}
+                    {qrResult.portInfo.connector.type}
                   </Typography>
                 </Paper>
               )}
@@ -254,7 +320,11 @@ const MockAPIDemo = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
                 <BatteryChargingFull color="primary" />
                 SOC Tracking API Test
               </Typography>
@@ -262,27 +332,52 @@ const MockAPIDemo = () => {
               {socSession ? (
                 <Box>
                   {/* SOC Display */}
-                  <Paper sx={{ p: 2, mb: 2, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      bgcolor: "primary.50",
+                      border: "1px solid",
+                      borderColor: "primary.200",
+                    }}
+                  >
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", mb: 2 }}
+                    >
+                      <Box
+                        sx={{ position: "relative", display: "inline-flex" }}
+                      >
                         <CircularProgress
                           variant="determinate"
-                          value={(socSession.currentSOC / socSession.targetSOC) * 100}
+                          value={
+                            (socSession.currentSOC / socSession.targetSOC) * 100
+                          }
                           size={80}
                           thickness={6}
-                          sx={{ color: socSession.currentSOC >= 80 ? 'success.main' : 'primary.main' }}
+                          sx={{
+                            color:
+                              socSession.currentSOC >= 80
+                                ? "success.main"
+                                : "primary.main",
+                          }}
                         />
-                        <Box sx={{
-                          top: 0,
-                          left: 0,
-                          bottom: 0,
-                          right: 0,
-                          position: 'absolute',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                          <Typography variant="h6" component="div" color="text.secondary">
+                        <Box
+                          sx={{
+                            top: 0,
+                            left: 0,
+                            bottom: 0,
+                            right: 0,
+                            position: "absolute",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Typography
+                            variant="h6"
+                            component="div"
+                            color="text.secondary"
+                          >
                             {socSession.currentSOC}%
                           </Typography>
                         </Box>
@@ -290,26 +385,41 @@ const MockAPIDemo = () => {
                     </Box>
 
                     <Typography variant="body2" textAlign="center">
-                      <strong>Status:</strong> <Chip label={socSession.status} size="small"
-                        color={socSession.status === 'charging' ? 'success' : 'default'} /><br />
+                      <strong>Status:</strong>{" "}
+                      <Chip
+                        label={socSession.status}
+                        size="small"
+                        color={
+                          socSession.status === "charging"
+                            ? "success"
+                            : "default"
+                        }
+                      />
+                      <br />
                       <strong>Target:</strong> {socSession.targetSOC}% •
-                      <strong>Rate:</strong> {socSession.chargingRate}%/h<br />
+                      <strong>Rate:</strong> {socSession.chargingRate}%/h
+                      <br />
                       {socSession.estimatedTimeToTarget && (
                         <>
-                          <strong>Time remaining:</strong> {Math.round(socSession.estimatedTimeToTarget)} min
+                          <strong>Time remaining:</strong>{" "}
+                          {Math.round(socSession.estimatedTimeToTarget)} min
                         </>
                       )}
                     </Typography>
                   </Paper>
 
                   {/* Controls */}
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
                     <Button
                       variant="contained"
                       color="success"
                       startIcon={<PlayArrow />}
                       onClick={startCharging}
-                      disabled={apiLoading || socSession.status === 'charging' || simulationRunning}
+                      disabled={
+                        apiLoading ||
+                        socSession.status === "charging" ||
+                        simulationRunning
+                      }
                       size="small"
                     >
                       Bắt đầu sạc
@@ -319,7 +429,7 @@ const MockAPIDemo = () => {
                       color="error"
                       startIcon={<Stop />}
                       onClick={stopCharging}
-                      disabled={apiLoading || socSession.status !== 'charging'}
+                      disabled={apiLoading || socSession.status !== "charging"}
                       size="small"
                     >
                       Stop
@@ -337,12 +447,18 @@ const MockAPIDemo = () => {
 
                   {simulationRunning && (
                     <Alert severity="info" sx={{ mb: 2 }}>
-                      ⚡ Real-time simulation running... SOC updating every 3 seconds
+                      ⚡ Real-time simulation running... SOC updating every 3
+                      seconds
                     </Alert>
                   )}
                 </Box>
               ) : (
-                <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  textAlign="center"
+                  sx={{ py: 4 }}
+                >
                   Chưa có SOC session. Hãy tạo booking từ QR scanner bên trái.
                 </Typography>
               )}
@@ -358,7 +474,7 @@ const MockAPIDemo = () => {
                 📝 API Call Logs
               </Typography>
 
-              <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+              <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
                 {logs.length > 0 ? (
                   logs.map((log) => (
                     <Paper
@@ -366,20 +482,33 @@ const MockAPIDemo = () => {
                       sx={{
                         p: 1,
                         mb: 1,
-                        bgcolor: log.type === 'error' ? 'error.50' : log.type === 'success' ? 'success.50' : 'grey.50',
-                        borderLeft: `4px solid ${log.type === 'error' ? 'red' : log.type === 'success' ? 'green' : 'blue'}`
+                        bgcolor:
+                          log.type === "error"
+                            ? "error.50"
+                            : log.type === "success"
+                            ? "success.50"
+                            : "grey.50",
+                        borderLeft: `4px solid ${
+                          log.type === "error"
+                            ? "red"
+                            : log.type === "success"
+                            ? "green"
+                            : "blue"
+                        }`,
                       }}
                     >
                       <Typography variant="caption" color="text.secondary">
                         {log.timestamp}
                       </Typography>
-                      <Typography variant="body2">
-                        {log.message}
-                      </Typography>
+                      <Typography variant="body2">{log.message}</Typography>
                     </Paper>
                   ))
                 ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontStyle: "italic" }}
+                  >
                     Chưa có API calls. Hãy test các chức năng bên trên.
                   </Typography>
                 )}
@@ -400,13 +529,15 @@ const MockAPIDemo = () => {
       </Grid>
 
       {apiLoading && (
-        <Box sx={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999
-        }}>
+        <Box
+          sx={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 9999,
+          }}
+        >
           <CircularProgress />
         </Box>
       )}
