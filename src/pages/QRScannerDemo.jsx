@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,12 +9,12 @@ import {
   Alert,
   Paper,
   Chip,
-} from '@mui/material';
-import { QrCodeScanner } from '@mui/icons-material';
-import QRCodeScanner from '../components/ui/QRCodeScanner/QRCodeScanner';
-import ChargingStatus from '../components/ui/ChargingStatus/ChargingStatus';
-import useStationStore from '../store/stationStore';
-import useBookingStore from '../store/bookingStore';
+} from "@mui/material";
+import { QrCodeScanner } from "@mui/icons-material";
+import QRCodeScanner from "../components/ui/QRCodeScanner/QRCodeScanner";
+import ChargingStatus from "../components/ui/ChargingStatus/ChargingStatus";
+import useStationStore from "../store/stationStore";
+import useBookingStore from "../store/bookingStore";
 
 const QRScannerDemo = () => {
   const [showScanner, setShowScanner] = useState(false);
@@ -26,13 +26,13 @@ const QRScannerDemo = () => {
     createBooking,
     initializeSOCTracking,
     startCharging,
-    updateChargingProgress
+    updateChargingProgress,
   } = useBookingStore();
 
   const mockQRCodes = getMockQRCodes();
 
   const handleScanSuccess = (result) => {
-    console.log('Scan success:', result);
+    console.log("Scan success:", result);
     setScanResult(result);
     setActiveBooking(result.booking);
     setShowScanner(false);
@@ -64,26 +64,30 @@ const QRScannerDemo = () => {
   };
 
   const simulateScan = (stationId) => {
-    const station = stations.find(s => s.id === stationId);
+    const station = stations.find((s) => s.id === stationId);
     if (!station) return;
 
     const mockBooking = createBooking({
       stationId: station.id,
       stationName: station.name,
       chargerType: {
-        id: 'fast',
-        name: 'Sạc nhanh',
+        id: "fast",
+        name: "Sạc nhanh",
         power: `${station.charging.maxPower} kW`,
-        price: `${station.charging.pricing.dcRate || station.charging.pricing.acRate} VNĐ/kWh`,
+        price: `${
+          station.charging.pricing.dcRate || station.charging.pricing.acRate
+        } VNĐ/kWh`,
       },
       connector: {
-        id: station.charging.connectorTypes[0]?.replace(' ', '_').toLowerCase() || 'auto',
-        name: station.charging.connectorTypes[0] || 'Tự động',
-        compatible: 'Tương thích',
+        id:
+          station.charging.connectorTypes[0]?.replace(" ", "_").toLowerCase() ||
+          "auto",
+        name: station.charging.connectorTypes[0] || "Tự động",
+        compatible: "Tương thích",
       },
       slot: {
-        id: 'A01',
-        location: 'Port A01',
+        id: "A01",
+        location: "Port A01",
       },
       bookingTime: new Date().toISOString(),
       scannedAt: new Date().toISOString(),
@@ -93,8 +97,8 @@ const QRScannerDemo = () => {
     handleScanSuccess({
       station,
       booking: mockBooking,
-      portId: 'A01',
-      message: `Quét QR thành công! Đang khởi tạo phiên sạc tại ${station.name}...`
+      portId: "A01",
+      message: `Quét QR thành công! Đang khởi tạo phiên sạc tại ${station.name}...`,
     });
   };
 
@@ -105,7 +109,8 @@ const QRScannerDemo = () => {
       </Typography>
 
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Demo tính năng quét QR code để bắt đầu sạc và hiển thị trạng thái sạc real-time
+        Demo tính năng quét QR code để bắt đầu sạc và hiển thị trạng thái sạc
+        real-time
       </Typography>
 
       {/* QR Scanner */}
@@ -125,15 +130,16 @@ const QRScannerDemo = () => {
                 Điều khiển Demo
               </Typography>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Button
                   variant="contained"
                   startIcon={<QrCodeScanner />}
                   onClick={() => setShowScanner(true)}
                   size="large"
                   sx={{
-                    background: "linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%)",
-                    fontWeight: "bold"
+                    background:
+                      "linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%)",
+                    fontWeight: "bold",
                   }}
                 >
                   Mở Camera Quét QR
@@ -144,8 +150,17 @@ const QRScannerDemo = () => {
                 </Typography>
 
                 {stations.slice(0, 3).map((station) => (
-                  <Paper key={station.id} sx={{ p: 2, border: '1px solid #e0e0e0' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Paper
+                    key={station.id}
+                    sx={{ p: 2, border: "1px solid #e0e0e0" }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <Box>
                         <Typography variant="subtitle1" fontWeight="medium">
                           {station.name}
@@ -157,7 +172,11 @@ const QRScannerDemo = () => {
                         <Chip
                           label={`${station.charging.availablePorts} ports available`}
                           size="small"
-                          color={station.charging.availablePorts > 0 ? "success" : "default"}
+                          color={
+                            station.charging.availablePorts > 0
+                              ? "success"
+                              : "default"
+                          }
                         />
                       </Box>
                       <Button
@@ -187,9 +206,12 @@ const QRScannerDemo = () => {
                 <Box>
                   <Alert severity="success" sx={{ mb: 2 }}>
                     <Typography variant="body2">
-                      <strong>✅ Quét thành công!</strong><br />
-                      Trạm: {scanResult.station?.name}<br />
-                      Port: {scanResult.portId}<br />
+                      <strong>✅ Quét thành công!</strong>
+                      <br />
+                      Trạm: {scanResult.station?.name}
+                      <br />
+                      Port: {scanResult.portId}
+                      <br />
                       Booking ID: {scanResult.booking?.id}
                     </Typography>
                   </Alert>
@@ -197,13 +219,24 @@ const QRScannerDemo = () => {
                   <Typography variant="subtitle2" gutterBottom>
                     Chi tiết trạm sạc:
                   </Typography>
-                  <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                  <Paper sx={{ p: 2, bgcolor: "grey.50" }}>
                     <Typography variant="body2">
-                      <strong>Tên:</strong> {scanResult.station?.name}<br />
-                      <strong>Địa chỉ:</strong> {scanResult.station?.location?.address}<br />
-                      <strong>Công suất tối đa:</strong> {scanResult.station?.charging?.maxPower} kW<br />
-                      <strong>Cổng khả dụng:</strong> {scanResult.station?.charging?.availablePorts}/{scanResult.station?.charging?.totalPorts}<br />
-                      <strong>Giá sạc:</strong> {scanResult.station?.charging?.pricing?.dcRate || scanResult.station?.charging?.pricing?.acRate} VNĐ/kWh
+                      <strong>Tên:</strong> {scanResult.station?.name}
+                      <br />
+                      <strong>Địa chỉ:</strong>{" "}
+                      {scanResult.station?.location?.address}
+                      <br />
+                      <strong>Công suất tối đa:</strong>{" "}
+                      {scanResult.station?.charging?.maxPower} kW
+                      <br />
+                      <strong>Cổng khả dụng:</strong>{" "}
+                      {scanResult.station?.charging?.availablePorts}/
+                      {scanResult.station?.charging?.totalPorts}
+                      <br />
+                      <strong>Giá sạc:</strong>{" "}
+                      {scanResult.station?.charging?.pricing?.dcRate ||
+                        scanResult.station?.charging?.pricing?.acRate}{" "}
+                      VNĐ/kWh
                     </Typography>
                   </Paper>
                 </Box>

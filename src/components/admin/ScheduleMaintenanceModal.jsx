@@ -79,8 +79,8 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
       for (let i = 1; i <= totalPorts; i++) {
         availablePorts.push(`Port ${i}`);
       }
-      
-      setFormData(prev => ({
+
+      setFormData((prev) => ({
         ...prev,
         affectedPorts: availablePorts, // Default to all ports
       }));
@@ -88,60 +88,60 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
   }, [station]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ""
+        [field]: "",
       }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.description.trim()) {
       newErrors.description = "Mô tả bảo trì là bắt buộc";
     }
-    
+
     if (!formData.scheduledDate) {
       newErrors.scheduledDate = "Ngày bảo trì là bắt buộc";
     }
-    
+
     if (!formData.scheduledTime) {
       newErrors.scheduledTime = "Giờ bảo trì là bắt buộc";
     }
-    
+
     if (formData.estimatedDuration < 0.5) {
       newErrors.estimatedDuration = "Thời gian ước tính phải ít nhất 30 phút";
     }
-    
+
     if (formData.affectedPorts.length === 0) {
       newErrors.affectedPorts = "Phải chọn ít nhất một cổng sạc";
     }
-    
+
     if (!formData.maintenanceTeam.trim()) {
       newErrors.maintenanceTeam = "Đội bảo trì là bắt buộc";
     }
-    
+
     if (!formData.contactPerson.trim()) {
       newErrors.contactPerson = "Người liên hệ là bắt buộc";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSchedule = async () => {
     if (!validateForm()) return;
-    
+
     setLoading(true);
-    
+
     try {
       const maintenanceData = {
         stationId: station.id,
@@ -170,7 +170,6 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
 
       await onSchedule(maintenanceData);
       onClose();
-      
     } catch (error) {
       console.error("Error scheduling maintenance:", error);
       alert("Có lỗi xảy ra khi lên lịch bảo trì. Vui lòng thử lại.");
@@ -182,13 +181,13 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
   // Helper functions reserved for future use
   // eslint-disable-next-line no-unused-vars
   const getTypeColor = (type) => {
-    const typeConfig = maintenanceTypes.find(t => t.value === type);
+    const typeConfig = maintenanceTypes.find((t) => t.value === type);
     return typeConfig?.color || "default";
   };
 
   // eslint-disable-next-line no-unused-vars
   const getPriorityColor = (priority) => {
-    const priorityConfig = priorityLevels.find(p => p.value === priority);
+    const priorityConfig = priorityLevels.find((p) => p.value === priority);
     return priorityConfig?.color || "default";
   };
 
@@ -203,23 +202,25 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
-      <Dialog 
-        open={open} 
-        onClose={onClose} 
-        maxWidth="md" 
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="md"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 2 }
+          sx: { borderRadius: 2 },
         }}
       >
-        <DialogTitle sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          pb: 1
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Build sx={{ mr: 1, color: 'warning.main' }} />
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            pb: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Build sx={{ mr: 1, color: "warning.main" }} />
             <Typography variant="h6" fontWeight="bold">
               Lên lịch bảo trì
             </Typography>
@@ -233,7 +234,7 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
 
         <DialogContent sx={{ pt: 3 }}>
           {/* Station Info */}
-          <Card sx={{ mb: 3, bgcolor: 'grey.50' }}>
+          <Card sx={{ mb: 3, bgcolor: "grey.50" }}>
             <CardContent sx={{ py: 2 }}>
               <Typography variant="h6" color="primary" gutterBottom>
                 {station?.name}
@@ -241,16 +242,20 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
               <Typography variant="body2" color="text.secondary">
                 {station?.location?.address}, {station?.location?.city}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                <Chip 
-                  label={`${station?.charging?.totalPorts || 0} cổng sạc`} 
-                  size="small" 
-                  color="info" 
+              <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+                <Chip
+                  label={`${station?.charging?.totalPorts || 0} cổng sạc`}
+                  size="small"
+                  color="info"
                 />
-                <Chip 
-                  label={station?.status === 'active' ? 'Hoạt động' : 'Không hoạt động'} 
-                  size="small" 
-                  color={station?.status === 'active' ? 'success' : 'error'} 
+                <Chip
+                  label={
+                    station?.status === "active"
+                      ? "Hoạt động"
+                      : "Không hoạt động"
+                  }
+                  size="small"
+                  color={station?.status === "active" ? "success" : "error"}
                 />
               </Box>
             </CardContent>
@@ -259,8 +264,8 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
           <Grid container spacing={3}>
             {/* Maintenance Type & Priority */}
             <Grid item xs={12}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Build sx={{ mr: 1, color: 'primary.main' }} />
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Build sx={{ mr: 1, color: "primary.main" }} />
                 <Typography variant="h6" color="primary">
                   Loại bảo trì
                 </Typography>
@@ -273,15 +278,17 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 <Select
                   value={formData.maintenanceType}
                   label="Loại bảo trì"
-                  onChange={(e) => handleInputChange('maintenanceType', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("maintenanceType", e.target.value)
+                  }
                 >
                   {maintenanceTypes.map((type) => (
                     <MenuItem key={type.value} value={type.value}>
-                      <Chip 
-                        label={type.label} 
-                        color={type.color} 
-                        size="small" 
-                        sx={{ mr: 1 }} 
+                      <Chip
+                        label={type.label}
+                        color={type.color}
+                        size="small"
+                        sx={{ mr: 1 }}
                       />
                       {type.label}
                     </MenuItem>
@@ -296,15 +303,17 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 <Select
                   value={formData.priority}
                   label="Mức độ ưu tiên"
-                  onChange={(e) => handleInputChange('priority', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("priority", e.target.value)
+                  }
                 >
                   {priorityLevels.map((priority) => (
                     <MenuItem key={priority.value} value={priority.value}>
-                      <Chip 
-                        label={priority.label} 
-                        color={priority.color} 
-                        size="small" 
-                        sx={{ mr: 1 }} 
+                      <Chip
+                        label={priority.label}
+                        color={priority.color}
+                        size="small"
+                        sx={{ mr: 1 }}
                       />
                       {priority.label}
                     </MenuItem>
@@ -318,7 +327,9 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 fullWidth
                 label="Mô tả bảo trì *"
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 error={!!errors.description}
                 helperText={errors.description}
                 multiline
@@ -329,8 +340,8 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
 
             {/* Schedule */}
             <Grid item xs={12} sx={{ mt: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Schedule sx={{ mr: 1, color: 'primary.main' }} />
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Schedule sx={{ mr: 1, color: "primary.main" }} />
                 <Typography variant="h6" color="primary">
                   Lịch trình
                 </Typography>
@@ -341,11 +352,13 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
               <DatePicker
                 label="Ngày bảo trì *"
                 value={formData.scheduledDate}
-                onChange={(newValue) => handleInputChange('scheduledDate', newValue)}
+                onChange={(newValue) =>
+                  handleInputChange("scheduledDate", newValue)
+                }
                 renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    fullWidth 
+                  <TextField
+                    {...params}
+                    fullWidth
                     error={!!errors.scheduledDate}
                     helperText={errors.scheduledDate}
                   />
@@ -358,11 +371,13 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
               <TimePicker
                 label="Giờ bắt đầu *"
                 value={formData.scheduledTime}
-                onChange={(newValue) => handleInputChange('scheduledTime', newValue)}
+                onChange={(newValue) =>
+                  handleInputChange("scheduledTime", newValue)
+                }
                 renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    fullWidth 
+                  <TextField
+                    {...params}
+                    fullWidth
                     error={!!errors.scheduledTime}
                     helperText={errors.scheduledTime}
                   />
@@ -376,12 +391,21 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 label="Thời gian ước tính (giờ) *"
                 type="number"
                 value={formData.estimatedDuration}
-                onChange={(e) => handleInputChange('estimatedDuration', parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleInputChange(
+                    "estimatedDuration",
+                    parseFloat(e.target.value) || 0
+                  )
+                }
                 error={!!errors.estimatedDuration}
                 helperText={errors.estimatedDuration}
                 inputProps={{ min: 0.5, step: 0.5 }}
                 InputProps={{
-                  endAdornment: <Typography variant="body2" color="text.secondary">giờ</Typography>
+                  endAdornment: (
+                    <Typography variant="body2" color="text.secondary">
+                      giờ
+                    </Typography>
+                  ),
                 }}
               />
             </Grid>
@@ -396,9 +420,11 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 <Select
                   multiple
                   value={formData.affectedPorts}
-                  onChange={(e) => handleInputChange('affectedPorts', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("affectedPorts", e.target.value)
+                  }
                   renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                       {selected.map((value) => (
                         <Chip key={value} label={value} size="small" />
                       ))}
@@ -432,7 +458,9 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 fullWidth
                 label="Đội bảo trì *"
                 value={formData.maintenanceTeam}
-                onChange={(e) => handleInputChange('maintenanceTeam', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("maintenanceTeam", e.target.value)
+                }
                 error={!!errors.maintenanceTeam}
                 helperText={errors.maintenanceTeam}
                 placeholder="Ví dụ: Đội kỹ thuật A"
@@ -444,7 +472,9 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 fullWidth
                 label="Người liên hệ *"
                 value={formData.contactPerson}
-                onChange={(e) => handleInputChange('contactPerson', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("contactPerson", e.target.value)
+                }
                 error={!!errors.contactPerson}
                 helperText={errors.contactPerson}
                 placeholder="Ví dụ: Nguyễn Văn A"
@@ -456,7 +486,9 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 fullWidth
                 label="Số điện thoại liên hệ"
                 value={formData.contactPhone}
-                onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("contactPhone", e.target.value)
+                }
                 placeholder="Ví dụ: +84 901 234 567"
               />
             </Grid>
@@ -466,7 +498,9 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 control={
                   <Checkbox
                     checked={formData.notifyUsers}
-                    onChange={(e) => handleInputChange('notifyUsers', e.target.checked)}
+                    onChange={(e) =>
+                      handleInputChange("notifyUsers", e.target.checked)
+                    }
                     color="primary"
                   />
                 }
@@ -479,7 +513,9 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
                 fullWidth
                 label="Hướng dẫn đặc biệt"
                 value={formData.specialInstructions}
-                onChange={(e) => handleInputChange('specialInstructions', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("specialInstructions", e.target.value)
+                }
                 multiline
                 rows={2}
                 placeholder="Các hướng dẫn đặc biệt hoặc lưu ý cho đội bảo trì..."
@@ -490,8 +526,10 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
           {/* Warning Alert */}
           <Alert severity="warning" sx={{ mt: 3 }}>
             <Typography variant="body2">
-              <strong>Lưu ý:</strong> Trong thời gian bảo trì, các cổng sạc được chọn sẽ không khả dụng. 
-              {formData.notifyUsers && " Người dùng sẽ được thông báo trước về lịch bảo trì này."}
+              <strong>Lưu ý:</strong> Trong thời gian bảo trì, các cổng sạc được
+              chọn sẽ không khả dụng.
+              {formData.notifyUsers &&
+                " Người dùng sẽ được thông báo trước về lịch bảo trì này."}
             </Typography>
           </Alert>
         </DialogContent>
@@ -502,14 +540,14 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
           <Button onClick={onClose} variant="outlined">
             Hủy
           </Button>
-          <Button 
-            onClick={handleSchedule} 
-            variant="contained" 
+          <Button
+            onClick={handleSchedule}
+            variant="contained"
             disabled={loading}
             startIcon={loading ? <CircularProgress size={20} /> : <Schedule />}
             sx={{ minWidth: 140 }}
           >
-            {loading ? 'Đang lên lịch...' : 'Lên lịch bảo trì'}
+            {loading ? "Đang lên lịch..." : "Lên lịch bảo trì"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -518,4 +556,3 @@ const ScheduleMaintenanceModal = ({ open, onClose, station, onSchedule }) => {
 };
 
 export default ScheduleMaintenanceModal;
-
