@@ -40,8 +40,6 @@ const MonthlyCostReports = () => {
     const [selectedMonth, setSelectedMonth] = useState("2024-09");
     const { bookingHistory, getBookingStats} = useBookingStore();
 
-    // Initialize data if needed
-    React.
     // Calculate monthly data from booking store
     const bookingStats = getBookingStats();
     const completedBookings = bookingHistory.filter(b => b.status === 'completed');

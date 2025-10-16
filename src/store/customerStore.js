@@ -1,7 +1,7 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// Unified Customer Data Store - Tổng hợp và đồng bộ tất cả dữ liệu customer
+// Unified Customer Data Store - Tá»•ng há»£p vÃ  Ä‘á»“ng bá»™ táº¥t cáº£ dá»¯ liá»‡u customer
 const useCustomerStore = create(
     persist(
         (set, get) => ({
@@ -24,7 +24,7 @@ const useCustomerStore = create(
                     if (user) {
                         // Initialize booking data
                         if (bookingStore.default.getState().bookingHistory.length === 0) {
-                            bookingStore.default.getState().initializeMockData();
+                            bookingStore.default.getState().fetchBookings();
                         }
 
                         // Initialize vehicle data
@@ -47,18 +47,7 @@ const useCustomerStore = create(
                 }
             },
 
-            getUserMockData: (userId) => {
-                const mockUsers = [
-                    {
-                        id: "customer-001",
-                        email: "nguyenvanan@gmail.com",
-                        role: "customer",
-                        profile: {
-                            firstName: "Nguyễn Văn",
-                            lastName: "An",
-                            phone: "+84 905 678 901",
-                            verified: true,
-                        },
+            
                         vehicle: {
                             make: "Tesla",
                             model: "Model 3",
