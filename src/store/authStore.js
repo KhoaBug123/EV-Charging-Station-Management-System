@@ -24,7 +24,7 @@ const useAuthStore = create(
             user_id: response.userId,
             email: response.email,
             full_name: response.fullName,
-            role: response.role,
+            role: response.role.toLowerCase(), // Normalize role to lowercase
           };
 
           // Store token in localStorage
