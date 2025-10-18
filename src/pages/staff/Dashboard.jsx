@@ -21,6 +21,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Paper,
+  Divider,
+  Snackbar,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -33,6 +40,10 @@ import {
   Add,
   Visibility,
   Edit,
+  Search,
+  Settings,
+  MonetizationOn,
+  PowerSettingsNew,
 } from "@mui/icons-material";
 
 // Mock data với chargingPosts structure
@@ -45,9 +56,33 @@ const mockStationData = [
     dailyRevenue: 2850000,
     dailySessions: 24,
     chargingPosts: [
-      { id: "A", name: "AC Charger A", type: "AC", power: 22, totalSlots: 2, availableSlots: 1, status: "active" },
-      { id: "B", name: "DC Fast B", type: "DC", power: 50, totalSlots: 1, availableSlots: 0, status: "occupied" },
-      { id: "C", name: "DC Ultra C", type: "DC", power: 150, totalSlots: 2, availableSlots: 2, status: "active" },
+      {
+        id: "A",
+        name: "AC Charger A",
+        type: "AC",
+        power: 22,
+        totalSlots: 2,
+        availableSlots: 1,
+        status: "active",
+      },
+      {
+        id: "B",
+        name: "DC Fast B",
+        type: "DC",
+        power: 50,
+        totalSlots: 1,
+        availableSlots: 0,
+        status: "occupied",
+      },
+      {
+        id: "C",
+        name: "DC Ultra C",
+        type: "DC",
+        power: 150,
+        totalSlots: 2,
+        availableSlots: 2,
+        status: "active",
+      },
     ],
   },
   {
@@ -58,9 +93,33 @@ const mockStationData = [
     dailyRevenue: 3200000,
     dailySessions: 31,
     chargingPosts: [
-      { id: "A", name: "AC Charger A", type: "AC", power: 22, totalSlots: 4, availableSlots: 2, status: "active" },
-      { id: "B", name: "DC Fast B", type: "DC", power: 75, totalSlots: 2, availableSlots: 1, status: "active" },
-      { id: "C", name: "DC Ultra C", type: "DC", power: 200, totalSlots: 2, availableSlots: 2, status: "active" },
+      {
+        id: "A",
+        name: "AC Charger A",
+        type: "AC",
+        power: 22,
+        totalSlots: 4,
+        availableSlots: 2,
+        status: "active",
+      },
+      {
+        id: "B",
+        name: "DC Fast B",
+        type: "DC",
+        power: 75,
+        totalSlots: 2,
+        availableSlots: 1,
+        status: "active",
+      },
+      {
+        id: "C",
+        name: "DC Ultra C",
+        type: "DC",
+        power: 200,
+        totalSlots: 2,
+        availableSlots: 2,
+        status: "active",
+      },
     ],
   },
   {
@@ -71,9 +130,33 @@ const mockStationData = [
     dailyRevenue: 1850000,
     dailySessions: 18,
     chargingPosts: [
-      { id: "A", name: "AC Charger A", type: "AC", power: 22, totalSlots: 2, availableSlots: 1, status: "active" },
-      { id: "B", name: "DC Fast B", type: "DC", power: 50, totalSlots: 1, availableSlots: 0, status: "maintenance" },
-      { id: "C", name: "DC Ultra C", type: "DC", power: 150, totalSlots: 1, availableSlots: 0, status: "offline" },
+      {
+        id: "A",
+        name: "AC Charger A",
+        type: "AC",
+        power: 22,
+        totalSlots: 2,
+        availableSlots: 1,
+        status: "active",
+      },
+      {
+        id: "B",
+        name: "DC Fast B",
+        type: "DC",
+        power: 50,
+        totalSlots: 1,
+        availableSlots: 0,
+        status: "maintenance",
+      },
+      {
+        id: "C",
+        name: "DC Ultra C",
+        type: "DC",
+        power: 150,
+        totalSlots: 1,
+        availableSlots: 0,
+        status: "offline",
+      },
     ],
   },
 ];
@@ -134,6 +217,19 @@ const StaffDashboard = () => {
     notes: "",
   });
 
+  // New states for driver-like flow
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedStationForDetail, setSelectedStationForDetail] =
+    useState(null);
+  const [actionDialog, setActionDialog] = useState({
+    open: false,
+    type: "",
+    station: null,
+  });
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+
   // Calculate overall statistics từ chargingPosts
   const calculateStationStats = (stations) => {
     let totalPosts = 0;
@@ -143,21 +239,21 @@ const StaffDashboard = () => {
     let totalSlots = 0;
     let occupiedSlots = 0;
 
-    stations.forEach(station => {
-      station.chargingPosts.forEach(post => {
+    stations.forEach((station) => {
+      station.chargingPosts.forEach((post) => {
         totalPosts++;
         totalSlots += post.totalSlots;
-        occupiedSlots += (post.totalSlots - post.availableSlots);
+        occupiedSlots += post.totalSlots - post.availableSlots;
 
         switch (post.status) {
-          case 'active':
-          case 'occupied':
+          case "active":
+          case "occupied":
             activePosts++;
             break;
-          case 'maintenance':
+          case "maintenance":
             maintenancePosts++;
             break;
-          case 'offline':
+          case "offline":
             offlinePosts++;
             break;
         }
@@ -185,6 +281,39 @@ const StaffDashboard = () => {
     0
   );
 
+  // Filter stations based on search and status like driver flow
+  const filteredStations = stations.filter((station) => {
+    const matchesSearch =
+      station.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      station.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || station.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Handle station actions like driver flow
+  const handleStationAction = (action, station) => {
+    if (action === "view") {
+      setSelectedStationForDetail(station);
+    } else if (action === "maintenance") {
+      setActionDialog({ open: true, type: "maintenance", station });
+    }
+  };
+
+  const handleActionComplete = (actionType, stationName) => {
+    setSuccessMessage(
+      `${actionType} completed successfully for ${stationName}!`
+    );
+    setShowSuccess(true);
+    setActionDialog({ open: false, type: "", station: null });
+    setMaintenanceDialog(false);
+  };
+
+  const getDistanceToStation = (station) => {
+    // Mock distance calculation for staff view
+    return (Math.random() * 5 + 0.5).toFixed(1);
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "operational":
@@ -211,23 +340,6 @@ const StaffDashboard = () => {
     }
   };
 
-  const handleViewDetails = (station) => {
-    setSelectedStation(station);
-    setDetailsDialog(true);
-  };
-
-  const handleScheduleMaintenance = () => {
-    setMaintenanceDialog(true);
-  };
-
-  const handleMaintenanceSubmit = () => {
-    // Here you would typically send the maintenance request to your backend
-    console.log("Maintenance request:", maintenanceForm);
-    setMaintenanceDialog(false);
-    setMaintenanceForm({ chargingPost: "", slot: "", issue: "", notes: "" });
-    // Show success message
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -246,6 +358,51 @@ const StaffDashboard = () => {
           Monitor and manage charging stations, posts, and slots
         </Typography>
       </Box>
+
+      {/* Search & Filters - Driver-like flow */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Grid container spacing={3} alignItems="center">
+            {/* Search Bar */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                placeholder="Search stations by name or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <Search sx={{ mr: 1, color: "text.secondary" }} />
+                  ),
+                }}
+              />
+            </Grid>
+
+            {/* Status Filter */}
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Station Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Status</MenuItem>
+                  <MenuItem value="operational">Operational</MenuItem>
+                  <MenuItem value="warning">Warning</MenuItem>
+                  <MenuItem value="error">Error</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Results Count */}
+            <Grid item xs={12} md={3}>
+              <Typography variant="body2" color="text.secondary">
+                {filteredStations.length} stations found
+              </Typography>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* Overview Statistics */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -275,8 +432,9 @@ const StaffDashboard = () => {
                 color="text.secondary"
                 sx={{ mt: 1 }}
               >
-                {stats.activePosts} active, {stats.maintenancePosts} maintenance,{" "}
-                {stats.offlinePosts} offline • {stats.totalSlots} total slots
+                {stats.activePosts} active, {stats.maintenancePosts}{" "}
+                maintenance, {stats.offlinePosts} offline • {stats.totalSlots}{" "}
+                total slots
               </Typography>
             </CardContent>
           </Card>
@@ -303,9 +461,10 @@ const StaffDashboard = () => {
                 </Box>
               </Box>
               <Chip
-                label={`${((stats.availableSlots / stats.totalSlots) * 100).toFixed(
-                  1
-                )}% Available`}
+                label={`${(
+                  (stats.availableSlots / stats.totalSlots) *
+                  100
+                ).toFixed(1)}% Available`}
                 color="success"
                 size="small"
               />
@@ -364,9 +523,10 @@ const StaffDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Station Status Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12}>
+      {/* Station List & Details - Driver-like flow */}
+      <Grid container spacing={3}>
+        {/* Station List */}
+        <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
               <Box
@@ -374,11 +534,11 @@ const StaffDashboard = () => {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  mb: 3,
+                  mb: 2,
                 }}
               >
-                <Typography variant="h6" fontWeight="bold">
-                  Station Status Overview
+                <Typography variant="h6" gutterBottom>
+                  {filteredStations.length} Stations Found
                 </Typography>
                 <Button
                   startIcon={<Refresh />}
@@ -388,253 +548,378 @@ const StaffDashboard = () => {
                 </Button>
               </Box>
 
-              <Grid container spacing={2}>
-                {stations.map((station) => (
-                  <Grid item xs={12} md={4} key={station.id}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Box
+              <Box sx={{ maxHeight: 600, overflowY: "auto" }}>
+                {filteredStations.map((station, index) => (
+                  <Box key={station.id}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        border:
+                          selectedStationForDetail?.id === station.id ? 2 : 1,
+                        borderColor:
+                          selectedStationForDetail?.id === station.id
+                            ? "primary.main"
+                            : "divider",
+                        "&:hover": {
+                          backgroundColor: "grey.50",
+                          cursor: "pointer",
+                        },
+                      }}
+                      onClick={() => setSelectedStationForDetail(station)}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          mb: 2,
+                        }}
+                      >
+                        <Avatar
                           sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            mb: 2,
+                            bgcolor: "success.main",
+                            width: 60,
+                            height: 60,
                           }}
                         >
-                          <Box>
-                            <Typography variant="h6" fontWeight="bold">
-                              {station.name}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              <LocationOn sx={{ fontSize: 16, mr: 0.5 }} />
-                              {station.location}
-                            </Typography>
-                          </Box>
-                          <Chip
-                            label={station.status}
-                            color={getStatusColor(station.status)}
-                            size="small"
-                          />
-                        </Box>
+                          <LocationOn />
+                        </Avatar>
 
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" gutterBottom>
-                            Charging Posts: {station.chargingPosts.length} posts,{" "}
-                            {station.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)} total slots
-                          </Typography>
-                          <Typography variant="body2" gutterBottom>
-                            Available Slots: {station.chargingPosts.reduce((sum, post) => sum + post.availableSlots, 0)}/
-                            {station.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)}
-                          </Typography>
-                          <LinearProgress
-                            variant="determinate"
-                            value={
-                              ((station.chargingPosts.reduce((sum, post) => sum + (post.totalSlots - post.availableSlots), 0)) /
-                                station.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)) * 100
-                            }
-                            sx={{ height: 6, borderRadius: 3, mb: 1 }}
-                          />
+                        <Box sx={{ flexGrow: 1 }}>
                           <Box
                             sx={{
                               display: "flex",
                               justifyContent: "space-between",
+                              alignItems: "start",
+                              mb: 1,
                             }}
                           >
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              Revenue: {formatCurrency(station.dailyRevenue)}
+                            <Typography variant="h6" fontWeight="bold">
+                              {station.name}
                             </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              Sessions: {station.dailySessions}
+                            <Chip
+                              label={station.status}
+                              color={getStatusColor(station.status)}
+                              size="small"
+                            />
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                              mb: 1,
+                            }}
+                          >
+                            <LocationOn
+                              sx={{ fontSize: 16, color: "text.secondary" }}
+                            />
+                            <Typography variant="body2" color="text.secondary">
+                              {station.location} •{" "}
+                              {getDistanceToStation(station)}km away
                             </Typography>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 3,
+                              mb: 1,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <ElectricCar
+                                sx={{ fontSize: 16, color: "primary.main" }}
+                              />
+                              <Typography variant="body2">
+                                {station.chargingPosts.length} posts,{" "}
+                                {station.chargingPosts.reduce(
+                                  (sum, post) => sum + post.totalSlots,
+                                  0
+                                )}{" "}
+                                slots
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <MonetizationOn
+                                sx={{ fontSize: 16, color: "success.main" }}
+                              />
+                              <Typography variant="body2">
+                                {formatCurrency(station.dailyRevenue)} revenue
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Available:{" "}
+                                {station.chargingPosts.reduce(
+                                  (sum, post) => sum + post.availableSlots,
+                                  0
+                                )}
+                                /
+                                {station.chargingPosts.reduce(
+                                  (sum, post) => sum + post.totalSlots,
+                                  0
+                                )}
+                              </Typography>
+                              <LinearProgress
+                                variant="determinate"
+                                value={
+                                  (station.chargingPosts.reduce(
+                                    (sum, post) =>
+                                      sum +
+                                      (post.totalSlots - post.availableSlots),
+                                    0
+                                  ) /
+                                    station.chargingPosts.reduce(
+                                      (sum, post) => sum + post.totalSlots,
+                                      0
+                                    )) *
+                                  100
+                                }
+                                sx={{ width: 60, height: 4 }}
+                              />
+                            </Box>
+                            <Chip
+                              label={`${station.dailySessions} sessions`}
+                              size="small"
+                              variant="outlined"
+                            />
+                            <Chip
+                              label={`${
+                                station.chargingPosts.filter(
+                                  (p) =>
+                                    p.status === "active" ||
+                                    p.status === "occupied"
+                                ).length
+                              } active posts`}
+                              color="success"
+                              size="small"
+                            />
                           </Box>
                         </Box>
 
-                        <Box sx={{ display: "flex", gap: 1 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                          }}
+                        >
                           <Button
+                            variant="contained"
                             size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStationAction("view", station);
+                            }}
                             startIcon={<Visibility />}
-                            onClick={() => handleViewDetails(station)}
                           >
-                            Details
+                            Monitor
                           </Button>
                           <Button
+                            variant="outlined"
                             size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStationAction("maintenance", station);
+                            }}
                             startIcon={<Build />}
-                            onClick={handleScheduleMaintenance}
                           >
                             Maintenance
                           </Button>
                         </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                      </Box>
+                    </Paper>
+                  </Box>
                 ))}
-              </Grid>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
 
-      {/* Alerts Section */}
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Card>
+        {/* Station Details & Alerts Panel */}
+        <Grid item xs={12} md={4}>
+          {selectedStationForDetail ? (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {selectedStationForDetail.name}
+                </Typography>
+
+                <Box sx={{ mb: 2 }}>
+                  <Avatar
+                    sx={{
+                      width: "100%",
+                      height: 120,
+                      borderRadius: 2,
+                      bgcolor: "success.main",
+                    }}
+                  >
+                    <LocationOn sx={{ fontSize: 40 }} />
+                  </Avatar>
+                </Box>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    color: "text.secondary",
+                    fontSize: "0.875rem",
+                    mb: 1,
+                  }}
+                >
+                  <LocationOn sx={{ fontSize: 16, mr: 0.5 }} />
+                  {selectedStationForDetail.location}
+                </Box>
+
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Distance: {getDistanceToStation(selectedStationForDetail)}km
+                  away
+                </Typography>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Typography variant="subtitle2" gutterBottom>
+                  Charging Posts Status
+                </Typography>
+                {selectedStationForDetail.chargingPosts.map((post) => (
+                  <Box key={post.id} sx={{ fontSize: "0.875rem", mb: 1 }}>
+                    • {post.name}: {post.availableSlots}/{post.totalSlots}{" "}
+                    available ({post.status})
+                  </Box>
+                ))}
+
+                <Divider sx={{ my: 2 }} />
+
+                <Typography variant="subtitle2" gutterBottom>
+                  Performance Today
+                </Typography>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Revenue:{" "}
+                  {formatCurrency(selectedStationForDetail.dailyRevenue)}
+                </Box>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Sessions: {selectedStationForDetail.dailySessions}
+                </Box>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                    mt: 2,
+                  }}
+                >
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={() =>
+                      handleStationAction(
+                        "maintenance",
+                        selectedStationForDetail
+                      )
+                    }
+                  >
+                    Schedule Maintenance
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Select a Station
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Choose a station from the list to see detailed information and
+                  perform maintenance actions.
+                </Typography>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Alerts */}
+          <Card sx={{ mt: 3 }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Recent Alerts
+                Priority Alerts
               </Typography>
-              {alerts.map((alert) => (
+              {alerts.slice(0, 3).map((alert) => (
                 <Alert
                   key={alert.id}
-                  severity={
-                    alert.priority === "high"
-                      ? "error"
-                      : alert.priority === "medium"
-                        ? "warning"
-                        : "info"
-                  }
+                  severity={getPriorityColor(alert.priority)}
                   sx={{ mb: 1 }}
-                  action={
-                    <IconButton size="small">
-                      <Edit />
-                    </IconButton>
-                  }
+                  size="small"
                 >
-                  <Box>
-                    <Typography variant="body2" fontWeight="bold">
-                      {alert.station} - {alert.chargingPost}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {alert.slot} • {alert.message}
-                    </Typography>
-                    <br />
-                    <Typography variant="caption" color="text.secondary">
-                      {alert.time}
-                    </Typography>
-                  </Box>
+                  <Typography variant="caption" fontWeight="bold">
+                    {alert.station} - {alert.chargingPost}
+                  </Typography>
+                  <Typography variant="caption" display="block">
+                    {alert.message}
+                  </Typography>
                 </Alert>
               ))}
+              <Button variant="outlined" fullWidth size="small" sx={{ mt: 1 }}>
+                View All Alerts
+              </Button>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Station Details Dialog */}
+      {/* Action Dialogs - Driver-like flow */}
       <Dialog
-        open={detailsDialog}
-        onClose={() => setDetailsDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Station Details - {selectedStation?.name}</DialogTitle>
-        <DialogContent>
-          {selectedStation && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Location
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {selectedStation.location}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Status
-                </Typography>
-                <Chip
-                  label={selectedStation.status}
-                  color={getStatusColor(selectedStation.status)}
-                  size="small"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Charging Posts
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {selectedStation.chargingPosts.length} posts
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Total Slots
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {selectedStation.chargingPosts.reduce((sum, post) => sum + post.totalSlots, 0)} slots
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Available Slots
-                </Typography>
-                <Typography variant="body2" color="success.main">
-                  {selectedStation.chargingPosts.reduce((sum, post) => sum + post.availableSlots, 0)} available
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Daily Revenue
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatCurrency(selectedStation.dailyRevenue)}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Daily Sessions
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {selectedStation.dailySessions}
-                </Typography>
-              </Grid>
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailsDialog(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Maintenance Dialog */}
-      <Dialog
-        open={maintenanceDialog}
-        onClose={() => setMaintenanceDialog(false)}
+        open={actionDialog.open && actionDialog.type === "maintenance"}
+        onClose={() =>
+          setActionDialog({ open: false, type: "", station: null })
+        }
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Schedule Maintenance</DialogTitle>
+        <DialogTitle>
+          Schedule Maintenance: {actionDialog.station?.name}
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Station</InputLabel>
-              <Select
-                value={maintenanceForm.stationId}
-                onChange={(e) =>
-                  setMaintenanceForm({
-                    ...maintenanceForm,
-                    stationId: e.target.value,
-                    chargingPost: '', // Reset when station changes
-                    slot: '', // Reset when station changes
-                  })
-                }
-              >
-                {mockStationData.map((station) => (
-                  <MenuItem key={station.id} value={station.id}>
-                    {station.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="Charging Post ID"
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Schedule maintenance for charging posts and equipment.
+          </Typography>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Charging Post</InputLabel>
+            <Select
               value={maintenanceForm.chargingPost}
               onChange={(e) =>
                 setMaintenanceForm({
@@ -642,56 +927,82 @@ const StaffDashboard = () => {
                   chargingPost: e.target.value,
                 })
               }
-              sx={{ mb: 2 }}
-              placeholder="e.g., AC Charger A, DC Fast B"
-            />
-            <TextField
-              fullWidth
-              label="Slot ID"
-              value={maintenanceForm.slot}
-              onChange={(e) =>
-                setMaintenanceForm({
-                  ...maintenanceForm,
-                  slot: e.target.value,
-                })
-              }
-              sx={{ mb: 2 }}
-              placeholder="e.g., Slot 1, Slot 2, All slots"
-            />
-            <TextField
-              fullWidth
-              label="Issue Description"
-              value={maintenanceForm.issue}
-              onChange={(e) =>
-                setMaintenanceForm({
-                  ...maintenanceForm,
-                  issue: e.target.value,
-                })
-              }
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Additional Notes"
-              value={maintenanceForm.notes}
-              onChange={(e) =>
-                setMaintenanceForm({
-                  ...maintenanceForm,
-                  notes: e.target.value,
-                })
-              }
-            />
-          </Box>
+            >
+              {actionDialog.station?.chargingPosts?.map((post) => (
+                <MenuItem key={post.id} value={post.id}>
+                  {post.name} ({post.type} - {post.power}kW)
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth
+            label="Slot ID"
+            value={maintenanceForm.slot}
+            onChange={(e) =>
+              setMaintenanceForm({ ...maintenanceForm, slot: e.target.value })
+            }
+            sx={{ mb: 2 }}
+            placeholder="e.g., Slot 1, Slot 2, All slots"
+          />
+          <TextField
+            fullWidth
+            label="Issue Description"
+            value={maintenanceForm.issue}
+            onChange={(e) =>
+              setMaintenanceForm({ ...maintenanceForm, issue: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Additional Notes"
+            value={maintenanceForm.notes}
+            onChange={(e) =>
+              setMaintenanceForm({ ...maintenanceForm, notes: e.target.value })
+            }
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMaintenanceDialog(false)}>Cancel</Button>
-          <Button onClick={handleMaintenanceSubmit} variant="contained">
-            Schedule
+          <Button
+            onClick={() =>
+              setActionDialog({ open: false, type: "", station: null })
+            }
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() =>
+              handleActionComplete(
+                "Maintenance scheduling",
+                actionDialog.station?.name
+              )
+            }
+          >
+            Schedule Maintenance
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Success Snackbar - Driver-like flow */}
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={4000}
+        onClose={() => setShowSuccess(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShowSuccess(false)}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

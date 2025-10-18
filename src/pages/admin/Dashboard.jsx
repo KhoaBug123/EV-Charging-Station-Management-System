@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -30,6 +30,8 @@ import {
   InputLabel,
   Select,
   Tooltip,
+  Snackbar,
+  Divider,
 } from "@mui/material";
 
 import {
@@ -57,116 +59,62 @@ import {
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import useStationStore from "../../store/stationStore";
+import { mockData } from "../../data/mockData";
 import { formatCurrency } from "../../utils/helpers";
 import { STATION_STATUS, USER_ROLES } from "../../utils/constants";
-import EditStationModal from "../../components/admin/EditStationModal";
-import ScheduleMaintenanceModal from "../../components/admin/ScheduleMaintenanceModal";
 
 const AdminDashboard = () => {
-  // navigate reserved for future navigation features
-  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
   useAuthStore();
-  const { stations, updateStation, addStation, deleteStation } =
-    useStationStore();
+  const { stations } = useStationStore();
   useState("today");
   const [anchorEl, setAnchorEl] = useState(null);
   const [openStationDialog, setOpenStationDialog] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [inlineEdit, setInlineEdit] = useState(false);
-  const [inlineForm, setInlineForm] = useState({
-    name: "",
-    address: "",
-    totalPorts: 0,
-    fastChargePorts: 0,
-    standardPorts: 0,
-    pricePerKwh: 0,
-    status: "active",
-  });
-  const [maintenanceModalOpen, setMaintenanceModalOpen] = useState(false);
-  // maintenanceSchedules reserved for future features
-  // eslint-disable-next-line no-unused-vars
-  const [maintenanceSchedules, setMaintenanceSchedules] = useState([]);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  // refreshTick reserved for future auto-refresh feature
-  // eslint-disable-next-line no-unused-vars
-  const [refreshTick, setRefreshTick] = useState(0);
-  const [addForm, setAddForm] = useState({
-    name: "",
-    address: "",
-    totalPorts: 4,
-    fastChargePorts: 2,
-    standardPorts: 2,
-    pricePerKwh: 3500,
-    operatingHours: "24/7",
-    status: "active",
-  });
-  const [addErrors, setAddErrors] = useState({});
 
-  // Debug: Log when stations change
-  useEffect(() => {
-    console.log("ðŸ”„ Stations updated in Dashboard:", stations.length);
-    stations.forEach((station) => {
-      console.log(`Station ${station.name}:`, {
-        id: station.id,
-        status: station.status,
-        totalPorts: station.charging?.totalPorts,
-        lastUpdated: station.lastUpdated,
-      });
-    });
-  }, [stations]);
+  // New states for driver-like flow
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedStationForDetail, setSelectedStationForDetail] =
+    useState(null);
+  const [actionDialog, setActionDialog] = useState({
+    open: false,
+    type: "",
+    station: null,
+  });
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  // System Overview Stats (recalculated when stations change)
+  // System Overview Stats
   const totalStations = stations.length;
   const activeStations = stations.filter((s) => s.status === "active").length;
-  const totalUsers = users.length;
-  bookings.length;
-  const todayBookings = bookings.filter(
+  const totalUsers = mockData.users.length;
+  mockData.bookings.length;
+  const todayBookings = mockData.bookings.filter(
     (b) => new Date(b.date).toDateString() === new Date().toDateString()
   ).length;
-  const totalRevenue = bookings.reduce((sum, b) => sum + b.cost, 0);
-  const activeChargingSessions = bookings.filter(
+  const totalRevenue = mockData.bookings.reduce((sum, b) => sum + b.cost, 0);
+  const activeChargingSessions = mockData.bookings.filter(
     (b) => b.status === "in_progress"
   ).length;
 
-  // Station Performance vá»›i chargingPosts structure
+  // Station Performance với chargingPosts structure
   const stationPerformance = stations
     .map((station) => {
-      const stationBookings = bookings.filter(
+      const stationBookings = mockData.bookings.filter(
         (b) => b.stationId === station.id
       );
       const revenue = stationBookings.reduce((sum, b) => sum + b.cost, 0);
 
-      // TÃ­nh utilization tá»« chargingPosts hoáº·c totalPorts
+      // Tính utilization từ chargingPosts
       let totalSlots = 0;
       let occupiedSlots = 0;
-      let chargingPostsCount = 0;
 
-      if (station.charging?.totalPorts) {
-        // Æ¯u tiÃªn totalPorts náº¿u Ä‘Ã£ Ä‘Æ°á»£c cáº­p nháº­t tá»« UI
-        totalSlots = station.charging.totalPorts;
-        if (station.charging?.availablePorts != null) {
-          occupiedSlots = Math.max(
-            0,
-            totalSlots - station.charging.availablePorts
-          );
-        } else if (station.charging?.chargingPosts) {
-          station.charging.chargingPosts.forEach((post) => {
-            occupiedSlots += post.totalSlots - post.availableSlots;
-          });
-        } else {
-          occupiedSlots = 0;
-        }
-        chargingPostsCount =
-          station.charging?.chargingPosts?.length || Math.ceil(totalSlots / 2);
-      } else if (station.charging?.chargingPosts) {
-        // Backward-compatible: tÃ­nh tá»« chargingPosts náº¿u khÃ´ng cÃ³ totalPorts
+      if (station.charging?.chargingPosts) {
         station.charging.chargingPosts.forEach((post) => {
           totalSlots += post.totalSlots;
           occupiedSlots += post.totalSlots - post.availableSlots;
         });
-        chargingPostsCount = station.charging.chargingPosts.length;
       }
 
       const utilization =
@@ -179,12 +127,51 @@ const AdminDashboard = () => {
         utilization,
         totalSlots,
         occupiedSlots,
-        chargingPostsCount,
+        chargingPostsCount: station.charging?.chargingPosts?.length || 0,
       };
     })
     .sort((a, b) => b.revenue - a.revenue);
 
-  // Recent Activities vá»›i chargingPosts context
+  // Filter stations based on search and status like driver flow
+  const filteredStations = stationPerformance.filter((station) => {
+    const matchesSearch =
+      station.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      station.location.address
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || station.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Handle station actions like driver flow
+  const handleStationAction = (action, station) => {
+    console.log(`${action} station:`, station.name);
+    if (action === "view") {
+      setSelectedStationForDetail(station);
+    } else if (
+      action === "edit" ||
+      action === "maintenance" ||
+      action === "delete"
+    ) {
+      setActionDialog({ open: true, type: action, station });
+    }
+  };
+
+  const handleActionComplete = (actionType, stationName) => {
+    setSuccessMessage(
+      `${actionType} completed successfully for ${stationName}!`
+    );
+    setShowSuccess(true);
+    setActionDialog({ open: false, type: "", station: null });
+  };
+
+  const getDistanceToStation = (station) => {
+    // Mock distance calculation for admin view
+    return (Math.random() * 10 + 1).toFixed(1);
+  };
+
+  // Recent Activities với chargingPosts context
   const recentActivities = [
     {
       id: 1,
@@ -203,14 +190,14 @@ const AdminDashboard = () => {
     {
       id: 3,
       type: "user",
-      message: "New user registration: Nguyá»…n VÄƒn An",
+      message: "New user registration: John Smith",
       time: "30 minutes ago",
       severity: "success",
     },
     {
       id: 4,
       type: "payment",
-      message: "DC Fast Charging completed: â‚«125,000",
+      message: "DC Fast Charging completed: ₫125,000",
       time: "1 hour ago",
       severity: "success",
     },
@@ -230,105 +217,11 @@ const AdminDashboard = () => {
     },
   ];
 
-  const handleStationAction = (action, station) => {
-    console.log(`${action} station:`, station.name);
-    setSelectedStation(station);
-
-    switch (action) {
-      case "view":
-        setOpenStationDialog(true);
-        break;
-      case "edit":
-        // Open inline edit inside details dialog
-        setOpenStationDialog(true);
-        setInlineEdit(true);
-        setInlineForm({
-          name: station.name || "",
-          address: station.location?.address || "",
-          totalPorts: station.charging?.totalPorts || 0,
-          fastChargePorts: station.charging?.fastChargePorts || 0,
-          standardPorts: station.charging?.standardPorts || 0,
-          pricePerKwh: station.charging?.pricePerKwh || 0,
-          status: station.status || "active",
-        });
-        break;
-      case "maintenance":
-        setMaintenanceModalOpen(true);
-        break;
-      case "delete":
-        if (
-          window.confirm(
-            `Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a tráº¡m sáº¡c "${station.name}"?`
-          )
-        ) {
-          deleteStation(station.id).then((res) => {
-            if (res?.success) {
-              setSelectedStation(null);
-              setOpenStationDialog(false);
-            } else {
-              alert("XÃ³a tráº¡m tháº¥t báº¡i. Vui lÃ²ng thá»­ láº¡i.");
-            }
-          });
-        }
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleSaveStation = async (stationId, updatedData) => {
-    try {
-      const result = await updateStation(stationId, updatedData);
-      if (result.success) {
-        alert("Cáº­p nháº­t tráº¡m sáº¡c thÃ nh cÃ´ng!");
-        // Force component re-render by updating selectedStation if it's the same station
-        if (selectedStation && selectedStation.id === stationId) {
-          const updatedStation = stations.find((s) => s.id === stationId);
-          setSelectedStation(updatedStation);
-        }
-      } else {
-        throw new Error(result.error || "Update failed");
-      }
-    } catch (error) {
-      console.error("Error updating station:", error);
-      alert("CÃ³ lá»—i xáº£y ra khi cáº­p nháº­t tráº¡m sáº¡c.");
-    }
-  };
-
-  const handleScheduleMaintenance = async (maintenanceData) => {
-    try {
-      // Add to maintenance schedules
-      setMaintenanceSchedules((prev) => [
-        ...prev,
-        {
-          id: `maintenance-${Date.now()}`,
-          ...maintenanceData,
-        },
-      ]);
-
-      // Update station status if needed
-      if (
-        maintenanceData.type === "emergency" ||
-        maintenanceData.priority === "critical"
-      ) {
-        await updateStation(maintenanceData.stationId, {
-          status: "maintenance",
-        });
-      }
-
-      alert("LÃªn lá»‹ch báº£o trÃ¬ thÃ nh cÃ´ng!");
-      console.log("Maintenance scheduled:", maintenanceData);
-    } catch (error) {
-      console.error("Error scheduling maintenance:", error);
-      alert("CÃ³ lá»—i xáº£y ra khi lÃªn lá»‹ch báº£o trÃ¬.");
-    }
-  };
-
   const getStatusChip = (status) => {
     const configs = {
-      active: { label: "Hoáº¡t Ä‘á»™ng", color: "success" },
-      inactive: { label: "KhÃ´ng hoáº¡t Ä‘á»™ng", color: "error" },
-      maintenance: { label: "Báº£o trÃ¬", color: "warning" },
+      active: { label: "Hoạt động", color: "success" },
+      inactive: { label: "Không hoạt động", color: "error" },
+      maintenance: { label: "Bảo trì", color: "warning" },
       construction: { label: "Construction", color: "info" },
     };
 
@@ -362,13 +255,86 @@ const AdminDashboard = () => {
       >
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Quáº£n trá»‹ há»‡ thá»‘ng ðŸ”§
+            Quản trị hệ thống 🔧
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            GiÃ¡m sÃ¡t vÃ  quáº£n lÃ½ máº¡ng lÆ°á»›i sáº¡c SkaEV
+            Giám sát và quản lý mạng lưới sạc SkaEV
           </Typography>
         </Box>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Download />}
+            onClick={() => console.log("Export report")}
+          >
+            Xuất báo cáo
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => navigate("/admin/stations/new")}
+          >
+            Thêm trạm sạc
+          </Button>
+        </Box>
       </Box>
+
+      {/* Alert for Critical Issues */}
+      <Alert severity="warning" sx={{ mb: 3 }}>
+        <Typography variant="body2">
+          <strong>Cảnh báo hệ thống:</strong> 2 trạm sạc cần được chú ý ngay lập
+          tức.
+          <Button size="small" sx={{ ml: 1 }}>
+            Xem chi tiết
+          </Button>
+        </Typography>
+      </Alert>
+
+      {/* Search & Filters - Driver-like flow */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Grid container spacing={3} alignItems="center">
+            {/* Search Bar */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                placeholder="Search stations by name or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <Search sx={{ mr: 1, color: "text.secondary" }} />
+                  ),
+                }}
+              />
+            </Grid>
+
+            {/* Status Filter */}
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Station Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Status</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                  <MenuItem value="maintenance">Maintenance</MenuItem>
+                  <MenuItem value="construction">Construction</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Results Count */}
+            <Grid item xs={12} md={3}>
+              <Typography variant="body2" color="text.secondary">
+                {filteredStations.length} stations found
+              </Typography>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* Key Metrics */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -389,10 +355,10 @@ const AdminDashboard = () => {
                     {totalStations}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Tá»•ng sá»‘ tráº¡m
+                    Total Stations
                   </Typography>
                   <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    {activeStations} hoáº¡t Ä‘á»™ng
+                    {activeStations} hoạt động
                   </Typography>
                 </Box>
               </Box>
@@ -417,10 +383,10 @@ const AdminDashboard = () => {
                     {totalUsers}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Tá»•ng sá»‘ ngÆ°á»i dÃ¹ng
+                    Total Users
                   </Typography>
                   <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    +12 tuáº§n nÃ y
+                    +12 this week
                   </Typography>
                 </Box>
               </Box>
@@ -445,10 +411,10 @@ const AdminDashboard = () => {
                     {activeChargingSessions}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    PhiÃªn hoáº¡t Ä‘á»™ng
+                    Phiên hoạt động
                   </Typography>
                   <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    {todayBookings} hÃ´m nay
+                    {todayBookings} today
                   </Typography>
                 </Box>
               </Box>
@@ -473,10 +439,10 @@ const AdminDashboard = () => {
                     {formatCurrency(totalRevenue)}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Tá»•ng doanh thu
+                    Total Revenue
                   </Typography>
                   <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    +18% so vá»›i thÃ¡ng trÆ°á»›c
+                    +18% vs last month
                   </Typography>
                 </Box>
               </Box>
@@ -486,51 +452,123 @@ const AdminDashboard = () => {
       </Grid>
 
       <Grid container spacing={3}>
-        {/* Station Performance Table */}
+        {/* Station List - Driver-like flow */}
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 2,
-                }}
-              >
-                <Typography variant="h6" fontWeight="bold">
-                  Hiá»‡u suáº¥t tráº¡m sáº¡c
-                </Typography>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <IconButton size="small">
-                    <FilterList />
-                  </IconButton>
-                  <IconButton size="small">
-                    <Search />
-                  </IconButton>
-                </Box>
-              </Box>
+              <Typography variant="h6" gutterBottom>
+                {filteredStations.length} Stations Found
+              </Typography>
 
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Tráº¡m sáº¡c</TableCell>
-                      <TableCell align="center">Tráº¡ng thÃ¡i</TableCell>
-                      <TableCell align="center">Cá»•ng sáº¡c</TableCell>
-                      <TableCell align="center">Sá»­ dá»¥ng</TableCell>
-                      <TableCell align="center">PhiÃªn</TableCell>
-                      <TableCell align="center">Doanh thu</TableCell>
-                      <TableCell align="center">Thao tÃ¡c</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {stationPerformance.slice(0, 6).map((station) => (
-                      <TableRow
-                        key={`${station.id}-${station.lastUpdated}`}
-                        hover
+              <Box sx={{ maxHeight: 600, overflowY: "auto" }}>
+                {filteredStations.map((station, index) => (
+                  <Box key={station.id}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        border:
+                          selectedStationForDetail?.id === station.id ? 2 : 1,
+                        borderColor:
+                          selectedStationForDetail?.id === station.id
+                            ? "primary.main"
+                            : "divider",
+                        "&:hover": {
+                          backgroundColor: "grey.50",
+                          cursor: "pointer",
+                        },
+                      }}
+                      onClick={() => setSelectedStationForDetail(station)}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          mb: 2,
+                        }}
                       >
-                        <TableCell>
+                        <Avatar
+                          sx={{
+                            bgcolor: "primary.main",
+                            width: 60,
+                            height: 60,
+                          }}
+                        >
+                          <LocationOn />
+                        </Avatar>
+
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "start",
+                              mb: 1,
+                            }}
+                          >
+                            <Typography variant="h6" fontWeight="bold">
+                              {station.name}
+                            </Typography>
+                            {getStatusChip(station.status)}
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                              mb: 1,
+                            }}
+                          >
+                            <LocationOn
+                              sx={{ fontSize: 16, color: "text.secondary" }}
+                            />
+                            <Typography variant="body2" color="text.secondary">
+                              {station.location.address} •{" "}
+                              {getDistanceToStation(station)}km from center
+                            </Typography>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 3,
+                              mb: 1,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <ElectricCar
+                                sx={{ fontSize: 16, color: "primary.main" }}
+                              />
+                              <Typography variant="body2">
+                                {station.chargingPostsCount} posts,{" "}
+                                {station.totalSlots} slots
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <MonetizationOn
+                                sx={{ fontSize: 16, color: "success.main" }}
+                              />
+                              <Typography variant="body2">
+                                {formatCurrency(station.revenue)} revenue
+                              </Typography>
+                            </Box>
+                          </Box>
+
                           <Box
                             sx={{
                               display: "flex",
@@ -538,634 +576,411 @@ const AdminDashboard = () => {
                               gap: 2,
                             }}
                           >
-                            <Avatar
+                            <Box
                               sx={{
-                                bgcolor: "primary.main",
-                                width: 40,
-                                height: 40,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
                               }}
                             >
-                              <ElectricCar />
-                            </Avatar>
-                            <Box>
-                              <Typography
-                                variant="subtitle2"
-                                fontWeight="medium"
-                              >
-                                {station.name}
-                              </Typography>
                               <Typography
                                 variant="caption"
                                 color="text.secondary"
                               >
-                                {station.location.address}
+                                Utilization: {station.utilization.toFixed(0)}%
                               </Typography>
+                              <LinearProgress
+                                variant="determinate"
+                                value={station.utilization}
+                                sx={{ width: 60, height: 4 }}
+                              />
                             </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          {getStatusChip(station.status)}
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box>
-                            <Typography variant="body2" fontWeight="medium">
-                              {station.chargingPostsCount} Cá»•ng
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {Math.max(
-                                0,
-                                station.totalSlots - station.occupiedSlots
-                              )}
-                              /{station.totalSlots} slot
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ minWidth: 60 }}>
-                            <LinearProgress
-                              variant="determinate"
-                              value={station.utilization}
-                              sx={{ mb: 0.5 }}
+                            <Chip
+                              label={`${station.bookingsCount} sessions`}
+                              size="small"
+                              variant="outlined"
                             />
-                            <Typography variant="caption">
-                              {station.utilization.toFixed(0)}%
-                            </Typography>
+                            <Chip
+                              label={`${
+                                station.totalSlots - station.occupiedSlots
+                              } available`}
+                              color="success"
+                              size="small"
+                            />
                           </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Typography variant="body2" fontWeight="medium">
-                            {station.bookingsCount}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Typography variant="body2" fontWeight="medium">
-                            {formatCurrency(station.revenue)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <IconButton
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                          }}
+                        >
+                          <Button
+                            variant="contained"
                             size="small"
                             onClick={(e) => {
-                              setAnchorEl(e.currentTarget);
-                              setSelectedStation(station);
+                              e.stopPropagation();
+                              handleStationAction("edit", station);
                             }}
+                            startIcon={<Edit />}
                           >
-                            <MoreVert />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={() => setAnchorEl(null)}
-              >
-                <MenuItem
-                  onClick={() => {
-                    handleStationAction("view", selectedStation);
-                    setAnchorEl(null);
-                  }}
-                >
-                  <Visibility sx={{ mr: 1 }} />
-                  Xem chi tiáº¿t
-                </MenuItem>
-                {/* Removed separate Edit Station to encourage inline editing inside details */}
-                <MenuItem
-                  onClick={() => {
-                    handleStationAction("maintenance", selectedStation);
-                    setAnchorEl(null);
-                  }}
-                >
-                  <Settings sx={{ mr: 1 }} />
-                  LÃªn lá»‹ch báº£o trÃ¬
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    handleStationAction("delete", selectedStation);
-                    setAnchorEl(null);
-                  }}
-                  sx={{ color: "error.main" }}
-                >
-                  <Delete sx={{ mr: 1 }} />
-                  XÃ³a tráº¡m sáº¡c
-                </MenuItem>
-              </Menu>
+                            Manage
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStationAction("maintenance", station);
+                            }}
+                            startIcon={<Settings />}
+                          >
+                            Maintenance
+                          </Button>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Box>
+                ))}
+              </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Recent Activities */}
+        {/* Station Details Panel - Driver-like flow */}
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Hoáº¡t Ä‘á»™ng gáº§n Ä‘Ã¢y
-              </Typography>
+          {selectedStationForDetail ? (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {selectedStationForDetail.name}
+                </Typography>
 
-              <Box sx={{ maxHeight: 400, overflowY: "auto" }}>
-                {recentActivities.map((activity) => (
-                  <Paper
-                    key={activity.id}
+                <Box sx={{ mb: 2 }}>
+                  <Avatar
                     sx={{
-                      p: 2,
-                      mb: 2,
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderLeft: 4,
-                      borderLeftColor: getSeverityColor(activity.severity),
+                      width: "100%",
+                      height: 150,
+                      borderRadius: 2,
+                      bgcolor: "primary.main",
                     }}
                   >
-                    <Typography variant="body2" gutterBottom>
-                      {activity.message}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {activity.time}
-                    </Typography>
-                  </Paper>
-                ))}
-              </Box>
+                    <LocationOn sx={{ fontSize: 40 }} />
+                  </Avatar>
+                </Box>
 
-              <Button variant="outlined" fullWidth sx={{ mt: 2 }}>
-                Xem táº¥t cáº£ hoáº¡t Ä‘á»™ng
-              </Button>
-            </CardContent>
-          </Card>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    color: "text.secondary",
+                    fontSize: "0.875rem",
+                    mb: 1,
+                  }}
+                >
+                  <LocationOn sx={{ fontSize: 16, mr: 0.5 }} />
+                  {selectedStationForDetail.location.address}
+                </Box>
+
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Distance: {getDistanceToStation(selectedStationForDetail)}km
+                  from center
+                </Typography>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Typography variant="subtitle2" gutterBottom>
+                  Station Information
+                </Typography>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Status: {selectedStationForDetail.status}
+                </Box>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Charging Posts:{" "}
+                  {selectedStationForDetail.chargingPostsCount}
+                </Box>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Total Slots: {selectedStationForDetail.totalSlots}
+                </Box>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Available Slots:{" "}
+                  {selectedStationForDetail.totalSlots -
+                    selectedStationForDetail.occupiedSlots}
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Typography variant="subtitle2" gutterBottom>
+                  Performance
+                </Typography>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Utilization:{" "}
+                  {selectedStationForDetail.utilization.toFixed(1)}%
+                </Box>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Sessions: {selectedStationForDetail.bookingsCount}
+                </Box>
+                <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
+                  • Revenue: {formatCurrency(selectedStationForDetail.revenue)}
+                </Box>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                    mt: 2,
+                  }}
+                >
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={() =>
+                      handleStationAction("edit", selectedStationForDetail)
+                    }
+                  >
+                    Manage Station
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() =>
+                      handleStationAction(
+                        "maintenance",
+                        selectedStationForDetail
+                      )
+                    }
+                  >
+                    Schedule Maintenance
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Select a Station
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Choose a station from the list to see detailed information and
+                  management options.
+                </Typography>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Actions */}
+          <Card sx={{ mt: 3 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Quick Actions
+              </Typography>
+
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<Analytics />}
+                  fullWidth
+                  onClick={() => navigate("/admin/analytics")}
+                >
+                  View Analytics
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<People />}
+                  fullWidth
+                  onClick={() => navigate("/admin/users")}
+                >
+                  Manage Users
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<LocationOn />}
+                  fullWidth
+                  onClick={() => navigate("/admin/stations")}
+                >
+                  Manage Stations
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<Settings />}
+                  fullWidth
+                  onClick={() => navigate("/admin/settings")}
+                >
+                  System Settings
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
 
-      {/* Station Detail Dialog */}
+      {/* Action Dialogs - Driver-like flow */}
       <Dialog
-        open={openStationDialog}
-        onClose={() => {
-          setOpenStationDialog(false);
-          setInlineEdit(false);
-        }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          {inlineEdit
-            ? `Chá»‰nh sá»­a: ${selectedStation?.name}`
-            : `Chi tiáº¿t tráº¡m sáº¡c: ${selectedStation?.name || ""}`}
-        </DialogTitle>
-        <DialogContent>
-          {selectedStation && !inlineEdit && (
-            <Box sx={{ pt: 2 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Vá»‹ trÃ­
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {selectedStation.location.address}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Tráº¡ng thÃ¡i
-                  </Typography>
-                  {getStatusChip(selectedStation.status)}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Cá»•ng sáº¡c
-                  </Typography>
-                  <Typography variant="body2">
-                    {selectedStation.charging?.chargingPosts?.length ||
-                      Math.ceil(
-                        (selectedStation.charging?.totalPorts || 0) / 2
-                      )}{" "}
-                    cá»•ng, {selectedStation.charging?.totalPorts || 0} tá»•ng slot
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Slot cÃ³ sáºµn
-                  </Typography>
-                  <Typography variant="body2">
-                    {selectedStation.charging?.availablePorts ?? 0} cÃ³ sáºµn
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    CÃ´ng suáº¥t tá»‘i Ä‘a (má»—i cá»•ng)
-                  </Typography>
-                  <Typography variant="body2">
-                    {selectedStation.charging?.chargingPosts?.[0]?.power ||
-                      "KhÃ´ng cÃ³"}
-                    kW
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Doanh thu (ThÃ¡ng)
-                  </Typography>
-                  <Typography variant="body2">
-                    {formatCurrency(
-                      stationPerformance.find(
-                        (s) => s.id === selectedStation.id
-                      )?.revenue || 0
-                    )}
-                  </Typography>
-                </Grid>
-              </Grid>
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    setInlineEdit(true);
-                    setInlineForm({
-                      name: selectedStation.name || "",
-                      address: selectedStation.location?.address || "",
-                      totalPorts: selectedStation.charging?.totalPorts || 0,
-                      fastChargePorts:
-                        selectedStation.charging?.fastChargePorts || 0,
-                      standardPorts:
-                        selectedStation.charging?.standardPorts || 0,
-                      pricePerKwh: selectedStation.charging?.pricePerKwh || 0,
-                      status: selectedStation.status || "active",
-                    });
-                  }}
-                >
-                  Chá»‰nh sá»­a táº¡i Ä‘Ã¢y
-                </Button>
-              </Box>
-            </Box>
-          )}
-
-          {selectedStation && inlineEdit && (
-            <Box sx={{ pt: 2 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="TÃªn tráº¡m sáº¡c"
-                    value={inlineForm.name}
-                    onChange={(e) =>
-                      setInlineForm({ ...inlineForm, name: e.target.value })
-                    }
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Tráº¡ng thÃ¡i</InputLabel>
-                    <Select
-                      label="Tráº¡ng thÃ¡i"
-                      value={inlineForm.status}
-                      onChange={(e) =>
-                        setInlineForm({ ...inlineForm, status: e.target.value })
-                      }
-                    >
-                      <MenuItem value="active">Hoáº¡t Ä‘á»™ng</MenuItem>
-                      <MenuItem value="maintenance">Báº£o trÃ¬</MenuItem>
-                      <MenuItem value="offline">Táº¡m ngÆ°ng</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Äá»‹a chá»‰"
-                    value={inlineForm.address}
-                    onChange={(e) =>
-                      setInlineForm({ ...inlineForm, address: e.target.value })
-                    }
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Tá»•ng cá»•ng"
-                    value={inlineForm.totalPorts}
-                    onChange={(e) =>
-                      setInlineForm({
-                        ...inlineForm,
-                        totalPorts: parseInt(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Sáº¡c nhanh (DC)"
-                    value={inlineForm.fastChargePorts}
-                    onChange={(e) =>
-                      setInlineForm({
-                        ...inlineForm,
-                        fastChargePorts: parseInt(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Sáº¡c tiÃªu chuáº©n (AC)"
-                    value={inlineForm.standardPorts}
-                    onChange={(e) =>
-                      setInlineForm({
-                        ...inlineForm,
-                        standardPorts: parseInt(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="GiÃ¡ (VND/kWh)"
-                    value={inlineForm.pricePerKwh}
-                    onChange={(e) =>
-                      setInlineForm({
-                        ...inlineForm,
-                        pricePerKwh: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Slot cÃ³ sáºµn"
-                    value={selectedStation?.charging?.availablePorts ?? 0}
-                    onChange={(e) =>
-                      setSelectedStation((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              charging: {
-                                ...(prev.charging || {}),
-                                availablePorts: Math.max(
-                                  0,
-                                  Math.min(
-                                    inlineForm.totalPorts,
-                                    parseInt(e.target.value) || 0
-                                  )
-                                ),
-                              },
-                            }
-                          : prev
-                      )
-                    }
-                  />
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setOpenStationDialog(false);
-              setInlineEdit(false);
-            }}
-          >
-            ÄÃ³ng
-          </Button>
-          {inlineEdit && (
-            <Button
-              variant="contained"
-              onClick={async () => {
-                if (!selectedStation) return;
-                // Preserve available slots as much as possible
-                const prevAvail =
-                  selectedStation?.charging?.availablePorts != null
-                    ? selectedStation.charging.availablePorts
-                    : Math.max(
-                        0,
-                        (selectedStation?.totalSlots || inlineForm.totalPorts) -
-                          (selectedStation?.occupiedSlots || 0)
-                      );
-                const newAvailablePorts = Math.min(
-                  inlineForm.totalPorts,
-                  prevAvail
-                );
-
-                const updated = {
-                  name: inlineForm.name,
-                  location: {
-                    ...(selectedStation.location || {}),
-                    address: inlineForm.address,
-                  },
-                  charging: {
-                    ...(selectedStation.charging || {}),
-                    totalPorts: inlineForm.totalPorts,
-                    availablePorts: newAvailablePorts,
-                    fastChargePorts: inlineForm.fastChargePorts,
-                    standardPorts: inlineForm.standardPorts,
-                    pricePerKwh: inlineForm.pricePerKwh,
-                  },
-                  status: inlineForm.status,
-                };
-                await handleSaveStation(selectedStation.id, updated);
-                // Optimistically update detail view immediately
-                setSelectedStation((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        ...updated,
-                        location: {
-                          ...(prev.location || {}),
-                          ...(updated.location || {}),
-                        },
-                        charging: {
-                          ...(prev.charging || {}),
-                          ...(updated.charging || {}),
-                        },
-                        lastUpdated: new Date().toISOString(),
-                      }
-                    : prev
-                );
-                setRefreshTick((t) => t + 1);
-                setInlineEdit(false);
-              }}
-            >
-              LÆ°u
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit Station Modal */}
-      <EditStationModal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        station={selectedStation}
-        onSave={handleSaveStation}
-      />
-
-      {/* Schedule Maintenance Modal */}
-      <ScheduleMaintenanceModal
-        open={maintenanceModalOpen}
-        onClose={() => setMaintenanceModalOpen(false)}
-        station={selectedStation}
-        onSchedule={handleScheduleMaintenance}
-      />
-
-      {/* Quick Add Station Dialog */}
-      <Dialog
-        open={addDialogOpen}
-        onClose={() => setAddDialogOpen(false)}
+        open={actionDialog.open && actionDialog.type === "edit"}
+        onClose={() =>
+          setActionDialog({ open: false, type: "", station: null })
+        }
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>ThÃªm tráº¡m sáº¡c nhanh</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="TÃªn tráº¡m sáº¡c *"
-              value={addForm.name}
-              onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-              error={!!addErrors.name}
-              helperText={addErrors.name}
-              fullWidth
-            />
-            <TextField
-              label="Äá»‹a chá»‰ *"
-              value={addForm.address}
-              onChange={(e) =>
-                setAddForm({ ...addForm, address: e.target.value })
-              }
-              error={!!addErrors.address}
-              helperText={addErrors.address}
-              fullWidth
-            />
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Tá»•ng cá»•ng"
-                  type="number"
-                  value={addForm.totalPorts}
-                  onChange={(e) =>
-                    setAddForm({
-                      ...addForm,
-                      totalPorts: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Sáº¡c nhanh (DC)"
-                  type="number"
-                  value={addForm.fastChargePorts}
-                  onChange={(e) =>
-                    setAddForm({
-                      ...addForm,
-                      fastChargePorts: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Sáº¡c tiÃªu chuáº©n (AC)"
-                  type="number"
-                  value={addForm.standardPorts}
-                  onChange={(e) =>
-                    setAddForm({
-                      ...addForm,
-                      standardPorts: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="GiÃ¡ (VND/kWh)"
-                  type="number"
-                  value={addForm.pricePerKwh}
-                  onChange={(e) =>
-                    setAddForm({
-                      ...addForm,
-                      pricePerKwh: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Tráº¡ng thÃ¡i</InputLabel>
-                  <Select
-                    label="Tráº¡ng thÃ¡i"
-                    value={addForm.status}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, status: e.target.value })
-                    }
-                  >
-                    <MenuItem value="active">Hoáº¡t Ä‘á»™ng</MenuItem>
-                    <MenuItem value="maintenance">Báº£o trÃ¬</MenuItem>
-                    <MenuItem value="offline">Táº¡m ngÆ°ng</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-          </Box>
+        <DialogTitle>Edit Station: {actionDialog.station?.name}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Manage station settings, charging posts, and operational parameters.
+          </Typography>
+          <TextField
+            fullWidth
+            label="Station Name"
+            defaultValue={actionDialog.station?.name}
+            sx={{ mb: 2 }}
+          />
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Status</InputLabel>
+            <Select defaultValue={actionDialog.station?.status}>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="inactive">Inactive</MenuItem>
+              <MenuItem value="maintenance">Maintenance</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddDialogOpen(false)}>Há»§y</Button>
+          <Button
+            onClick={() =>
+              setActionDialog({ open: false, type: "", station: null })
+            }
+          >
+            Cancel
+          </Button>
           <Button
             variant="contained"
-            onClick={async () => {
-              const errs = {};
-              if (!addForm.name.trim()) errs.name = "TÃªn tráº¡m sáº¡c lÃ  báº¯t buá»™c";
-              if (!addForm.address.trim()) errs.address = "Äá»‹a chá»‰ lÃ  báº¯t buá»™c";
-              setAddErrors(errs);
-              if (Object.keys(errs).length) return;
-
-              const stationData = {
-                name: addForm.name,
-                location: {
-                  address: addForm.address,
-                  city: "TP. Há»“ ChÃ­ Minh",
-                  province: "TP. Há»“ ChÃ­ Minh",
-                  coordinates: { lat: 10.7769, lng: 106.7009 },
-                },
-                charging: {
-                  totalPorts: addForm.totalPorts,
-                  availablePorts: addForm.totalPorts,
-                  fastChargePorts: addForm.fastChargePorts,
-                  standardPorts: addForm.standardPorts,
-                  pricePerKwh: addForm.pricePerKwh,
-                },
-                operatingHours: addForm.operatingHours,
-                amenities: [],
-                status: addForm.status,
-              };
-
-              const res = await addStation(stationData);
-              if (res?.success) {
-                setAddDialogOpen(false);
-              } else {
-                alert("KhÃ´ng thá»ƒ thÃªm tráº¡m sáº¡c. Vui lÃ²ng thá»­ láº¡i.");
-              }
-            }}
+            onClick={() =>
+              handleActionComplete(
+                "Station management",
+                actionDialog.station?.name
+              )
+            }
           >
-            Táº¡o tráº¡m sáº¡c
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={actionDialog.open && actionDialog.type === "maintenance"}
+        onClose={() =>
+          setActionDialog({ open: false, type: "", station: null })
+        }
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Schedule Maintenance: {actionDialog.station?.name}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Schedule maintenance for charging posts and equipment.
+          </Typography>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Charging Post</InputLabel>
+            <Select>
+              {actionDialog.station?.charging?.chargingPosts?.map((post) => (
+                <MenuItem key={post.id} value={post.id}>
+                  {post.name} ({post.type} - {post.power}kW)
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth
+            label="Issue Description"
+            multiline
+            rows={3}
+            sx={{ mb: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() =>
+              setActionDialog({ open: false, type: "", station: null })
+            }
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() =>
+              handleActionComplete(
+                "Maintenance scheduling",
+                actionDialog.station?.name
+              )
+            }
+          >
+            Schedule Maintenance
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={actionDialog.open && actionDialog.type === "delete"}
+        onClose={() =>
+          setActionDialog({ open: false, type: "", station: null })
+        }
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Delete Station</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This action cannot be undone!
+          </Alert>
+          <Typography variant="body2">
+            Are you sure you want to delete{" "}
+            <strong>{actionDialog.station?.name}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() =>
+              setActionDialog({ open: false, type: "", station: null })
+            }
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() =>
+              handleActionComplete(
+                "Station deletion",
+                actionDialog.station?.name
+              )
+            }
+          >
+            Delete Station
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success Snackbar - Driver-like flow */}
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={4000}
+        onClose={() => setShowSuccess(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShowSuccess(false)}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
 
       {/* Floating Action Button */}
       <Fab
@@ -1180,4 +995,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
