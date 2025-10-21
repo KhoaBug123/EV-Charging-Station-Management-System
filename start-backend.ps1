@@ -18,10 +18,10 @@ if (-not (Test-Path $projectPath)) {
 
 # Check SQL Server
 Write-Host "Checking SQL Server..." -ForegroundColor Yellow
-$sql = Get-Service -Name "MSSQLSERVER" -ErrorAction SilentlyContinue
+$sql = Get-Service -Name "MSSQL`$SQLEXPRESS" -ErrorAction SilentlyContinue
 if (-not $sql -or $sql.Status -ne "Running") {
     Write-Host "[ERROR] SQL Server is not running!" -ForegroundColor Red
-    Write-Host "Start SQL Server with: Start-Service MSSQLSERVER" -ForegroundColor Yellow
+    Write-Host "Start SQL Server with: Start-Service MSSQL`$SQLEXPRESS" -ForegroundColor Yellow
     exit 1
 }
 Write-Host "[OK] SQL Server is running" -ForegroundColor Green

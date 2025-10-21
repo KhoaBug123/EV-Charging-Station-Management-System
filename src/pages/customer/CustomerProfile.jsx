@@ -38,6 +38,7 @@ import useBookingStore from "../../store/bookingStore";
 import useVehicleStore from "../../store/vehicleStore";
 import { formatCurrency } from "../../utils/helpers";
 import VehicleEditModal from "../../components/customer/VehicleEditModal";
+import { authAPI } from "../../services/api";
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -64,12 +65,10 @@ const CustomerProfile = () => {
     vehicle: null,
   });
   const [profileData, setProfileData] = useState({
-    name: user?.profile
-      ? `${user.profile.firstName} ${user.profile.lastName}`
-      : "Nguyễn Văn An",
-    email: user?.email || "customer@skaev.com",
-    phone: user?.profile?.phone || "+84 901 234 567",
-    address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
+    name: user?.fullName || user?.profile?.fullName || "Chưa cập nhật",
+    email: user?.email || "Chưa cập nhật",
+    phone: user?.phoneNumber || user?.profile?.phoneNumber || "Chưa cập nhật",
+    address: user?.profile?.address || "Chưa cập nhật địa chỉ",
   });
   const [profileErrors, setProfileErrors] = useState({
     name: "",
@@ -78,10 +77,54 @@ const CustomerProfile = () => {
     address: "",
   });
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // No initialization needed - data is fetched by UnifiedDataSync
-  }, []);
+    // Fetch full user profile from backend
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        const profileResponse = await authAPI.getProfile();
+        console.log("Full profile from API:", profileResponse);
+
+        if (profileResponse) {
+          setProfileData({
+            name:
+              profileResponse.fullName ||
+              profileResponse.full_name ||
+              "Chưa cập nhật",
+            email: profileResponse.email || user?.email || "Chưa cập nhật",
+            phone:
+              profileResponse.phoneNumber ||
+              profileResponse.phone_number ||
+              "Chưa cập nhật",
+            address:
+              profileResponse.profile?.address ||
+              profileResponse.address ||
+              "Chưa cập nhật địa chỉ",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        // Fallback to user from authStore
+        if (user) {
+          setProfileData({
+            name: user?.fullName || user?.full_name || "Chưa cập nhật",
+            email: user?.email || "Chưa cập nhật",
+            phone: user?.phoneNumber || user?.phone_number || "Chưa cập nhật",
+            address:
+              user?.profile?.address ||
+              user?.address ||
+              "Chưa cập nhật địa chỉ",
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   const rawBookingStats = getBookingStats();
 
@@ -469,7 +512,7 @@ const CustomerProfile = () => {
                       fontWeight="medium"
                       gutterBottom
                     >
-                      Loáº¡i sáº¡c há»— trá»£:
+                      Loại sạc hỗ trợ:
                     </Typography>
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                       {(
@@ -494,7 +537,7 @@ const CustomerProfile = () => {
                     onClick={() => handleEditVehicle(vehicle)}
                     startIcon={<Edit />}
                   >
-                    Chá»‰nh sá»­a thÃ´ng tin
+                    Chỉnh sửa thông tin
                   </Button>
                 </CardContent>
               </Card>
@@ -512,7 +555,7 @@ const CustomerProfile = () => {
                   {bookingStats.completed || 1}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Tá»•ng phiÃªn sáº¡c
+                  Tổng phiên sạc
                 </Typography>
               </CardContent>
             </Card>
@@ -524,7 +567,7 @@ const CustomerProfile = () => {
                   {bookingStats.completed}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  HoÃ n thÃ nh
+                  Hoàn thành
                 </Typography>
               </CardContent>
             </Card>
@@ -536,7 +579,7 @@ const CustomerProfile = () => {
                   {bookingStats.totalEnergyCharged} kWh
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Tá»•ng nÄƒng lÆ°á»£ng
+                  Tổng năng lượng
                 </Typography>
               </CardContent>
             </Card>
@@ -548,7 +591,7 @@ const CustomerProfile = () => {
                   {formatCurrency(bookingStats.totalAmount)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Tá»•ng chi phÃ­
+                  Tổng chi phí
                 </Typography>
               </CardContent>
             </Card>
@@ -557,7 +600,7 @@ const CustomerProfile = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Lá»‹ch sá»­ sáº¡c gáº§n Ä‘Ã¢y
+                  Lịch sử sạc gần đây
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <List>
@@ -613,8 +656,8 @@ const CustomerProfile = () => {
                         <Chip
                           label={
                             booking.status === "completed"
-                              ? "HoÃ n thÃ nh"
-                              : "ÄÃ£ há»§y"
+                              ? "Hoàn thành"
+                              : "Đã hủy"
                           }
                           color={
                             booking.status === "completed" ? "success" : "error"
