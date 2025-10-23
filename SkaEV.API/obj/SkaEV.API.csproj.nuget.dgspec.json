@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "D:\\University\\SWP\\FPTU_FA25_SWP391_G4_Topic3_SkaEV\\SkaEV.API\\SkaEV.API.csproj": {}
+    "d:\\FPT_University\\FPTU_StudySource\\term5\\SWP391\\Project\\SkaEV_SWP_Project\\SkaEV.API\\SkaEV.API.csproj": {}
   },
   "projects": {
-    "D:\\University\\SWP\\FPTU_FA25_SWP391_G4_Topic3_SkaEV\\SkaEV.API\\SkaEV.API.csproj": {
+    "d:\\FPT_University\\FPTU_StudySource\\term5\\SWP391\\Project\\SkaEV_SWP_Project\\SkaEV.API\\SkaEV.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\University\\SWP\\FPTU_FA25_SWP391_G4_Topic3_SkaEV\\SkaEV.API\\SkaEV.API.csproj",
+        "projectUniqueName": "d:\\FPT_University\\FPTU_StudySource\\term5\\SWP391\\Project\\SkaEV_SWP_Project\\SkaEV.API\\SkaEV.API.csproj",
         "projectName": "SkaEV.API",
-        "projectPath": "D:\\University\\SWP\\FPTU_FA25_SWP391_G4_Topic3_SkaEV\\SkaEV.API\\SkaEV.API.csproj",
-        "packagesPath": "C:\\Users\\ACER\\.nuget\\packages\\",
-        "outputPath": "D:\\University\\SWP\\FPTU_FA25_SWP391_G4_Topic3_SkaEV\\SkaEV.API\\obj\\",
+        "projectPath": "d:\\FPT_University\\FPTU_StudySource\\term5\\SWP391\\Project\\SkaEV_SWP_Project\\SkaEV.API\\SkaEV.API.csproj",
+        "packagesPath": "C:\\Users\\thinhpro\\.nuget\\packages\\",
+        "outputPath": "d:\\FPT_University\\FPTU_StudySource\\term5\\SWP391\\Project\\SkaEV_SWP_Project\\SkaEV.API\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\ACER\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\thinhpro\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -86,10 +80,6 @@
               "target": "Package",
               "version": "[8.0.11, )"
             },
-            "Microsoft.EntityFrameworkCore.Sqlite": {
-              "target": "Package",
-              "version": "[8.0.11, )"
-            },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
@@ -144,7 +134,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
