@@ -82,36 +82,102 @@ import BookingModal from "../../components/customer/BookingModal";
 import RatingModal from "../../components/customer/RatingModal";
 
 const ChargingFlow = () => {
-  const { currentBooking, chargingSession, resetFlowState, completeBooking } =
-    useBookingStore();
+  // Các bước của flow booking sạc xe
+  const flowSteps = [
+    "Chọn trạm",
+    "Đặt lịch",
+    "Quét QR",
+    "Kết nối",
+    "Đang sạc",
+    "Hoàn thành"
+  ];
+  const { currentBooking, chargingSession, resetFlowState, completeBooking } = useBookingStore();
+  const bookingStore = useBookingStore;
   const { stations, initializeData, filters, updateFilters, loading } =
     useStationStore();
 
-  const [flowStep, setFlowStep] = useState(0); // 0: Tìm trạm, 1: Đặt lịch, 2: QR Scan, 3: Kết nối, 4: Sạc, 5: Hoàn thành
+  // Lưu flowStep vào sessionStorage để giữ trạng thái khi chuyển tab
+  const getInitialFlowStep = () => {
+    const saved = sessionStorage.getItem("chargingFlowStep");
+    return saved !== null ? Number(saved) : 0;
+  };
+  const [flowStep, setFlowStepState] = useState(getInitialFlowStep());
+
+  // Custom setter để lưu vào sessionStorage
+  const setFlowStep = (step) => {
+    setFlowStepState(step);
+    sessionStorage.setItem("chargingFlowStep", step);
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStation, setSelectedStation] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'map'
 
-  // Reset flow to step 0 on component mount - always start fresh
+  // Khôi phục currentBooking, chargingSession, flowStep từ sessionStorage khi mount (KHÔNG reset flowStep về 0 tự động)
   useEffect(() => {
-    console.log("🔄 Component mounted - resetting flow state");
-    resetFlowState(); // Clear any old booking/session data
-    setFlowStep(0); // Always start from step 0
-  }, []); // Empty dependency array = run only on mount
+    // Khi mount, khôi phục currentBooking và chargingSession nếu chưa có
+    const savedBooking = sessionStorage.getItem("chargingCurrentBooking");
+    if (!currentBooking && savedBooking) {
+      try {
+        const bookingObj = JSON.parse(savedBooking);
+        if (bookingObj && bookingObj.id) {
+          bookingStore.setState({ currentBooking: bookingObj });
+        }
+      } catch (e) { console.error("Lỗi parse currentBooking từ sessionStorage", e); }
+    }
+    const savedSession = sessionStorage.getItem("chargingSession");
+    if (!chargingSession && savedSession) {
+      try {
+        const sessionObj = JSON.parse(savedSession);
+        if (sessionObj && sessionObj.bookingId) {
+          bookingStore.setState({ chargingSession: sessionObj });
+        }
+      } catch (e) { console.error("Lỗi parse chargingSession từ sessionStorage", e); }
+    }
+    // Luôn ưu tiên lấy flowStep từ sessionStorage nếu có
+    const saved = sessionStorage.getItem("chargingFlowStep");
+    if (saved !== null) {
+      setFlowStepState(Number(saved));
+    }
+    // KHÔNG reset flowStep về 0 tự động nữa!
+  }, []);
+  // Lưu chargingSession vào sessionStorage mỗi khi thay đổi
+  useEffect(() => {
+    if (chargingSession) {
+      sessionStorage.setItem("chargingSession", JSON.stringify(chargingSession));
+    } else {
+      sessionStorage.removeItem("chargingSession");
+    }
+  }, [chargingSession]);
+  // Lưu currentBooking vào sessionStorage mỗi khi thay đổi
+  useEffect(() => {
+    if (currentBooking) {
+      sessionStorage.setItem("chargingCurrentBooking", JSON.stringify(currentBooking));
+    } else {
+      sessionStorage.removeItem("chargingCurrentBooking");
+    }
+  }, [currentBooking]);
 
   // Debug searchQuery changes
   useEffect(() => {
     console.log("🔎 SearchQuery changed to:", searchQuery);
   }, [searchQuery]);
+
+
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [qrScanOpen, setQrScanOpen] = useState(false);
-  const [scanResult, setScanResult] = useState("");
+  // Persisted state for flow >= 2
+  const getPersisted = (key, fallback) => {
+    const saved = sessionStorage.getItem(key);
+    if (!saved) return fallback;
+    try { return JSON.parse(saved); } catch { return fallback; }
+  };
+  const [scanResult, setScanResultState] = useState(() => getPersisted("chargingScanResult", ""));
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [completedSession, setCompletedSession] = useState(null);
-  const [currentBookingData, setCurrentBookingData] = useState(null);
-  const [chargingStartTime, setChargingStartTime] = useState(null);
+  const [currentBookingData, setCurrentBookingDataState] = useState(() => getPersisted("chargingCurrentBookingData", null));
+  const [chargingStartTime, setChargingStartTimeState] = useState(() => getPersisted("chargingChargingStartTime", null));
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
-  const [sessionData, setSessionData] = useState({
+  const [sessionData, setSessionDataState] = useState(() => getPersisted("chargingSessionData", {
     energyDelivered: 0,
     startSOC: 25,
     currentSOC: 25,
@@ -124,82 +190,71 @@ const ChargingFlow = () => {
     stationName: "Trạm sạc FPT Hà Nội",
     connectorType: "CCS2",
     maxPower: 150,
-  });
+  }));
 
-  const flowSteps = [
-    "Tìm trạm sạc",
-    "Đặt lịch sạc",
-    "Quét QR trạm",
-    "Kết nối xe",
-    "Đang sạc",
-    "Thanh toán",
-    "Hoàn thành",
-  ];
+  // Custom setters to persist
+  const setCurrentBookingData = (data) => {
+    setCurrentBookingDataState(data);
+    if (data) sessionStorage.setItem("chargingCurrentBookingData", JSON.stringify(data));
+    else sessionStorage.removeItem("chargingCurrentBookingData");
+  };
+  const setChargingStartTime = (val) => {
+    setChargingStartTimeState(val);
+    if (val) sessionStorage.setItem("chargingChargingStartTime", JSON.stringify(val));
+    else sessionStorage.removeItem("chargingChargingStartTime");
+  };
+  const setScanResult = (val) => {
+    setScanResultState(val);
+    if (val) sessionStorage.setItem("chargingScanResult", JSON.stringify(val));
+    else sessionStorage.removeItem("chargingScanResult");
+  };
+  const setSessionData = (val) => {
+    setSessionDataState(val);
+    if (val) sessionStorage.setItem("chargingSessionData", JSON.stringify(val));
+    else sessionStorage.removeItem("chargingSessionData");
+  };
 
-  // Combined filter for stations based on search text and connector types
+  // Khôi phục state khi flowStep >= 2
+  useEffect(() => {
+    const saved = sessionStorage.getItem("chargingFlowStep");
+    const step = saved !== null ? Number(saved) : 0;
+    if (step >= 2) {
+      setCurrentBookingData(getPersisted("chargingCurrentBookingData", null));
+      setScanResult(getPersisted("chargingScanResult", ""));
+      setChargingStartTime(getPersisted("chargingChargingStartTime", null));
+      setSessionData(getPersisted("chargingSessionData", {
+        energyDelivered: 0,
+        startSOC: 25,
+        currentSOC: 25,
+        targetSOC: 80,
+        startTime: null,
+        estimatedDuration: 0,
+        currentCost: 0,
+        chargingRate: 8500,
+        stationId: "ST-001",
+        stationName: "Trạm sạc FPT Hà Nội",
+        connectorType: "CCS2",
+        maxPower: 150,
+      }));
+    }
+  }, []);
+  // Filter and search stations (useMemo)
   const filteredStations = React.useMemo(() => {
-    console.log(
-      "🔍 FILTER START - Query:",
-      searchQuery,
-      "| Connector:",
-      filters.connectorTypes
-    );
-    console.log("📊 Stations array:", stations);
-
     try {
-      // Start with all stations from store
-      let stationList = Array.isArray(stations) ? [...stations] : [];
-      console.log("📊 Total stations to filter:", stationList.length);
-
-      if (stationList.length === 0) {
-        // No stations available yet - return empty list silently.
-        // Avoid noisy console warnings that can confuse users.
-        return [];
-      }
-
-      // Helper: normalize text to remove diacritics and compare case-insensitively
-      const normalize = (str) =>
-        (str || "")
-          .toString()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase();
-
-      // Apply text search filter if search query exists
-      if (searchQuery && searchQuery.trim()) {
-        const query = normalize(searchQuery.trim());
-        console.log("🔤 Applying normalized text search for:", query);
-
+      let stationList = stations ? [...stations] : [];
+      const query = searchQuery.trim().toLowerCase();
+      if (query) {
         stationList = stationList.filter((station) => {
           if (!station) return false;
-
           // Normalize and search in station name
-          const matchesName =
-            station.name && normalize(station.name).includes(query);
-
+          const matchesName = station.name && normalize(station.name).includes(query);
           // Search in city
-          const matchesCity =
-            station.location &&
-            station.location.city &&
-            normalize(station.location.city).includes(query);
-
+          const matchesCity = station.location && station.location.city && normalize(station.location.city).includes(query);
           // Search in address
-          const matchesAddress =
-            station.location &&
-            station.location.address &&
-            normalize(station.location.address).includes(query);
-
+          const matchesAddress = station.location && station.location.address && normalize(station.location.address).includes(query);
           // Search in landmarks
-          const matchesLandmarks =
-            station.location &&
-            station.location.landmarks &&
-            Array.isArray(station.location.landmarks) &&
-            station.location.landmarks.some(
-              (landmark) => landmark && normalize(landmark).includes(query)
-            );
-
-          const isMatch =
-            matchesName || matchesCity || matchesAddress || matchesLandmarks;
+          const matchesLandmarks = station.location && station.location.landmarks && Array.isArray(station.location.landmarks) && station.location.landmarks.some((landmark) => landmark && normalize(landmark).includes(query));
+          const isMatch = matchesName || matchesCity || matchesAddress || matchesLandmarks;
           if (isMatch) {
             console.log("✅ Text match:", station.name);
           }
@@ -207,39 +262,26 @@ const ChargingFlow = () => {
         });
         console.log("🔤 After text search:", stationList.length, "stations");
       }
-
       // Apply connector type filter if selected (independent from text search)
-      // Support multiple selected connector types (array)
       const connectorFilters = Array.isArray(filters.connectorTypes)
         ? filters.connectorTypes.filter(Boolean)
         : filters.connectorTypes
         ? [filters.connectorTypes]
         : [];
-
       if (connectorFilters.length > 0) {
         console.log("🔌 Applying connector filters:", connectorFilters);
-
         stationList = stationList.filter((station) => {
           if (!station || !station.charging) {
             console.log("❌ Station missing charging data:", station?.name);
             return false;
           }
-
           // Check connectorTypes array first
           const stationConnectors = station.charging.connectorTypes || [];
-          const hasMatchingConnector = connectorFilters.some((filterType) =>
-            stationConnectors.includes(filterType)
-          );
-
+          const hasMatchingConnector = connectorFilters.some((filterType) => stationConnectors.includes(filterType));
           if (hasMatchingConnector) {
-            console.log(
-              "✅ Connector match in array:",
-              station.name,
-              stationConnectors
-            );
+            console.log("✅ Connector match in array:", station.name, stationConnectors);
             return true;
           }
-
           // Check poles/ports if connectorTypes not available
           if (station.charging.poles && Array.isArray(station.charging.poles)) {
             const hasInPoles = station.charging.poles.some(
@@ -247,47 +289,32 @@ const ChargingFlow = () => {
                 pole &&
                 pole.ports &&
                 Array.isArray(pole.ports) &&
-                pole.ports.some(
-                  (port) =>
-                    port && connectorFilters.includes(port.connectorType)
-                )
+                pole.ports.some((port) => port && connectorFilters.includes(port.connectorType))
             );
             if (hasInPoles) {
               console.log("✅ Connector match in poles:", station.name);
               return true;
             }
           }
-
           console.log("❌ No connector match:", station.name);
           return false;
         });
-
-        console.log(
-          "🔌 After connector filter:",
-          stationList.length,
-          "stations"
-        );
+        console.log("🔌 After connector filter:", stationList.length, "stations");
       }
-
       console.log("✅ FINAL RESULT:", stationList.length, "stations");
       if (stationList.length > 0) {
         console.log("   Stations:", stationList.map((s) => s.name).join(", "));
       }
-
       // Add stats to each station
       stationList = stationList.map((station) => {
         if (!station.stats && station.charging?.poles) {
           let totalPorts = 0;
           let availablePorts = 0;
-
           station.charging.poles.forEach((pole) => {
             const ports = pole.ports || [];
             totalPorts += ports.length;
-            availablePorts += ports.filter(
-              (port) => port.status === "available"
-            ).length;
+            availablePorts += ports.filter((port) => port.status === "available").length;
           });
-
           return {
             ...station,
             stats: {
@@ -299,7 +326,6 @@ const ChargingFlow = () => {
         }
         return station;
       });
-
       return stationList;
     } catch (error) {
       console.error("❌ Error filtering stations:", error);
@@ -313,12 +339,9 @@ const ChargingFlow = () => {
   }, [initializeData]);
 
   // Reset flow step to 0 if no active booking or charging session
-  useEffect(() => {
-    if (!currentBooking && !chargingSession) {
-      console.log("🔄 No active booking or session, resetting flow to step 0");
-      setFlowStep(0);
-    }
-  }, [currentBooking, chargingSession]);
+  // Đã loại bỏ auto-reset flowStep về 0 khi mất currentBooking/changingSession để giữ đúng trạng thái flow khi quay lại
+
+
 
   // Debug log when stations change
   useEffect(() => {
@@ -342,7 +365,6 @@ const ChargingFlow = () => {
       "currentStep:",
       flowStep
     );
-
     // Don't auto-advance - user must manually proceed through steps
     // This prevents auto-jumping to QR scan on page load with persisted booking
   }, [currentBooking, chargingSession, flowStep]);
