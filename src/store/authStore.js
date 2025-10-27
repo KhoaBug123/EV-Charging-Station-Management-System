@@ -63,17 +63,27 @@ const useAuthStore = create(
           // Real API call
           const response = await authAPI.register(userData);
 
-          if (response.success && response.data) {
+          // Backend returns RegisterResponseDto directly (not wrapped in success/data)
+          if (response && response.userId) {
+            const user = {
+              user_id: response.userId,
+              email: response.email,
+              full_name: response.fullName,
+              role: userData.role, // Use role from request
+            };
+
             set({
-              user: response.data.user,
+              user: user,
               isAuthenticated: false, // May require verification
               loading: false,
+              error: null, // Clear any previous errors
             });
 
             return {
               success: true,
-              user: response.data.user,
-              requiresVerification: response.data.requiresVerification,
+              user: user,
+              requiresVerification: false, // Set to false to trigger success message
+              message: response.message,
             };
           } else {
             throw new Error(response.message || "Đăng ký thất bại");

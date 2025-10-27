@@ -272,26 +272,26 @@ const StaffProfile = () => {
             </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="First Name"
-                  value={profileData.firstName}
-                  onChange={(e) =>
-                    handleProfileChange("firstName", e.target.value)
-                  }
-                  disabled={!editMode}
-                />
+                  <TextField
+                    fullWidth
+                    label="First Name"
+                    value={profileData.firstName}
+                    onChange={(e) =>
+                      handleProfileChange("firstName", e.target.value)
+                    }
+                    disabled
+                  />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Last Name"
-                  value={profileData.lastName}
-                  onChange={(e) =>
-                    handleProfileChange("lastName", e.target.value)
-                  }
-                  disabled={!editMode}
-                />
+                  <TextField
+                    fullWidth
+                    label="Last Name"
+                    value={profileData.lastName}
+                    onChange={(e) =>
+                      handleProfileChange("lastName", e.target.value)
+                    }
+                    disabled
+                  />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField

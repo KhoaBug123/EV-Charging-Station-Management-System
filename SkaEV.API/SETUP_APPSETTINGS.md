@@ -29,6 +29,7 @@ Copy-Item "appsettings.SQLite.json.example" -Destination "appsettings.SQLite.jso
 Mở file `appsettings.json` hoặc `appsettings.Development.json` và cập nhật Connection String phù hợp với máy của bạn:
 
 **Với SQL Server:**
+
 ```json
 {
   "ConnectionStrings": {
@@ -38,6 +39,7 @@ Mở file `appsettings.json` hoặc `appsettings.Development.json` và cập nh�
 ```
 
 **Với SQLite:**
+
 ```json
 {
   "ConnectionStrings": {
@@ -60,12 +62,14 @@ Mở file `appsettings.json` hoặc `appsettings.Development.json` và cập nh�
 ## 🔒 Các file được gitignore
 
 Các file sau **KHÔNG** được push lên Git:
+
 - ✅ `appsettings.json` - Cấu hình production
-- ✅ `appsettings.Development.json` - Cấu hình development 
+- ✅ `appsettings.Development.json` - Cấu hình development
 - ✅ `appsettings.SQLite.json` - Cấu hình SQLite
 - ✅ `appsettings.*.json` - Tất cả các file appsettings khác
 
 Các file template **ĐƯỢC** push lên Git:
+
 - 📄 `appsettings.json.example`
 - 📄 `appsettings.Development.json.example`
 - 📄 `appsettings.SQLite.json.example`
@@ -73,6 +77,7 @@ Các file template **ĐƯỢC** push lên Git:
 ## 🚀 Khi pull code mới
 
 Khi pull code từ Git về:
+
 1. Các file cấu hình của bạn (`appsettings.json`, `appsettings.Development.json`) sẽ **KHÔNG** bị ghi đè
 2. Bạn **KHÔNG** cần lo lắng về việc connection string bị thay đổi
 3. Nếu có thêm cấu hình mới, file `.example` sẽ được cập nhật → bạn chỉ cần copy cấu hình mới vào file của mình
@@ -86,12 +91,15 @@ Khi pull code từ Git về:
 ## ❓ Troubleshooting
 
 **Lỗi: "Cannot open database"**
+
 - Kiểm tra tên server trong connection string
 - Kiểm tra SQL Server đã chạy chưa
 - Kiểm tra database `SkaEV_DB` đã được tạo chưa
 
 **Lỗi: "A connection was successfully established..."**
+
 - Thêm `TrustServerCertificate=True` vào connection string
 
 **File appsettings không tồn tại:**
+
 - Copy từ file `.example` như hướng dẫn ở trên

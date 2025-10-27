@@ -174,7 +174,123 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
     const [selectedFromList, setSelectedFromList] = useState(false);
     const [showRoute, setShowRoute] = useState(false);
     const [mapReady, setMapReady] = useState(false);
+    const [pendingFindNearby, setPendingFindNearby] = useState(false);
     const mapRef = useRef(null);
+    const [nearbyBounds, setNearbyBounds] = useState(null);
+    const [nearbyStations, setNearbyStations] = useState([]);
+    const [showUserPopup, setShowUserPopup] = useState(false);
+    const [findNearbyError, setFindNearbyError] = useState(null);
+
+    const FitBoundsRunner = ({ bounds }) => {
+        const map = useMap();
+        useEffect(() => {
+            if (!bounds || !map) return;
+            try {
+                if (typeof map.invalidateSize === 'function') map.invalidateSize();
+                if (typeof map.fitBounds === 'function') {
+                    map.fitBounds(bounds, { padding: [80, 80], animate: true });
+                } else if (typeof map.flyToBounds === 'function') {
+                    map.flyToBounds(bounds, { padding: [80, 80], animate: true });
+                }
+                // briefly show user popup
+                setShowUserPopup(true);
+                const t = setTimeout(() => setShowUserPopup(false), 2500);
+                return () => clearTimeout(t);
+            } catch (err) {
+                console.error('FitBoundsRunner error', err);
+            }
+        }, [bounds, map]);
+        return null;
+    };
+
+    // Haversine formula to compute distance in meters between two lat/lng points
+    const haversineDistance = (lat1, lon1, lat2, lon2) => {
+        const toRad = (v) => (v * Math.PI) / 180;
+        const R = 6371000; // meters
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+
+    // Find nearby stations and fit bounds to include user + those stations
+    const handleFindNearby = (options = { maxResults: 5, maxDistanceMeters: 5000 }) => {
+        setFindNearbyError(null);
+        console.log('🔎 Find nearby clicked', { userLocation, stations });
+        if (!userLocation) {
+            setFindNearbyError('Không xác định được vị trí của bạn.');
+            console.warn('No user location available yet');
+            return;
+        }
+        const validStations = stations
+            .map(s => ({ station: s, coords: getStationCoords(s) }))
+            .filter(x => {
+                const valid = x.coords && x.coords.lat != null && x.coords.lng != null && !isNaN(x.coords.lat) && !isNaN(x.coords.lng);
+                if (!valid) {
+                    console.warn('Trạm bị loại khỏi nearby do thiếu hoặc sai lat/lng:', x.station, x.coords);
+                }
+                return valid;
+            });
+
+        if (validStations.length === 0) {
+            setFindNearbyError('Không có trạm nào có vị trí hợp lệ để tìm gần bạn.');
+            console.warn('No valid station coordinates to search nearby');
+            return;
+        }
+
+        const withDistance = validStations.map(x => ({
+            station: x.station,
+            coords: x.coords,
+            distance: haversineDistance(userLocation.lat, userLocation.lng, x.coords.lat, x.coords.lng)
+        }));
+
+        withDistance.sort((a, b) => a.distance - b.distance);
+
+        const nearby = withDistance.filter(x => x.distance <= options.maxDistanceMeters).slice(0, options.maxResults);
+        // if none within maxDistance, take top N
+        const result = nearby.length ? nearby : withDistance.slice(0, options.maxResults);
+        console.log('Nearby stations selected:', result.map(r => ({ id: r.station.id, distance: Math.round(r.distance), coords: r.coords })));
+        // Log user location
+        console.log('User location:', userLocation);
+        // Log all nearby station coords
+        result.forEach((r, idx) => {
+            console.log(`Nearby[${idx}]:`, r.station.name, r.coords);
+        });
+
+        const boundsLatLngs = [ [userLocation.lat, userLocation.lng], ...result.map(r => [r.coords.lat, r.coords.lng]) ];
+        // Set nearby stations and bounds; FitBoundsRunner (child) will perform fit when MapContainer is ready
+        setNearbyStations(result);
+        setNearbyBounds(boundsLatLngs);
+        // Also try immediate mapRef if available
+        const map = mapRef.current;
+        if (map) {
+            try {
+                if (typeof map.invalidateSize === 'function') map.invalidateSize();
+                if (typeof map.fitBounds === 'function') {
+                    console.log('Fitting bounds to include user + nearby stations (immediate)', boundsLatLngs);
+                    map.fitBounds(boundsLatLngs, { padding: [80, 80], animate: true });
+                }
+            } catch (err) {
+                console.error('Immediate fitBounds failed', err);
+            }
+        } else {
+            console.log('Map not ready, nearby bounds will be applied when map initializes');
+            setPendingFindNearby(true);
+        }
+    };
+
+    // If user requested find-nearby while map wasn't ready, run when mapReady
+    useEffect(() => {
+        if (pendingFindNearby && mapReady) {
+            console.log('Pending find-nearby now executing because map is ready');
+            setPendingFindNearby(false);
+            handleFindNearby();
+        }
+    }, [pendingFindNearby, mapReady]);
 
     // Debug stations prop
     useEffect(() => {
@@ -184,9 +300,7 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
             const coords = getStationCoords(stations[0]);
             console.log('📍 Extracted coords:', coords);
             // Mark map as ready to render once we have stations
-            if (!mapReady) {
-                setMapReady(true);
-            }
+            // NOTE: don't set mapReady here - mapReady should reflect the actual Map instance
         }
     }, [stations, mapReady]);
 
@@ -296,8 +410,8 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
         }
     };
 
-    // Don't render if no valid center or not ready
-    if (!mapReady || !center || center.some(c => isNaN(c)) || stations.length === 0) {
+    // Don't render if center is invalid
+    if (!center || center.some(c => isNaN(c))) {
         return (
             <Box sx={{ p: 4, textAlign: 'center' }}>
                 <Typography variant="body1" color="text.secondary">
@@ -311,7 +425,6 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
         <Box>
             {/* Map Container */}
             <Box sx={{ position: 'relative', height: 500, width: '100%', borderRadius: 2, overflow: 'hidden', mb: 3 }}>
-                {mapReady && (
                     <MapContainer
                         center={center}
                         zoom={13}
@@ -321,9 +434,11 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
                         attributionControl={false}
                         whenCreated={(map) => {
                             // store map ref and prevent multiple initialization
+                            console.log('🗺️ Leaflet map instance created');
                             mapRef.current = map;
+                            setMapReady(true);
                             setTimeout(() => {
-                                map.invalidateSize();
+                                if (typeof map.invalidateSize === 'function') map.invalidateSize();
                             }, 100);
                         }}
                     >
@@ -335,17 +450,22 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
                         {/* Set bounds to show all markers */}
                         <MapBoundsSetter bounds={bounds} />
 
+                        {/* If user requested nearby, use FitBoundsRunner to apply those bounds inside the Map context */}
+                        {nearbyBounds && <FitBoundsRunner bounds={nearbyBounds} />}
+
                         {/* User location marker */}
                         {userLocation && (
                             <>
                                 <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
-                                    <Popup>
-                                        <Box sx={{ p: 1 }}>
-                                            <Typography variant="subtitle2" fontWeight="bold">
-                                                📍 Vị trí của bạn
-                                            </Typography>
-                                        </Box>
-                                    </Popup>
+                                    {showUserPopup && (
+                                        <Popup>
+                                            <Box sx={{ p: 1 }}>
+                                                <Typography variant="subtitle2" fontWeight="bold">
+                                                    📍 Vị trí của bạn
+                                                </Typography>
+                                            </Box>
+                                        </Popup>
+                                    )}
                                 </Marker>
                                 <Circle
                                     center={[userLocation.lat, userLocation.lng]}
@@ -409,6 +529,11 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
                             );
                         })}
 
+                        {/* Highlight nearby stations with a light circle */}
+                        {nearbyStations.map((n) => (
+                            <Circle key={`near-${n.station.id}`} center={[n.coords.lat, n.coords.lng]} radius={50} pathOptions={{ color: '#ffa726', fillColor: '#ffb74d', fillOpacity: 0.4 }} />
+                        ))}
+
                         {/* If a station was selected from the list, show a popup at its location */}
                         {selectedStation && selectedFromList && (() => {
                             const coords = getStationCoords(selectedStation);
@@ -461,26 +586,32 @@ const StationMapLeaflet = ({ stations, onStationSelect }) => {
                             );
                         })()}
                     </MapContainer>
-                )}
 
-                {/* Center on User button */}
+                {/* Find Nearby Stations button */}
                 {userLocation && (
-                    <Tooltip title="Về vị trí của tôi">
-                        <IconButton
-                            sx={{
-                                position: 'absolute',
-                                top: 80,
-                                right: 10,
-                                bgcolor: 'white',
-                                boxShadow: 2,
-                                '&:hover': { bgcolor: 'grey.100' },
-                                zIndex: 1400
-                            }}
-                            onClick={handleCenterOnUser}
-                        >
-                            <MyLocationIcon color="primary" />
-                        </IconButton>
+                    <Tooltip title="Tìm trạm gần tôi">
+                        <span>
+                            <IconButton
+                                sx={{
+                                    position: 'absolute',
+                                    top: 80,
+                                    right: 10,
+                                    bgcolor: 'white',
+                                    boxShadow: 2,
+                                    '&:hover': { bgcolor: 'grey.100' },
+                                    zIndex: 1400
+                                }}
+                                onClick={() => handleFindNearby()}
+                            >
+                                <EvStationIcon color="primary" />
+                            </IconButton>
+                        </span>
                     </Tooltip>
+                )}
+                {findNearbyError && (
+                    <Alert severity="error" sx={{ position: 'absolute', top: 130, right: 10, zIndex: 1500, minWidth: 260 }}>
+                        {findNearbyError}
+                    </Alert>
                 )}
 
                 {/* Legend */}

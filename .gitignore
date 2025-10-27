@@ -40,3 +40,24 @@ SkaEV.API/appsettings.Development.json
 SkaEV.API/appsettings.json
 SkaEV.API/appsettings.*.json
 !SkaEV.API/appsettings.Development.json.example
+!SkaEV.API/appsettings.template.json
+!SkaEV.API/appsettings.*.example
+
+# Database scripts that are machine-specific
+database/delete_users_*.sql
+database/local_*.sql
+database/temp_*.sql
+
+# Local configuration files
+*.local.json
+!appsettings.template.json
+
+# SQL Server local files
+*.mdf
+*.ldf
+*.ndf
+
+# Test/temp files
+.azure/*.md
+!.azure/README.md
+>>>>>>> 1340a20aa8658470e6ab5295d3f488069e58bc28
