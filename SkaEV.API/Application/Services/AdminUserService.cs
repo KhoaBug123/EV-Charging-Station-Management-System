@@ -41,7 +41,18 @@ public class AdminUserService : IAdminUserService
             .OrderByDescending(u => u.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(u => MapToDto(u))
+            .Select(u => new AdminUserDto
+            {
+                UserId = u.UserId,
+                Email = u.Email,
+                FullName = u.FullName,
+                PhoneNumber = u.PhoneNumber,
+                Role = u.Role,
+                Status = u.IsActive ? "active" : "inactive",
+                CreatedAt = u.CreatedAt,
+                UpdatedAt = u.UpdatedAt,
+                LastLoginAt = null
+            })
             .ToListAsync();
     }
 
