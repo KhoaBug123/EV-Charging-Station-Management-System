@@ -150,10 +150,10 @@ const StaffProfile = () => {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Staff Profile
+          Hồ sơ nhân viên
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Manage your personal information and work settings
+          Quản lý thông tin cá nhân và cài đặt công việc
         </Typography>
       </Box>
 
@@ -192,7 +192,7 @@ const StaffProfile = () => {
               variant={editMode ? "contained" : "outlined"}
               onClick={editMode ? handleSaveProfile : () => setEditMode(true)}
             >
-              {editMode ? "Save" : "Edit Profile"}
+              {editMode ? "Lưu" : "Chỉnh sửa hồ sơ"}
             </Button>
             {editMode && (
               <Button
@@ -203,7 +203,7 @@ const StaffProfile = () => {
                 }}
                 sx={{ ml: 1 }}
               >
-                Cancel
+                Hủy
               </Button>
             )}
           </Box>

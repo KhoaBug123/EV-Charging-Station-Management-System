@@ -581,7 +581,7 @@ const StaffDashboard = () => {
                             }}
                             startIcon={<Visibility />}
                           >
-                            Monitor
+                            Giám sát
                           </Button>
                           <Button
                             variant="outlined"
@@ -592,7 +592,7 @@ const StaffDashboard = () => {
                             }}
                             startIcon={<Build />}
                           >
-                            Maintenance
+                            Bảo trì
                           </Button>
                         </Box>
                       </Box>
@@ -640,8 +640,7 @@ const StaffDashboard = () => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Distance: {getDistanceToStation(selectedStationForDetail)}km
-                  away
+                  Khoảng cách: {getDistanceToStation(selectedStationForDetail)}km
                 </Typography>
 
                 <Divider sx={{ my: 2 }} />
@@ -658,14 +657,14 @@ const StaffDashboard = () => {
                 <Divider sx={{ my: 2 }} />
 
                 <Typography variant="subtitle2" gutterBottom>
-                  Performance Today
+                  Hiệu suất hôm nay
                 </Typography>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • Revenue:{" "}
+                  • Doanh thu:{" "}
                   {formatCurrency(selectedStationForDetail.dailyRevenue)}
                 </Box>
                 <Box sx={{ fontSize: "0.875rem", mb: 1 }}>
-                  • Sessions: {selectedStationForDetail.dailySessions}
+                  • Phiên sạc: {selectedStationForDetail.dailySessions}
                 </Box>
 
                 <Box
@@ -686,7 +685,7 @@ const StaffDashboard = () => {
                       )
                     }
                   >
-                    Schedule Maintenance
+                    Lên lịch bảo trì
                   </Button>
                 </Box>
               </CardContent>
@@ -695,11 +694,10 @@ const StaffDashboard = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Select a Station
+                  Chọn một trạm
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Choose a station from the list to see detailed information and
-                  perform maintenance actions.
+                  Chọn trạm từ danh sách để xem thông tin chi tiết và thực hiện bảo trì
                 </Typography>
               </CardContent>
             </Card>
@@ -709,7 +707,7 @@ const StaffDashboard = () => {
           <Card sx={{ mt: 3 }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Priority Alerts
+                Cảnh báo ưu tiên
               </Typography>
               {alerts.slice(0, 3).map((alert) => (
                 <Alert
@@ -727,7 +725,7 @@ const StaffDashboard = () => {
                 </Alert>
               ))}
               <Button variant="outlined" fullWidth size="small" sx={{ mt: 1 }}>
-                View All Alerts
+                Xem tất cả cảnh báo
               </Button>
             </CardContent>
           </Card>
@@ -744,14 +742,14 @@ const StaffDashboard = () => {
         fullWidth
       >
         <DialogTitle>
-          Schedule Maintenance: {actionDialog.station?.name}
+          Lên lịch bảo trì: {actionDialog.station?.name}
         </DialogTitle>
         <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>
-            Schedule maintenance for poles and ports.
+            Lên lịch bảo trì cho trụ và cổng sạc
           </Typography>
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Pole</InputLabel>
+            <InputLabel>Trụ</InputLabel>
             <Select
               value={maintenanceForm.pole}
               onChange={(e) =>
@@ -770,17 +768,17 @@ const StaffDashboard = () => {
           </FormControl>
           <TextField
             fullWidth
-            label="Port ID"
+            label="Mã cổng"
             value={maintenanceForm.port}
             onChange={(e) =>
               setMaintenanceForm({ ...maintenanceForm, port: e.target.value })
             }
             sx={{ mb: 2 }}
-            placeholder="e.g., Port 1, Port 2, All ports"
+            placeholder="Ví dụ: Cổng 1, Cổng 2, Tất cả cổng"
           />
           <TextField
             fullWidth
-            label="Issue Description"
+            label="Mô tả sự cố"
             value={maintenanceForm.issue}
             onChange={(e) =>
               setMaintenanceForm({ ...maintenanceForm, issue: e.target.value })
@@ -791,7 +789,7 @@ const StaffDashboard = () => {
             fullWidth
             multiline
             rows={3}
-            label="Additional Notes"
+            label="Ghi chú thêm"
             value={maintenanceForm.notes}
             onChange={(e) =>
               setMaintenanceForm({ ...maintenanceForm, notes: e.target.value })
@@ -804,7 +802,7 @@ const StaffDashboard = () => {
               setActionDialog({ open: false, type: "", station: null })
             }
           >
-            Cancel
+            Hủy
           </Button>
           <Button
             variant="contained"
@@ -815,7 +813,7 @@ const StaffDashboard = () => {
               )
             }
           >
-            Schedule Maintenance
+            Lên lịch bảo trì
           </Button>
         </DialogActions>
       </Dialog>
