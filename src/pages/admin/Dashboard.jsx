@@ -32,6 +32,8 @@ import {
   Tooltip,
   Snackbar,
   Divider,
+  Container,
+  Stack,
 } from "@mui/material";
 
 import {
@@ -257,45 +259,29 @@ const AdminDashboard = () => {
   };
 
   return (
-    <Box>
+    <Container maxWidth="lg" sx={{ py: 3 }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Quản trị hệ thống 🔧
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Giám sát và quản lý mạng lưới sạc SkaEV
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", gap: 2 }}>
-          {/* Removed "Thêm trạm sạc" button */}
-        </Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Quản trị hệ thống
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Giám sát và quản lý mạng lưới sạc SkaEV
+        </Typography>
       </Box>
 
       {/* Alert for Critical Issues */}
       <Alert severity="warning" sx={{ mb: 3 }}>
         <Typography variant="body2">
           <strong>Cảnh báo hệ thống:</strong> 2 trạm sạc cần được chú ý ngay lập
-          tức.
-          <Button size="small" sx={{ ml: 1 }}>
-            Xem chi tiết
-          </Button>
+          tức
         </Typography>
       </Alert>
 
-      {/* Search & Filters - Driver-like flow */}
+      {/* Search & Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={3} alignItems="center">
-            {/* Search Bar */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -310,7 +296,6 @@ const AdminDashboard = () => {
               />
             </Grid>
 
-            {/* Status Filter */}
             <Grid item xs={12} md={3}>
               <FormControl fullWidth>
                 <InputLabel>Trạng thái trạm</InputLabel>
@@ -327,7 +312,6 @@ const AdminDashboard = () => {
               </FormControl>
             </Grid>
 
-            {/* Results Count */}
             <Grid item xs={12} md={3}>
               <Typography variant="body2" color="text.secondary">
                 Tìm thấy {filteredStations.length} trạm
@@ -339,114 +323,110 @@ const AdminDashboard = () => {
 
       {/* Key Metrics */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #1379FF 0%, #0D5FDD 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-                  <LocationOn />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    {totalStations}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Tổng số trạm
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    {activeStations} hoạt động
-                  </Typography>
-                </Box>
-              </Box>
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "primary.main",
+                  mx: "auto",
+                  mb: 2,
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <LocationOn />
+              </Avatar>
+              <Typography variant="h4" fontWeight="bold">
+                {totalStations}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Tổng số trạm
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {activeStations} hoạt động
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-                  <People />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    {totalUsers}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Tổng người dùng
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    +12 tuần này
-                  </Typography>
-                </Box>
-              </Box>
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "success.main",
+                  mx: "auto",
+                  mb: 2,
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <People />
+              </Avatar>
+              <Typography variant="h4" fontWeight="bold">
+                {totalUsers}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Tổng người dùng
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                +12 tuần này
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-                  <ElectricCar />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    {activeChargingSessions}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Phiên hoạt động
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    {todayBookings} hôm nay
-                  </Typography>
-                </Box>
-              </Box>
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "warning.main",
+                  mx: "auto",
+                  mb: 2,
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <ElectricCar />
+              </Avatar>
+              <Typography variant="h4" fontWeight="bold">
+                {activeChargingSessions}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Phiên hoạt động
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {todayBookings} hôm nay
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-                  <MonetizationOn />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    {formatCurrency(totalRevenue)}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Tổng doanh thu
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                    +18% so với tháng trước
-                  </Typography>
-                </Box>
-              </Box>
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "info.main",
+                  mx: "auto",
+                  mb: 2,
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <MonetizationOn />
+              </Avatar>
+              <Typography variant="h4" fontWeight="bold">
+                {formatCurrency(totalRevenue)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Tổng doanh thu
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                +18% so với tháng trước
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -921,7 +901,7 @@ const AdminDashboard = () => {
       >
         <Notifications />
       </Fab>
-    </Box>
+    </Container>
   );
 };
 

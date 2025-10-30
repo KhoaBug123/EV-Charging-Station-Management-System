@@ -28,6 +28,8 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Container,
+  Stack,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -193,26 +195,25 @@ const StaffDashboard = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Staff Dashboard ⚡
+          Bảng điều khiển Nhân viên
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Monitor and manage charging stations, poles (trụ), and ports (cổng)
+          Giám sát và quản lý trạm sạc, trụ sạc và cổng sạc
         </Typography>
       </Box>
 
-      {/* Search & Filters - Driver-like flow */}
+      {/* Search & Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={3} alignItems="center">
-            {/* Search Bar */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                placeholder="Search stations by name or location..."
+                placeholder="Tìm kiếm trạm theo tên hoặc địa điểm..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 InputProps={{
@@ -223,26 +224,24 @@ const StaffDashboard = () => {
               />
             </Grid>
 
-            {/* Status Filter */}
             <Grid item xs={12} md={3}>
               <FormControl fullWidth>
-                <InputLabel>Station Status</InputLabel>
+                <InputLabel>Trạng thái trạm</InputLabel>
                 <Select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
-                  <MenuItem value="all">All Status</MenuItem>
-                  <MenuItem value="operational">Operational</MenuItem>
-                  <MenuItem value="warning">Warning</MenuItem>
-                  <MenuItem value="error">Error</MenuItem>
+                  <MenuItem value="all">Tất cả</MenuItem>
+                  <MenuItem value="operational">Hoạt động</MenuItem>
+                  <MenuItem value="warning">Cảnh báo</MenuItem>
+                  <MenuItem value="error">Lỗi</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
-            {/* Results Count */}
             <Grid item xs={12} md={3}>
               <Typography variant="body2" color="text.secondary">
-                {filteredStations.length} stations found
+                Tìm thấy {filteredStations.length} trạm
               </Typography>
             </Grid>
           </Grid>
@@ -251,117 +250,109 @@ const StaffDashboard = () => {
 
       {/* Overview Statistics */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} md={3}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
-                  <ElectricCar />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    {stats.totalPoles}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Trụ sạc (Poles)
-                  </Typography>
-                </Box>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={(stats.activePoles / Math.max(1, stats.totalPoles)) * 100}
-                sx={{ height: 8, borderRadius: 4 }}
-              />
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ mt: 1 }}
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "primary.main",
+                  mx: "auto",
+                  mb: 2,
+                  width: 56,
+                  height: 56,
+                }}
               >
-                {stats.activePoles} active, {stats.maintenancePoles}{" "}
-                maintenance, {stats.offlinePoles} offline • {stats.totalPorts}{" "}
-                total ports
+                <ElectricCar />
+              </Avatar>
+              <Typography variant="h4" fontWeight="bold">
+                {stats.totalPoles}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Trụ sạc
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {stats.activePoles} hoạt động • {stats.totalPorts} cổng
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} md={3}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Avatar sx={{ bgcolor: "success.main", mr: 2 }}>
-                  <CheckCircle />
-                </Avatar>
-                <Box>
-                  <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    color="success.main"
-                  >
-                    {stats.availablePorts}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Cổng có sẵn (Available Ports)
-                  </Typography>
-                </Box>
-              </Box>
-              <Chip
-                label={`${(
-                  (stats.availablePorts / Math.max(1, stats.totalPorts)) *
-                  100
-                ).toFixed(1)}% Available`}
-                color="success"
-                size="small"
-              />
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Avatar sx={{ bgcolor: "info.main", mr: 2 }}>
-                  {formatCurrency(totalRevenue).slice(0, -2)}
-                </Avatar>
-                <Box>
-                  <Typography variant="h6" fontWeight="bold">
-                    {formatCurrency(totalRevenue)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Today's Revenue
-                  </Typography>
-                </Box>
-              </Box>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "success.main",
+                  mx: "auto",
+                  mb: 2,
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <CheckCircle />
+              </Avatar>
+              <Typography variant="h4" fontWeight="bold" color="success.main">
+                {stats.availablePorts}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Cổng có sẵn
+              </Typography>
               <Typography variant="caption" color="text.secondary">
-                From {totalSessions} charging sessions
+                {((stats.availablePorts / Math.max(1, stats.totalPorts)) * 100).toFixed(1)}% khả dụng
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} md={3}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Avatar sx={{ bgcolor: "warning.main", mr: 2 }}>
-                  <Warning />
-                </Avatar>
-                <Box>
-                  <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    color="warning.main"
-                  >
-                    {alerts.filter((a) => a.priority === "high").length}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    High Priority Alerts
-                  </Typography>
-                </Box>
-              </Box>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "info.main",
+                  mx: "auto",
+                  mb: 2,
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <MonetizationOn />
+              </Avatar>
+              <Typography variant="h4" fontWeight="bold">
+                {formatCurrency(totalRevenue)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Doanh thu hôm nay
+              </Typography>
               <Typography variant="caption" color="text.secondary">
-                {alerts.length} total alerts
+                {totalSessions} phiên sạc
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "warning.main",
+                  mx: "auto",
+                  mb: 2,
+                  width: 56,
+                  height: 56,
+                }}
+              >
+                <Warning />
+              </Avatar>
+              <Typography variant="h4" fontWeight="bold" color="warning.main">
+                {alerts.filter((a) => a.priority === "high").length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Cảnh báo ưu tiên cao
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {alerts.length} tổng cảnh báo
               </Typography>
             </CardContent>
           </Card>
@@ -845,7 +836,7 @@ const StaffDashboard = () => {
           {successMessage}
         </Alert>
       </Snackbar>
-    </Box>
+    </Container>
   );
 };
 
