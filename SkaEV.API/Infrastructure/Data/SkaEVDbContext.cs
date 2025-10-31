@@ -135,7 +135,16 @@ public class SkaEVDbContext : DbContext
             entity.Property(e => e.City).HasColumnName("city").HasMaxLength(100).IsRequired();
             entity.Property(e => e.Latitude).HasColumnName("latitude").HasColumnType("decimal(10,8)").IsRequired();
             entity.Property(e => e.Longitude).HasColumnName("longitude").HasColumnType("decimal(11,8)").IsRequired();
-            entity.Property(e => e.Location).HasColumnName("location").HasColumnType("geography");
+            // Spatial 'Location' column: SQL Server uses 'geography', Sqlite provider doesn't support mapping Point -> geography.
+            // Ignore the Location property when using Sqlite to avoid mapping errors; keep Latitude/Longitude for coordinates.
+            if (Database.ProviderName != null && Database.ProviderName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                entity.Ignore(e => e.Location);
+            }
+            else
+            {
+                entity.Property(e => e.Location).HasColumnName("location").HasColumnType("geography");
+            }
             entity.Property(e => e.TotalPosts).HasColumnName("total_posts");
             entity.Property(e => e.AvailablePosts).HasColumnName("available_posts");
             entity.Property(e => e.OperatingHours).HasColumnName("operating_hours").HasMaxLength(100);
