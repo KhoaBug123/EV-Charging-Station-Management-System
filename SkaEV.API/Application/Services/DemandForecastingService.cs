@@ -27,8 +27,8 @@ namespace SkaEV.API.Application.Services
         {
             // Get historical booking data with invoice energy
             var historicalData = await _context.Bookings
-                .Where(b => b.StationId == stationId && 
-                           b.ActualStartTime >= startDate.AddDays(-30) && 
+                .Where(b => b.StationId == stationId &&
+                           b.ActualStartTime >= startDate.AddDays(-30) &&
                            b.ActualStartTime <= startDate &&
                            b.DeletedAt == null)
                 .GroupBy(b => b.ActualStartTime.Value.Date)
@@ -55,11 +55,11 @@ namespace SkaEV.API.Application.Services
             }
 
             // Calculate moving average
-                var avgBookings = historicalData.Average(x => x.BookingCount);
+            var avgBookings = historicalData.Average(x => x.BookingCount);
             var avgEnergy = (double)historicalData.Average(x => x.TotalEnergy);            // Simple trend analysis (last 7 days vs previous 7 days)
             var recentAvg = historicalData.TakeLast(7).Average(x => x.BookingCount);
             var previousAvg = historicalData.Skip(Math.Max(0, historicalData.Count - 14)).Take(7).Average(x => x.BookingCount);
-            
+
             var trendPercentage = previousAvg > 0 ? ((recentAvg - previousAvg) / previousAvg) * 100 : 0;
             var trend = trendPercentage > 5 ? "increasing" : trendPercentage < -5 ? "decreasing" : "stable";
 

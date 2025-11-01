@@ -31,14 +31,14 @@ public class AdminReportsController : ControllerBase
     [HttpGet("revenue")]
     [ProducesResponseType(typeof(IEnumerable<RevenueReportDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRevenueReports(
-        [FromQuery] int? stationId = null, 
-        [FromQuery] int? year = null, 
+        [FromQuery] int? stationId = null,
+        [FromQuery] int? year = null,
         [FromQuery] int? month = null)
     {
         try
         {
             var reports = await _reportService.GetRevenueReportsAsync(stationId, year, month);
-            
+
             var totalRevenue = reports.Sum(r => r.TotalRevenue);
             var totalEnergy = reports.Sum(r => r.TotalEnergySoldKwh);
             var totalTransactions = reports.Sum(r => r.TotalTransactions);
@@ -71,8 +71,8 @@ public class AdminReportsController : ControllerBase
     [HttpGet("usage")]
     [ProducesResponseType(typeof(IEnumerable<UsageReportDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUsageReports(
-        [FromQuery] int? stationId = null, 
-        [FromQuery] int? year = null, 
+        [FromQuery] int? stationId = null,
+        [FromQuery] int? year = null,
         [FromQuery] int? month = null)
     {
         try
@@ -131,7 +131,7 @@ public class AdminReportsController : ControllerBase
     [HttpGet("top-stations")]
     [ProducesResponseType(typeof(IEnumerable<RevenueReportDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTopStations(
-        [FromQuery] int? year = null, 
+        [FromQuery] int? year = null,
         [FromQuery] int? month = null,
         [FromQuery] int limit = 10)
     {
@@ -204,7 +204,7 @@ public class AdminReportsController : ControllerBase
         {
             var csvContent = await _reportService.ExportRevenueReportToCsvAsync(stationId, year, month);
             var fileName = $"revenue_report_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-            
+
             return File(
                 System.Text.Encoding.UTF8.GetBytes(csvContent),
                 "text/csv",

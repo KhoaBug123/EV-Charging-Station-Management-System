@@ -57,7 +57,7 @@ public class AuthService : IAuthService
         // === VALIDATION (FIX LỖI 500) ===
 
         // 1. Kiểm tra trường FullName (NOT NULL)
-     
+
 
         // 2. Kiểm tra trường Role (NOT NULL)
         if (string.IsNullOrWhiteSpace(request.Role))
@@ -150,4 +150,3 @@ public class AuthService : IAuthService
         return tokenHandler.WriteToken(token);
     }
 }
-                                                                                                                                                           

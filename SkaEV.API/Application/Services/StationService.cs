@@ -51,8 +51,8 @@ public class StationService : IStationService
             TotalPosts = s.TotalPosts,
             AvailablePosts = s.AvailablePosts,
             OperatingHours = s.OperatingHours,
-            Amenities = !string.IsNullOrEmpty(s.Amenities) 
-                ? s.Amenities.Split(',').Select(a => a.Trim()).ToList() 
+            Amenities = !string.IsNullOrEmpty(s.Amenities)
+                ? s.Amenities.Split(',').Select(a => a.Trim()).ToList()
                 : new List<string>(),
             StationImageUrl = s.StationImageUrl,
             Status = s.Status
@@ -81,8 +81,8 @@ public class StationService : IStationService
             TotalPosts = stationEntity.TotalPosts,
             AvailablePosts = stationEntity.AvailablePosts,
             OperatingHours = stationEntity.OperatingHours,
-            Amenities = !string.IsNullOrEmpty(stationEntity.Amenities) 
-                ? stationEntity.Amenities.Split(',').Select(a => a.Trim()).ToList() 
+            Amenities = !string.IsNullOrEmpty(stationEntity.Amenities)
+                ? stationEntity.Amenities.Split(',').Select(a => a.Trim()).ToList()
                 : new List<string>(),
             StationImageUrl = stationEntity.StationImageUrl,
             Status = stationEntity.Status
@@ -116,8 +116,8 @@ public class StationService : IStationService
             TotalPosts = s.TotalPosts,
             AvailablePosts = s.AvailablePosts,
             OperatingHours = s.OperatingHours,
-            Amenities = !string.IsNullOrEmpty(s.Amenities) 
-                ? s.Amenities.Split(',').Select(a => a.Trim()).ToList() 
+            Amenities = !string.IsNullOrEmpty(s.Amenities)
+                ? s.Amenities.Split(',').Select(a => a.Trim()).ToList()
                 : new List<string>(),
             StationImageUrl = s.StationImageUrl,
             Status = s.Status

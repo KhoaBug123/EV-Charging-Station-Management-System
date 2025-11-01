@@ -26,7 +26,7 @@ namespace SkaEV.API.Application.Services
         public async Task<UserBehaviorAnalysis> AnalyzeUserBehaviorAsync(int userId)
         {
             var last90Days = DateTime.UtcNow.AddDays(-90);
-            
+
             var userBookings = await _context.Bookings
                 .Include(b => b.Invoice)
                 .Where(b => b.UserId == userId && b.ActualStartTime >= last90Days && b.DeletedAt == null)
@@ -67,7 +67,7 @@ namespace SkaEV.API.Application.Services
                 .OrderByDescending(x => x.Count)
                 .FirstOrDefaultAsync();
 
-            var preferredStation = stationPreference != null 
+            var preferredStation = stationPreference != null
                 ? await _context.ChargingStations
                     .Where(s => s.StationId == stationPreference.StationId)
                     .Select(s => s.StationName)
@@ -80,8 +80,8 @@ namespace SkaEV.API.Application.Services
             var avgDaysBetweenBookings = daysSinceFirst / Math.Max(1, userBookings.Count - 1);
 
             // User category
-            var category = avgDaysBetweenBookings <= 3 ? "frequent" : 
-                          avgDaysBetweenBookings <= 7 ? "regular" : 
+            var category = avgDaysBetweenBookings <= 3 ? "frequent" :
+                          avgDaysBetweenBookings <= 7 ? "regular" :
                           avgDaysBetweenBookings <= 14 ? "occasional" : "rare";
 
             return new UserBehaviorAnalysis

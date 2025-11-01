@@ -243,15 +243,15 @@ try
 {
     Log.Information("Starting SkaEV API...");
     Log.Information("Environment: {0}", app.Environment.EnvironmentName);
-    
+
     // Start the application asynchronously
     _ = app.RunAsync();
-    
+
     Log.Information("Backend is now running. Press ENTER to stop...");
-    
+
     // Keep console alive
     Console.ReadLine();
-    
+
     // Initiate shutdown
     await app.StopAsync();
 }

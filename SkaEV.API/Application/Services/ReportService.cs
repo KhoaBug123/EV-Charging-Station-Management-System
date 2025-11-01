@@ -150,7 +150,7 @@ public class ReportService : IReportService
     public async Task<IEnumerable<UsageReportDto>> GetUsageReportsAsync(int? stationId = null, int? year = null, int? month = null)
     {
         // Use existing view v_admin_usage_reports
-        try 
+        try
         {
             var query = _context.AdminUsageReports.AsQueryable();
 
