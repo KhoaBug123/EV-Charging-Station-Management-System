@@ -64,14 +64,12 @@ import useStationStore from "../../store/stationStore";
 import useBookingStore from "../../store/bookingStore";
 import { formatCurrency } from "../../utils/helpers";
 import { STATION_STATUS, USER_ROLES } from "../../utils/constants";
-import statisticsAPI from "../../services/api/statisticsAPI";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   useAuthStore();
   const { stations, fetchStations } = useStationStore();
   const { bookingHistory } = useBookingStore();
-  const [dashboardStats, setDashboardStats] = useState(null);
   const [_anchorEl, _setAnchorEl] = useState(null);
   const [_openStationDialog, setOpenStationDialog] = useState(false);
   const [_selectedStation, _setSelectedStation] = useState(null);
@@ -89,31 +87,16 @@ const AdminDashboard = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Fetch stations and dashboard stats on component mount
+  // Fetch stations on component mount
   useEffect(() => {
-    console.log("🔄 Admin Dashboard mounted - fetching data...");
+    console.log("🔄 Admin Dashboard mounted - fetching stations...");
     fetchStations();
-    
-    // Fetch dashboard statistics from API
-    const loadDashboardStats = async () => {
-      try {
-        const response = await statisticsAPI.getDashboardStats();
-        if (response.success && response.data) {
-          setDashboardStats(response.data);
-          console.log("✅ Dashboard stats loaded:", response.data);
-        }
-      } catch (error) {
-        console.error("❌ Failed to load dashboard stats:", error);
-      }
-    };
-    
-    loadDashboardStats();
   }, [fetchStations]);
 
-  // System Overview Stats - use real data from API or fallback to local data
-  const totalStations = dashboardStats?.stations?.total || stations.length;
-  const activeStations = dashboardStats?.stations?.active || stations.filter((s) => s.status === "active").length;
-  const totalUsers = dashboardStats?.users?.total || 0;
+  // System Overview Stats
+  const totalStations = stations.length;
+  const activeStations = stations.filter((s) => s.status === "active").length;
+  const totalUsers = 0; // TODO: Fetch from user management API
   
   const todayBookings = bookingHistory.filter(
     (b) => new Date(b.createdAt).toDateString() === new Date().toDateString()
@@ -331,7 +314,7 @@ const AdminDashboard = () => {
 
             <Grid item xs={12} md={3}>
               <Typography variant="body2" color="text.secondary">
-                Hiện có {filteredStations.length} trạm
+                Tìm thấy {filteredStations.length} trạm
               </Typography>
             </Grid>
           </Grid>
@@ -455,7 +438,7 @@ const AdminDashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Hiện có {filteredStations.length} trạm
+                Tìm thấy {filteredStations.length} trạm
               </Typography>
 
               <Box sx={{ maxHeight: 600, overflowY: "auto" }}>
