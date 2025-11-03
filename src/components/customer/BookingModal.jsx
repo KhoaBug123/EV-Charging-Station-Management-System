@@ -198,6 +198,7 @@ const BookingModal = ({ open, onClose, station, onSuccess }) => {
           connectorType: selectedPort.connectorType,
           poleId: selectedPort.poleId,
           poleName: selectedPort.poleName,
+          slotId: selectedPort.slotId, // Real slot ID from database
         },
         pricing: {
           baseRate,
