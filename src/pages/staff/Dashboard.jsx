@@ -13,6 +13,7 @@ import {
   Chip,
   Divider,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import {
   ElectricCar,
@@ -28,10 +29,15 @@ import {
   AccessTime,
   MonetizationOn,
 } from "@mui/icons-material";
+import staffService from "../../services/staffService";
+import { formatCurrency } from "../../utils/helpers";
 
 const StaffDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stations, setStations] = useState([]);
+  const [selectedStation, setSelectedStation] = useState(null);
   const [stationInfo, setStationInfo] = useState(null);
   const [connectors, setConnectors] = useState([]);
   const [dailyStats, setDailyStats] = useState({
@@ -40,63 +46,7 @@ const StaffDashboard = () => {
     energyConsumed: 0,
   });
   const [alerts, setAlerts] = useState([]);
-
-  // Mock data - TODO: Thay thế bằng API thực tế
-  const mockStationInfo = {
-    id: 1,
-    name: "Trạm sạc FPT Complex",
-    address: "Lô E2a-7, D1, KCN Cao, Q9, HCM",
-    staffName: "Nguyễn Văn A",
-  };
-
-  const mockConnectors = [
-    {
-      id: "CON-01",
-      stationId: 1,
-      type: "AC",
-      maxPower: 22,
-      status: "Available",
-      statusLabel: "Rảnh",
-      statusColor: "success",
-      currentSession: null,
-    },
-    {
-      id: "CON-02",
-      stationId: 1,
-      type: "AC",
-      maxPower: 22,
-      status: "Charging",
-      statusLabel: "Đang sạc",
-      statusColor: "primary",
-      currentSession: {
-        id: "SES-001",
-        startTime: new Date(Date.now() - 45 * 60 * 1000),
-        energyConsumed: 15.5,
-        estimatedCost: 77500,
-        vehicleSOC: 65,
-      },
-    },
-    {
-      id: "CON-03",
-      stationId: 1,
-      type: "DC",
-      maxPower: 50,
-      status: "Available",
-      statusLabel: "Rảnh",
-      statusColor: "success",
-      currentSession: null,
-    },
-    {
-      id: "CON-04",
-      stationId: 1,
-      type: "DC",
-      maxPower: 50,
-      status: "Faulted",
-      statusLabel: "Lỗi",
-      statusColor: "error",
-      currentSession: null,
-    },
-  ];
+  const [activeSessions, setActiveSessions] = useState([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -104,42 +54,95 @@ const StaffDashboard = () => {
 
   const loadDashboardData = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // TODO: Thay thế bằng API call thực tế
-      // const response = await fetch(`/api/staff/dashboard`);
-      // const data = await response.json();
+      const data = await staffService.getDashboardData();
       
-      setStationInfo(mockStationInfo);
-      setConnectors(mockConnectors);
+      console.log('📊 Staff Dashboard Data:', data);
 
-      // Mock daily statistics
-      setDailyStats({
-        revenue: 2850000,
-        completedSessions: 12,
-        energyConsumed: 285.5,
+      // Set stations
+      const stationsList = data.stations || [];
+      setStations(stationsList);
+      
+      // Auto-select first station if available
+      if (stationsList.length > 0 && !selectedStation) {
+        const firstStation = stationsList[0];
+        setSelectedStation(firstStation);
+        await loadStationDetails(firstStation.stationId);
+      }
+
+      // Set daily stats
+      setDailyStats(data.dailyStats || {
+        revenue: 0,
+        completedSessions: 0,
+        energyConsumed: 0,
       });
 
-      // Mock alerts
-      const mockAlerts = [
-        {
-          id: 1,
-          type: "warning",
-          message: "Điểm sạc CON-04 đang Offline",
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        },
-        {
-          id: 2,
-          type: "info",
-          message: "Phiên sạc SES-096 chưa thanh toán",
-          timestamp: new Date(Date.now() - 90 * 60 * 1000),
-        },
-      ];
-      setAlerts(mockAlerts);
+      // Set alerts from issues
+      setAlerts(data.alerts || []);
+
+      // Set active sessions
+      setActiveSessions(data.activeSessions || []);
+
     } catch (error) {
       console.error("Error loading dashboard:", error);
+      setError(error.message || "Không thể tải dữ liệu dashboard");
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadStationDetails = async (stationId) => {
+    try {
+      const stationData = await staffService.getStationWithLiveData(stationId);
+      console.log('🔌 Station Details:', stationData);
+
+      // Set station info
+      setStationInfo({
+        name: stationData.name || 'Unknown Station',
+        address: stationData.address || '',
+        staffName: stationData.staffName || 'Staff Member'
+      });
+
+      // Map slots to connectors format
+      const mappedConnectors = (stationData.slots || []).map((slot, index) => ({
+        id: slot.slotId || `SLOT-${index + 1}`,
+        stationId: slot.stationId,
+        name: `Cổng ${index + 1}`,
+        type: slot.connectorType || "AC",
+        maxPower: slot.maxPower || 22,
+        status: slot.status || "available",
+        statusLabel: getStatusLabel(slot.status),
+        statusColor: getStatusColor(slot.status),
+        currentSession: slot.currentBooking || null,
+      }));
+
+      setConnectors(mappedConnectors);
+    } catch (error) {
+      console.error("Error loading station details:", error);
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      available: "Rảnh",
+      occupied: "Đang sạc",
+      faulted: "Lỗi",
+      maintenance: "Bảo trì",
+      offline: "Ngoại tuyến",
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      available: "success",
+      occupied: "primary",
+      faulted: "error",
+      maintenance: "warning",
+      offline: "default",
+    };
+    return colors[status] || "default";
   };
 
   const getStatusIcon = (status) => {
