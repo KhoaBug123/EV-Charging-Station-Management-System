@@ -4,20 +4,20 @@
 
 **All Metrics ≥80% ACHIEVED!** 🎊
 
-| Metric | Coverage | Target | Status |
-|--------|----------|--------|--------|
-| **Statements** | **87.72%** | 80% | ✅ **+7.72%** |
-| **Branches** | **80.97%** | 80% | ✅ **+0.97%** 🎯 |
-| **Functions** | **83.92%** | 80% | ✅ **+3.92%** |
-| **Lines** | **87.72%** | 80% | ✅ **+7.72%** |
+| Metric         | Coverage   | Target | Status           |
+| -------------- | ---------- | ------ | ---------------- |
+| **Statements** | **87.72%** | 80%    | ✅ **+7.72%**    |
+| **Branches**   | **80.97%** | 80%    | ✅ **+0.97%** 🎯 |
+| **Functions**  | **83.92%** | 80%    | ✅ **+3.92%**    |
+| **Lines**      | **87.72%** | 80%    | ✅ **+7.72%**    |
 
 ### File-Level Coverage
 
-| File | Statements | Branches | Functions | Lines | Status |
-|------|-----------|----------|-----------|-------|--------|
-| **Login.jsx** | 97.86% | 78.26% | 83.33% | 97.86% | ✅ |
-| **authStore.js** | 81.44% | 78.26% | 85.71% | 81.44% | ✅ |
-| **bookingStore.js** | 83.45% | 82.35% | 83.33% | 83.45% | ✅ |
+| File                | Statements | Branches | Functions | Lines  | Status |
+| ------------------- | ---------- | -------- | --------- | ------ | ------ |
+| **Login.jsx**       | 97.86%     | 78.26%   | 83.33%    | 97.86% | ✅     |
+| **authStore.js**    | 81.44%     | 78.26%   | 85.71%    | 81.44% | ✅     |
+| **bookingStore.js** | 83.45%     | 82.35%   | 83.33%    | 83.45% | ✅     |
 
 ## 🧪 Test Statistics
 
@@ -31,14 +31,14 @@
 
 ### Test Distribution
 
-| Test File | Tests | Status |
-|-----------|-------|--------|
-| Login.test.jsx | 29 passing | ✅ All pass |
-| authStore.test.js | 9 passing | ✅ All pass |
-| bookingStore.test.js | 68 passing, 12 skipped | ✅ All pass |
-| Register.test.jsx | 13 passing, 22 skipped | ⚠️ Timeouts |
-| QRCodeScanner.test.jsx | 11 skipped | ⏭️ |
-| Payment.test.jsx | 14 skipped | ⏭️ |
+| Test File              | Tests                  | Status      |
+| ---------------------- | ---------------------- | ----------- |
+| Login.test.jsx         | 29 passing             | ✅ All pass |
+| authStore.test.js      | 9 passing              | ✅ All pass |
+| bookingStore.test.js   | 68 passing, 12 skipped | ✅ All pass |
+| Register.test.jsx      | 13 passing, 22 skipped | ⚠️ Timeouts |
+| QRCodeScanner.test.jsx | 11 skipped             | ⏭️          |
+| Payment.test.jsx       | 14 skipped             | ⏭️          |
 
 ## Overview
 
@@ -91,6 +91,82 @@ npm run test:cov
 ```
 
 Coverage report will be generated in `./coverage/index.html`
+
+## Environment & Quick Commands
+
+We recommend running tests with the following environment to reproduce results used in this report:
+
+- Node.js: 18.x or 20.x (LTS is preferred)
+- npm: 9.x
+- Vitest: v1.6.1
+- React: 19.1.1
+
+Quick commands (copy/paste):
+
+```powershell
+# Install deps
+npm ci
+
+# Run tests once (CI)
+npm run test:run
+
+# Run tests with coverage
+npm run test:cov
+
+# On Windows open HTML coverage report
+cmd /c start coverage\index.html
+
+# Run a single test file (example)
+npx vitest run src/store/__tests__/bookingStore.test.js
+```
+
+Notes:
+
+- If your package.json doesn't include `test:run`, use `npx vitest run` instead.
+- To run tests in watch mode: `npx vitest` or `npm run test` (project script).
+
+## Skipped Tests & How to Reproduce / Fix
+
+Some tests are intentionally skipped in this repo (see test summary in `TESTING_README.md`). The main reasons:
+
+- `Register.test.jsx`: a countdown using `setInterval` caused time-based flakiness; these tests were skipped to keep the suite stable. To run or unskip them:
+
+  - Use fake timers in the test: `vi.useFakeTimers()` and advance timers with `vi.advanceTimersByTime(ms)`.
+  - Or mock the countdown/navigation to avoid real delays.
+
+- `QRCodeScanner` and `Payment` tests: skipped if external hardware or Stripe mocks are not available. To enable, add proper mocks in `src/setupTests.js`.
+
+If you want, I can help unskip and fix these tests (mock timers and external APIs).
+
+## CI / PR Guidance
+
+- Add `npm run test:cov` to your CI job and upload the `coverage` directory as an artifact for reviewers.
+- In the PR description include:
+  - Branch: `feature/tests/ev-booking`
+  - Commit hash used for coverage (example: `245e315`)
+  - A link to the coverage artifact or attach the `coverage/index.html` from CI artifacts
+
+## Branch & Commit used for this report
+
+- Branch: `feature/tests/ev-booking`
+- Commit: `245e315` (message: "feat(tests): Achieve 100% coverage goal - all metrics 80%")
+
+If you regenerate coverage later, update this section with the new commit hash.
+
+### Quick coverage screenshots / link for reviewers
+
+- Open the coverage HTML report in a browser after running `npm run test:cov`:
+
+  - File: `coverage/index.html`
+  - Example (local): open the file in your browser or attach the generated HTML in the CI artifacts.
+
+- Recommended screenshots to include when submitting or creating a PR:
+
+  1. The top "All files" overview showing Statements / Branches / Functions / Lines (this proves overall coverage).
+  2. The `store/bookingStore.js` detail page (shows branch coverage improvements for booking flow).
+  3. The `pages/auth/Login.jsx` detail page (component-level coverage).
+
+- Alternatively, add a link to the coverage artifact in your PR description or CI job (e.g. upload `coverage/index.html` to build artifacts).
 
 ## Project Structure
 
