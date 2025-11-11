@@ -205,14 +205,17 @@ const Monitoring = () => {
       }
 
       const issueData = {
-        stationId: targetConnector.stationId,
-        postId: targetConnector.postId,
-        title: incidentTypes.find((t) => t.value === reportForm.incidentType)?.label || "Sự cố kỹ thuật",
-        description: reportForm.description,
-        priority: reportForm.priority,
+        StationId: targetConnector.stationId,
+        PostId: targetConnector.postId,
+        Title: incidentTypes.find((t) => t.value === reportForm.incidentType)?.label || "Sự cố kỹ thuật",
+        Description: reportForm.description,
+        Priority: reportForm.priority,
       };
 
+      console.log("📝 Submitting issue data:", issueData);
+
       const result = await staffAPI.createIssue(issueData);
+      console.log("✅ Issue created:", result);
       
       // Upload attachments if any
       if (reportForm.attachments.length > 0 && result.issueId) {

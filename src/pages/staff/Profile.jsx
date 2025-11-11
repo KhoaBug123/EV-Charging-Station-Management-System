@@ -6,47 +6,31 @@ import {
   CardContent,
   Typography,
   TextField,
-  Button,
   Avatar,
   Divider,
-  Switch,
-  FormControlLabel,
   Chip,
   Alert,
-  Tab,
-  Tabs,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
   CircularProgress,
 } from "@mui/material";
 import {
   Person,
-  Edit,
-  Save,
-  Cancel,
-  Security,
   Work,
   Badge,
   Phone,
   Email,
   LocationOn,
   CalendarToday,
+  Info,
 } from "@mui/icons-material";
 import staffAPI from "../../services/api/staffAPI";
 import useAuthStore from "../../store/authStore";
 import { authAPI } from "../../services/api.js";
 
 const StaffProfile = () => {
-  const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saveMessage, setSaveMessage] = useState(null);
-  const [saveError, setSaveError] = useState(null);
   
   // Get user from authStore
-  const { user: authUser, updateProfile: updateAuthProfile } = useAuthStore();
+  const { user: authUser } = useAuthStore();
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
@@ -74,7 +58,7 @@ const StaffProfile = () => {
       // Get user profile from backend API to get phone number and other details
       let userProfileData = null;
       try {
-        const profileResponse = await authAPI.getProfile();
+        const profileResponse = await authAPI.updateProfile({}); // Use PUT /UserProfiles/me to get current data
         userProfileData = profileResponse.data;
         console.log("👤 User Profile Data from API:", userProfileData);
       } catch (error) {
@@ -103,12 +87,12 @@ const StaffProfile = () => {
           firstName: firstName,
           lastName: lastName,
           email: userProfileData?.email || authUser.email || "",
-          phone: userProfileData?.phoneNumber || authUser.phone_number || authUser.phoneNumber || "",
-          employeeId: authUser.user_id ? `ST${String(authUser.user_id).padStart(3, '0')}` : "",
-          department: "Vận hành",
-          position: "Kỹ thuật viên trạm sạc",
-          joinDate: authUser.created_at ? new Date(authUser.created_at).toISOString().split('T')[0] : "2025-01-15",
-          location: dashboardData?.station?.city || authUser.address || "Hồ Chí Minh",
+          phone: userProfileData?.phoneNumber || authUser.phone_number || "",
+          employeeId: (userProfileData?.employeeId || authUser.user_id) ? `ST${String(userProfileData?.employeeId || authUser.user_id).padStart(3, '0')}` : "",
+          department: userProfileData?.department || "Vận hành",
+          position: userProfileData?.position || "Kỹ thuật viên trạm sạc",
+          joinDate: userProfileData?.joinDate || (authUser.created_at ? new Date(authUser.created_at).toISOString().split('T')[0] : "2025-01-15"),
+          location: userProfileData?.location || dashboardData?.station?.city || "Hồ Chí Minh",
           avatar: authUser.avatar || authUser.profile_image || "",
         });
       }
@@ -146,88 +130,6 @@ const StaffProfile = () => {
     loadStaffProfile();
   }, [loadStaffProfile]);
 
-  // Reload when authUser full_name or phone_number changes (after update)
-  useEffect(() => {
-    if (authUser) {
-      console.log("🔄 AuthUser data changed, profile will reload automatically");
-    }
-  }, [authUser?.full_name, authUser?.phone_number]);
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  const handleProfileChange = (field, value) => {
-    setProfileData({ ...profileData, [field]: value });
-    // Clear any previous save messages when user makes changes
-    setSaveMessage(null);
-    setSaveError(null);
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      setSaveMessage(null);
-      setSaveError(null);
-      setLoading(true);
-
-      // Prepare data to send to backend
-      // Backend UpdateProfileDto only supports: FullName, PhoneNumber
-      const updateData = {
-        fullName: `${profileData.firstName} ${profileData.lastName}`.trim(),
-        phoneNumber: profileData.phone,
-      };
-
-      console.log("💾 Saving profile data:", updateData);
-
-      // Call API to update profile - using correct endpoint
-      const response = await authAPI.updateProfile(updateData);
-      console.log("✅ Profile updated:", response);
-
-      // Update authStore with new data from response
-      if (response.data) {
-        const updatedUserData = {
-          full_name: response.data.fullName,
-          phone_number: response.data.phoneNumber,
-        };
-        
-        console.log("🔄 Updating authStore with:", updatedUserData);
-        updateAuthProfile(updatedUserData);
-        
-        // Verify update
-        setTimeout(() => {
-          const currentUser = useAuthStore.getState().user;
-          console.log("✓ AuthStore after update:", currentUser);
-        }, 100);
-
-        // Update local profileData to reflect changes immediately
-        const fullName = response.data.fullName.trim();
-        const nameParts = fullName.split(" ");
-        const lastName = nameParts.pop() || "";
-        const firstName = nameParts.join(" ") || "";
-
-        setProfileData(prev => ({
-          ...prev,
-          firstName: firstName,
-          lastName: lastName,
-          phone: response.data.phoneNumber || prev.phone,
-        }));
-      }
-
-      // Show success message
-      setSaveMessage("Thông tin đã được cập nhật thành công!");
-      setEditMode(false);
-
-    } catch (error) {
-      console.error("❌ Error saving profile:", error);
-      setSaveError(
-        error.response?.data?.message || 
-        "Không thể lưu thông tin. Vui lòng thử lại!"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
@@ -246,17 +148,10 @@ const StaffProfile = () => {
         </Box>
       ) : (
         <>
-          {/* Success/Error Messages */}
-          {saveMessage && (
-            <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSaveMessage(null)}>
-              {saveMessage}
-            </Alert>
-          )}
-          {saveError && (
-            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setSaveError(null)}>
-              {saveError}
-            </Alert>
-          )}
+          {/* Info Alert - Staff can only view */}
+          <Alert severity="info" icon={<Info />} sx={{ mb: 3 }}>
+            Thông tin cá nhân và công việc chỉ có thể được chỉnh sửa bởi quản trị viên. Nếu bạn cần cập nhật thông tin, vui lòng liên hệ admin.
+          </Alert>
 
           {/* Profile Overview Card */}
           <Card sx={{ mb: 3 }}>
@@ -288,25 +183,6 @@ const StaffProfile = () => {
                     color="primary"
                   />
                 </Box>
-                <Button
-                  startIcon={editMode ? <Save /> : <Edit />}
-                  variant={editMode ? "contained" : "outlined"}
-                  onClick={editMode ? handleSaveProfile : () => setEditMode(true)}
-                >
-                  {editMode ? "Lưu" : "Chỉnh sửa hồ sơ"}
-                </Button>
-                {editMode && (
-                  <Button
-                    startIcon={<Cancel />}
-                    onClick={() => {
-                      setEditMode(false);
-                      loadStaffProfile(); // Reload data to reset
-                    }}
-                    sx={{ ml: 1 }}
-                  >
-                    Hủy
-                  </Button>
-                )}
               </Box>
 
               {/* Quick Stats - CHỈ 4 CHỈ SỐ THỰC TẾ */}
@@ -367,10 +243,10 @@ const StaffProfile = () => {
                   fullWidth
                   label="Họ"
                   value={profileData.firstName}
-                  onChange={(e) =>
-                    handleProfileChange("firstName", e.target.value)
-                  }
-                  disabled={!editMode}
+                  disabled
+                  InputProps={{
+                    readOnly: true,
+                  }}
                 />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -378,10 +254,10 @@ const StaffProfile = () => {
                   fullWidth
                   label="Tên"
                   value={profileData.lastName}
-                  onChange={(e) =>
-                    handleProfileChange("lastName", e.target.value)
-                  }
-                  disabled={!editMode}
+                  disabled
+                  InputProps={{
+                    readOnly: true,
+                  }}
                 />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -390,9 +266,9 @@ const StaffProfile = () => {
                 label="Email"
                 type="email"
                 value={profileData.email}
-                onChange={(e) => handleProfileChange("email", e.target.value)}
                 disabled
                 InputProps={{
+                  readOnly: true,
                   startAdornment: (
                     <Email sx={{ mr: 1, color: "text.secondary" }} />
                   ),
@@ -404,9 +280,9 @@ const StaffProfile = () => {
                 fullWidth
                 label="Số điện thoại"
                 value={profileData.phone}
-                onChange={(e) => handleProfileChange("phone", e.target.value)}
-                disabled={!editMode}
+                disabled
                 InputProps={{
+                  readOnly: true,
                   startAdornment: (
                     <Phone sx={{ mr: 1, color: "text.secondary" }} />
                   ),
@@ -418,11 +294,9 @@ const StaffProfile = () => {
                 fullWidth
                 label="Địa điểm"
                 value={profileData.location}
-                onChange={(e) =>
-                  handleProfileChange("location", e.target.value)
-                }
                 disabled
                 InputProps={{
+                  readOnly: true,
                   startAdornment: (
                     <LocationOn sx={{ mr: 1, color: "text.secondary" }} />
                   ),
@@ -436,6 +310,7 @@ const StaffProfile = () => {
                 value={profileData.joinDate}
                 disabled
                 InputProps={{
+                  readOnly: true,
                   startAdornment: (
                     <CalendarToday sx={{ mr: 1, color: "text.secondary" }} />
                   ),
@@ -457,6 +332,7 @@ const StaffProfile = () => {
                 value={profileData.employeeId}
                 disabled
                 InputProps={{
+                  readOnly: true,
                   startAdornment: (
                     <Badge sx={{ mr: 1, color: "text.secondary" }} />
                   ),
@@ -470,6 +346,7 @@ const StaffProfile = () => {
                 value={profileData.department}
                 disabled
                 InputProps={{
+                  readOnly: true,
                   startAdornment: (
                     <Work sx={{ mr: 1, color: "text.secondary" }} />
                   ),
@@ -483,6 +360,7 @@ const StaffProfile = () => {
                 value={profileData.position}
                 disabled
                 InputProps={{
+                  readOnly: true,
                   startAdornment: (
                     <Work sx={{ mr: 1, color: "text.secondary" }} />
                   ),
