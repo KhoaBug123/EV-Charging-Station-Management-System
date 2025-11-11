@@ -107,6 +107,10 @@ const ChargingFlow = () => {
   const bookingStore = useBookingStore;
   const { stations, initializeData, filters, updateFilters, loading } =
     useStationStore();
+  
+  // Debug log to check stations value
+  console.log("🔍 ChargingFlow - stations from store:", stations?.length || 0, "stations");
+  console.log("🔍 ChargingFlow - loading:", loading);
 
   // Lưu flowStep vào sessionStorage để giữ trạng thái khi chuyển tab
   const getInitialFlowStep = () => {
