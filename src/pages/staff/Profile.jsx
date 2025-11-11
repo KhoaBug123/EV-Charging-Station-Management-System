@@ -71,32 +71,44 @@ const StaffProfile = () => {
     try {
       console.log("📋 Loading profile - Auth User from store:", authUser);
 
+      // Get user profile from backend API to get phone number and other details
+      let userProfileData = null;
+      try {
+        const profileResponse = await authAPI.getProfile();
+        userProfileData = profileResponse.data;
+        console.log("👤 User Profile Data from API:", userProfileData);
+      } catch (error) {
+        console.error("⚠️ Could not load user profile, using authUser data:", error);
+      }
+
       // Get dashboard data for work stats
       const dashboardData = await staffAPI.getDashboardOverview();
       console.log("📊 Dashboard Data:", dashboardData);
 
-      // Set profile data from authStore user (the logged-in staff)
-      if (authUser && authUser.full_name) {
+      // Set profile data from API response (preferred) or authStore user (fallback)
+      if (authUser) {
         console.log("✓ Parsing name from:", authUser.full_name);
         
         // Parse full name into first and last name
-        const fullName = authUser.full_name.trim();
+        const fullName = (userProfileData?.fullName || authUser.full_name || "").trim();
         const nameParts = fullName.split(" ");
         const lastName = nameParts.pop() || ""; // Last word is the last name (Tên)
         const firstName = nameParts.join(" ") || ""; // Rest is first name + middle name (Họ và tên đệm)
 
         console.log("✓ Parsed - firstName:", firstName, "lastName:", lastName);
+        console.log("📞 Phone from profile API:", userProfileData?.phoneNumber);
+        console.log("📞 Phone from authUser:", authUser.phone_number);
 
         setProfileData({
           firstName: firstName,
           lastName: lastName,
-          email: authUser.email || "",
-          phone: authUser.phone_number || authUser.phoneNumber || "",
+          email: userProfileData?.email || authUser.email || "",
+          phone: userProfileData?.phoneNumber || authUser.phone_number || authUser.phoneNumber || "",
           employeeId: authUser.user_id ? `ST${String(authUser.user_id).padStart(3, '0')}` : "",
           department: "Vận hành",
           position: "Kỹ thuật viên trạm sạc",
           joinDate: authUser.created_at ? new Date(authUser.created_at).toISOString().split('T')[0] : "2025-01-15",
-          location: dashboardData?.station?.city || authUser.address || "TP.HCM",
+          location: dashboardData?.station?.city || authUser.address || "Hồ Chí Minh",
           avatar: authUser.avatar || authUser.profile_image || "",
         });
       }

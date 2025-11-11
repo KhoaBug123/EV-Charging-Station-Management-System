@@ -24,6 +24,7 @@ const useAuthStore = create(
             user_id: response.userId,
             email: response.email,
             full_name: response.fullName,
+            phone_number: response.phoneNumber || null,
             role: response.role.toLowerCase(), // Normalize role to lowercase
           };
 
