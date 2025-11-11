@@ -140,9 +140,9 @@ builder.Services.AddScoped<IAdminStationManagementService, AdminStationManagemen
 // builder.Services.AddScoped<IDemandForecastingService, DemandForecastingService>(); // AI demand forecasting
 // builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>(); // Advanced ML analytics
 
-// Background Simulation Services (for student project demo)
-builder.Services.AddHostedService<SkaEV.API.Services.ChargingSimulationService>();
-builder.Services.AddHostedService<SkaEV.API.Services.SystemEventsSimulationService>();
+// Background Simulation Services (for student project demo) - DISABLED to prevent crashes
+// builder.Services.AddHostedService<SkaEV.API.Services.ChargingSimulationService>();
+// builder.Services.AddHostedService<SkaEV.API.Services.SystemEventsSimulationService>();
 
 // Configure Swagger
 builder.Services.AddEndpointsApiExplorer();

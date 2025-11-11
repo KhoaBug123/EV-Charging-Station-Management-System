@@ -31,6 +31,8 @@ const StaffProfile = () => {
   
   // Get user from authStore
   const { user: authUser } = useAuthStore();
+  
+  // State for profile data
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
@@ -43,6 +45,8 @@ const StaffProfile = () => {
     location: "",
     avatar: "",
   });
+  
+  // State for work statistics
   const [workStats, setWorkStats] = useState({
     totalStationsManaged: 0,
     maintenanceCompleted: 0,
@@ -58,11 +62,16 @@ const StaffProfile = () => {
       // Get user profile from backend API to get phone number and other details
       let userProfileData = null;
       try {
-        const profileResponse = await authAPI.updateProfile({}); // Use PUT /UserProfiles/me to get current data
-        userProfileData = profileResponse.data;
+        const profileResponse = await authAPI.getProfile();
+        console.log("🔍 Full Profile API Response:", profileResponse);
+        
+        // Backend returns data directly (not wrapped in .data)
+        userProfileData = profileResponse.data || profileResponse;
         console.log("👤 User Profile Data from API:", userProfileData);
+        console.log("📞 PhoneNumber field from API:", userProfileData?.PhoneNumber || userProfileData?.phoneNumber);
       } catch (error) {
-        console.error("⚠️ Could not load user profile, using authUser data:", error);
+        console.error("⚠️ Could not load user profile:", error);
+        console.error("⚠️ Error response:", error.response?.data);
       }
 
       // Get dashboard data for work stats
@@ -80,20 +89,23 @@ const StaffProfile = () => {
         const firstName = nameParts.join(" ") || ""; // Rest is first name + middle name (Họ và tên đệm)
 
         console.log("✓ Parsed - firstName:", firstName, "lastName:", lastName);
-        console.log("📞 Phone from profile API:", userProfileData?.phoneNumber);
+        
+        // Backend returns PhoneNumber (capital P) not phoneNumber
+        const phoneFromAPI = userProfileData?.PhoneNumber || userProfileData?.phoneNumber;
+        console.log("📞 Phone from profile API:", phoneFromAPI);
         console.log("📞 Phone from authUser:", authUser.phone_number);
 
         setProfileData({
           firstName: firstName,
           lastName: lastName,
-          email: userProfileData?.email || authUser.email || "",
-          phone: userProfileData?.phoneNumber || authUser.phone_number || "",
-          employeeId: (userProfileData?.employeeId || authUser.user_id) ? `ST${String(userProfileData?.employeeId || authUser.user_id).padStart(3, '0')}` : "",
+          email: userProfileData?.Email || userProfileData?.email || authUser.email || "",
+          phone: phoneFromAPI || authUser.phone_number || "",
+          employeeId: (userProfileData?.UserId || userProfileData?.userId || authUser.user_id) ? `ST${String(userProfileData?.UserId || userProfileData?.userId || authUser.user_id).padStart(3, '0')}` : "",
           department: userProfileData?.department || "Vận hành",
           position: userProfileData?.position || "Kỹ thuật viên trạm sạc",
-          joinDate: userProfileData?.joinDate || (authUser.created_at ? new Date(authUser.created_at).toISOString().split('T')[0] : "2025-01-15"),
+          joinDate: userProfileData?.CreatedAt || userProfileData?.createdAt || (authUser.created_at ? new Date(authUser.created_at).toISOString().split('T')[0] : "2025-01-15"),
           location: userProfileData?.location || dashboardData?.station?.city || "Hồ Chí Minh",
-          avatar: authUser.avatar || authUser.profile_image || "",
+          avatar: userProfileData?.AvatarUrl || userProfileData?.avatarUrl || authUser.avatar || authUser.profile_image || "",
         });
       }
 

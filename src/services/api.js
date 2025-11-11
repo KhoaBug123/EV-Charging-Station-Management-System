@@ -119,7 +119,7 @@ export const authAPI = {
   },
 
   getProfile: () => {
-    return axiosInstance.get("/auth/profile");
+    return axiosInstance.get("/UserProfiles/me");
   },
 
   updateProfile: (profileData) => {
