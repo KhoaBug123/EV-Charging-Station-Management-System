@@ -262,7 +262,7 @@ public class SlotsController : ControllerBase
     /// Update slot status (Staff only - for emergency stop / maintenance)
     /// </summary>
     [HttpPatch("{slotId}/status")]
-    [Authorize(Roles = "Staff,Admin")]
+    [Authorize(Roles = "staff,admin")]
     [ProducesResponseType(typeof(SlotDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateSlotStatus(int slotId, [FromBody] UpdateSlotStatusDto dto)
