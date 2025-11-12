@@ -8,7 +8,7 @@ class SignalRService {
       slotStatus: [],
       alert: [],
       stationUpdate: [],
-      chargingUpdate: []  // 🔥 Thêm listener cho charging updates
+      chargingUpdate: []
     };
   }
 
@@ -23,7 +23,7 @@ class SignalRService {
         skipNegotiation: false,
         transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
       })
-      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000]) // Retry intervals
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
       .configureLogging(signalR.LogLevel.Information)
       .build();
 
@@ -48,7 +48,6 @@ class SignalRService {
       this.listeners.stationUpdate.forEach(callback => callback(data));
     });
 
-    // 🔥 Thêm listener cho charging updates (từ Customer)
     this.connection.on('ReceiveChargingUpdate', (data) => {
       console.log('🔌 SignalR: Received charging update:', data);
       console.log('  → Event:', data.EventType);
@@ -87,7 +86,6 @@ class SignalRService {
     }
   }
 
-  // Subscribe to station updates
   async subscribeToStation(stationId) {
     if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
       await this.connection.invoke('SubscribeToStation', stationId);
@@ -95,7 +93,6 @@ class SignalRService {
     }
   }
 
-  // Unsubscribe from station updates
   async unsubscribeFromStation(stationId) {
     if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
       await this.connection.invoke('UnsubscribeFromStation', stationId);
@@ -103,7 +100,6 @@ class SignalRService {
     }
   }
 
-  // Add event listeners
   onStationStatus(callback) {
     this.listeners.stationStatus.push(callback);
     return () => {
@@ -115,6 +111,16 @@ class SignalRService {
     this.listeners.slotStatus.push(callback);
     return () => {
       this.listeners.slotStatus = this.listeners.slotStatus.filter(cb => cb !== callback);
+    };
+  }
+
+  onAlert(callback) {
+    this.listeners.alert.push(callback);
+    return () => {
+      this.listeners.alert = this.listeners.alert.filter(cb => cb !== callback);
+    };
+  }
+
   onStationUpdate(callback) {
     this.listeners.stationUpdate.push(callback);
     return () => {
@@ -122,21 +128,10 @@ class SignalRService {
     };
   }
 
-  // 🔥 Thêm method để lắng nghe charging updates
   onChargingUpdate(callback) {
     this.listeners.chargingUpdate.push(callback);
     return () => {
       this.listeners.chargingUpdate = this.listeners.chargingUpdate.filter(cb => cb !== callback);
-    };
-  }
-
-  isConnected() {
-  }
-
-  onStationUpdate(callback) {
-    this.listeners.stationUpdate.push(callback);
-    return () => {
-      this.listeners.stationUpdate = this.listeners.stationUpdate.filter(cb => cb !== callback);
     };
   }
 

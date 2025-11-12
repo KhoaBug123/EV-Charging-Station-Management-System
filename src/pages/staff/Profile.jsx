@@ -103,7 +103,16 @@ const StaffProfile = () => {
           employeeId: (userProfileData?.UserId || userProfileData?.userId || authUser.user_id) ? `ST${String(userProfileData?.UserId || userProfileData?.userId || authUser.user_id).padStart(3, '0')}` : "",
           department: userProfileData?.department || "Vận hành",
           position: userProfileData?.position || "Kỹ thuật viên trạm sạc",
-          joinDate: userProfileData?.CreatedAt || userProfileData?.createdAt || (authUser.created_at ? new Date(authUser.created_at).toISOString().split('T')[0] : "2025-01-15"),
+          joinDate: (() => {
+            // Get the raw date value
+            const rawDate = userProfileData?.CreatedAt || userProfileData?.createdAt || authUser.created_at || "2025-01-15";
+            // Format to DD-MM-YYYY
+            const dateObj = new Date(rawDate);
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            return `${day}-${month}-${year}`;
+          })(),
           location: userProfileData?.location || dashboardData?.station?.city || "Hồ Chí Minh",
           avatar: userProfileData?.AvatarUrl || userProfileData?.avatarUrl || authUser.avatar || authUser.profile_image || "",
         });
