@@ -126,14 +126,14 @@ const StaffDashboard = () => {
       let currentActiveRevenue = 0;
 
       normalizedConnectors.forEach((connector) => {
-        console.log("🔍 Checking connector:", connector.code, "hasActiveSession:", !!connector.activeSession);
-        if (connector.activeSession) {
+        console.log("🔍 Checking connector:", connector.code, "hasCurrentSession:", !!connector.currentSession);
+        if (connector.currentSession) {
           currentActiveSessions += 1;
-          const session = connector.activeSession;
+          const session = connector.currentSession;
           console.log("  ✅ Active session found:", session);
           
           // Calculate energy consumed from SOC change or direct value
-          const energyKwh = Number(session.energyConsumedKwh || 0);
+          const energyKwh = Number(session.energyConsumed || session.energyConsumedKwh || 0);
           currentActiveEnergy += energyKwh;
           
           // Calculate revenue based on energy and rate

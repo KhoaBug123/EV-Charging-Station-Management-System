@@ -5,7 +5,7 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using SkaEV.API.Infrastructure.Data;
 using SkaEV.API.Application.Services;
-// using SkaEV.API.Hubs; // Temporarily commented out
+using SkaEV.API.Hubs;
 using Serilog;
 using Serilog.Events;
 
@@ -133,6 +133,9 @@ builder.Services.AddScoped<IIssueService, IssueService>(); // Optional - require
 builder.Services.AddScoped<IncidentService>(); // Incident management service
 builder.Services.AddScoped<StationAnalyticsService>(); // Station analytics service
 
+// Real-time SignalR Notification Service
+builder.Services.AddScoped<IStationNotificationService, StationNotificationService>();
+
 // Admin Management Services
 builder.Services.AddScoped<IAdminStationManagementService, AdminStationManagementService>();
 // Temporarily commented out - services not implemented yet
@@ -246,8 +249,8 @@ app.MapControllers();
 
 app.MapHealthChecks("/health");
 
-// Map SignalR Hub - Temporarily commented out
-// app.MapHub<StationMonitoringHub>("/hubs/station-monitoring");
+// Map SignalR Hub for real-time updates
+app.MapHub<StationMonitoringHub>("/hubs/station-monitoring");
 
 try
 {

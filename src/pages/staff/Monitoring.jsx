@@ -189,6 +189,7 @@ const Monitoring = () => {
           operationalStatus: connector.operationalStatus,
           status: connector.status,
           statusLabel: connector.statusLabel,
+          currentSession: connector.currentSession,
           activeSession: connector.activeSession
         });
         
@@ -202,6 +203,12 @@ const Monitoring = () => {
         const status = mapSlotStatus(actualStatus);
         
         console.log(`  → Mapped status:`, { rawStatus, actualStatus, result: status });
+        console.log(`  → Session data:`, { 
+          hasCurrentSession: !!connector.currentSession, 
+          hasActiveSession: !!connector.activeSession,
+          customerName: connector.currentSession?.customerName || connector.activeSession?.customerName,
+          energyConsumed: connector.currentSession?.energyConsumed || connector.activeSession?.energyConsumed
+        });
         
         return {
           id: connector.connectorCode || connector.id || `SLOT-${connector.slotId}`,
@@ -219,6 +226,7 @@ const Monitoring = () => {
           currentSoc: connector.currentSession?.vehicleSOC ?? connector.activeSession?.vehicleSOC ?? null,
           currentUser: connector.currentSession?.customerName ?? connector.activeSession?.customerName ?? null,
           bookingStart: connector.currentSession?.startTime ?? connector.activeSession?.startTime ?? null,
+          hasActiveIssue: hasStationActiveIssues, // Flag for station-level issues
         };
       });
 
@@ -510,10 +518,21 @@ const Monitoring = () => {
                     </TableCell>
                     <TableCell align="center">
                       <Chip
-                        icon={getStatusIcon(connector.operationalStatus)}
-                        label={connector.operationalStatus}
+                        icon={
+                          connector.hasActiveIssue ? (
+                            <Build fontSize="small" />
+                          ) : (
+                            getStatusIcon(connector.operationalStatus)
+                          )
+                        }
+                        label={
+                          connector.hasActiveIssue 
+                            ? "Đang bảo trì" 
+                            : connector.operationalStatus
+                        }
                         size="small"
                         variant="outlined"
+                        color={connector.hasActiveIssue ? "warning" : "default"}
                       />
                     </TableCell>
                     <TableCell align="right">

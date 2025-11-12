@@ -117,6 +117,23 @@ public class InvoiceService : IInvoiceService
         invoice.PaidAt = DateTime.UtcNow;
         invoice.UpdatedAt = DateTime.UtcNow;
 
+        // ✅ FIX: Free up the charging slot after payment completed
+        if (invoice.Booking != null)
+        {
+            var slot = await _context.ChargingSlots
+                .FirstOrDefaultAsync(cs => cs.SlotId == invoice.Booking.SlotId);
+            
+            if (slot != null && slot.CurrentBookingId == invoice.BookingId)
+            {
+                slot.Status = "available";
+                slot.CurrentBookingId = null;
+                slot.UpdatedAt = DateTime.UtcNow;
+                
+                _logger.LogInformation("✅ Freed charging slot {SlotId} after payment for booking {BookingId}", 
+                    slot.SlotId, invoice.BookingId);
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("✅ Processed payment for invoice {InvoiceId} by staff {UserId}: {Amount} via {Method}", 

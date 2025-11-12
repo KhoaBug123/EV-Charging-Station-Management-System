@@ -134,6 +134,10 @@ const ChargingSessionsSimple = () => {
       }
       
       console.log("✅ Processed sessions:", allSessions);
+      console.log("📊 Sessions detail:");
+      allSessions.forEach((s, i) => {
+        console.log(`  [${i}] ${s.connectorCode}: ${s.operationalStatus} - ${s.customerName || 'No session'} - Energy: ${s.energyDelivered || 0}kWh - HasActiveSession: ${!!s.activeSession}`);
+      });
       setSessions(allSessions);
       
     } catch (err) {
