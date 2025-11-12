@@ -204,23 +204,23 @@ public class BookingsController : ControllerBase
             }
 
             // 🔥 Get booking details để broadcast SignalR
-            var booking = await _bookingService.GetBookingByIdAsync(id);
-            if (booking != null)
+            var bookingDetails = await _bookingService.GetBookingByIdAsync(id);
+            if (bookingDetails != null)
             {
                 _logger.LogInformation(
                     "📡 Broadcasting charging started - Booking {BookingId}, Station {StationId}, Slot {SlotId}",
-                    id, booking.StationId, booking.SlotId);
+                    id, bookingDetails.StationId, bookingDetails.SlotId);
 
                 // Broadcast real-time notification to Staff Dashboard
                 await _notificationService.NotifyChargingStarted(
                     bookingId: id,
-                    stationId: booking.StationId,
-                    slotId: booking.SlotId ?? 0,
-                    connectorCode: booking.SlotNumber ?? "N/A"
+                    stationId: bookingDetails.StationId,
+                    slotId: bookingDetails.SlotId,
+                    connectorCode: bookingDetails.SlotNumber ?? "N/A"
                 );
             }
 
-            return Ok(new { message: "Charging started successfully" });
+            return Ok(new { message = "Charging started successfully" });
         }
         catch (Exception ex)
         {
@@ -263,19 +263,19 @@ public class BookingsController : ControllerBase
             }
 
             // 🔥 Get booking details để broadcast SignalR
-            var booking = await _bookingService.GetBookingByIdAsync(id);
-            if (booking != null)
+            var completedBooking = await _bookingService.GetBookingByIdAsync(id);
+            if (completedBooking != null)
             {
                 _logger.LogInformation(
                     "📡 Broadcasting charging completed - Booking {BookingId}, Station {StationId}, Slot {SlotId}",
-                    id, booking.StationId, booking.SlotId);
+                    id, completedBooking.StationId, completedBooking.SlotId);
 
                 // Broadcast real-time notification to Staff Dashboard
                 await _notificationService.NotifyChargingCompleted(
                     bookingId: id,
-                    stationId: booking.StationId,
-                    slotId: booking.SlotId ?? 0,
-                    connectorCode: booking.SlotNumber ?? "N/A"
+                    stationId: completedBooking.StationId,
+                    slotId: completedBooking.SlotId,
+                    connectorCode: completedBooking.SlotNumber ?? "N/A"
                 );
             }
 
