@@ -181,47 +181,24 @@ const staffAPI = {
   },
 
   /**
-   * Broadcast alert (triggers SignalR)
-   */
-  broadcastAlert: async (alertData) => {
-    const response = await axiosInstance.post('/monitoring/alert', alertData);
-    return response.data;
-  },
-
-  // ==================== CONNECTOR CONTROL ====================
-
-  /**
-   * Emergency stop - Immediately stop charging and cut power
+   * Update slot status (for emergency stop / maintenance)
    * @param {number} slotId - Charging slot ID
-   * @param {string} reason - Reason for emergency stop
+   * @param {string} status - New status: 'maintenance', 'unavailable', 'available'
+   * @param {string} reason - Reason for status change
    */
-  emergencyStop: async (slotId, reason = 'Emergency stop initiated by staff') => {
-    const response = await axiosInstance.post(`/staff/connectors/${slotId}/emergency-stop`, {
+  updateSlotStatus: async (slotId, status, reason = '') => {
+    const response = await axiosInstance.patch(`/slots/${slotId}/status`, {
+      status,
       reason
     });
     return response.data;
   },
 
   /**
-   * Set connector to maintenance mode
-   * @param {number} slotId - Charging slot ID
-   * @param {string} reason - Maintenance reason
-   * @param {number} estimatedDurationHours - Estimated maintenance duration
+   * Broadcast alert (triggers SignalR)
    */
-  setMaintenance: async (slotId, reason, estimatedDurationHours = 2) => {
-    const response = await axiosInstance.post(`/staff/connectors/${slotId}/maintenance`, {
-      reason,
-      estimatedDurationHours
-    });
-    return response.data;
-  },
-
-  /**
-   * Resume connector from maintenance
-   * @param {number} slotId - Charging slot ID
-   */
-  resumeFromMaintenance: async (slotId) => {
-    const response = await axiosInstance.post(`/staff/connectors/${slotId}/resume`);
+  broadcastAlert: async (alertData) => {
+    const response = await axiosInstance.post('/monitoring/alert', alertData);
     return response.data;
   },
 

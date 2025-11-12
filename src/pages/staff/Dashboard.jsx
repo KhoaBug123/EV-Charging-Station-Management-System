@@ -235,14 +235,15 @@ const StaffDashboard = () => {
 
     setActionLoading(true);
     try {
-      await staffAPI.emergencyStop(connector.slotId, actionReason);
+      // Update slot status to unavailable
+      await staffAPI.updateSlotStatus(connector.slotId, 'unavailable', actionReason);
       
       // Close dialog
       setEmergencyDialog({ open: false, connector: null });
       setActionReason('');
 
       // Show success message
-      alert(`✅ Đã dừng khẩn cấp connector ${connector.code}`);
+      alert(`✅ Đã dừng khẩn cấp connector ${connector.id || connector.code}`);
 
       // Reload dashboard to reflect changes
       await loadDashboardData();
@@ -263,7 +264,12 @@ const StaffDashboard = () => {
 
     setActionLoading(true);
     try {
-      await staffAPI.setMaintenance(connector.slotId, actionReason, maintenanceDuration);
+      // Update slot status to maintenance
+      await staffAPI.updateSlotStatus(
+        connector.slotId, 
+        'maintenance', 
+        `${actionReason} (Dự kiến: ${maintenanceDuration}h)`
+      );
       
       // Close dialog
       setMaintenanceDialog({ open: false, connector: null });
@@ -271,7 +277,7 @@ const StaffDashboard = () => {
       setMaintenanceDuration(2);
 
       // Show success message
-      alert(`✅ Đã chuyển connector ${connector.code} sang chế độ bảo trì`);
+      alert(`✅ Đã chuyển connector ${connector.id || connector.code} sang chế độ bảo trì`);
 
       // Reload dashboard to reflect changes
       await loadDashboardData();
