@@ -568,9 +568,10 @@ const ChargingFlow = () => {
         currentBooking
       );
 
-      // Try to call API to start charging session (may fail with 403 if not Staff)
-      // Use numeric ID from API response, not the BOOK... string
-      const bookingId = currentBooking.id;
+      // Use numeric booking ID from API (apiId) if available, otherwise use id
+      // API endpoint expects integer ID, not string "BOOK..."
+      const bookingId = currentBooking.apiId || currentBooking.bookingId || currentBooking.id;
+      console.log('📊 Using booking ID for API:', bookingId, 'Type:', typeof bookingId);
 
       try {
         const response = await chargingAPI.startCharging(bookingId);
@@ -1407,9 +1408,11 @@ const ChargingFlow = () => {
                   setCompletedSession(sessionEndData);
 
                   // 🚀 Call API to complete charging session
-                  // Use numeric ID from API response, not the BOOK... string
+                  // Use numeric booking ID from API (apiId), not string "BOOK..."
                   const bookingId =
+                    currentBooking?.apiId || currentBooking?.bookingId || 
                     currentBooking?.id || currentBookingData?.id;
+                  console.log('📊 Complete - Using booking ID:', bookingId, 'Type:', typeof bookingId);
                   if (bookingId) {
                     try {
                       console.log(
