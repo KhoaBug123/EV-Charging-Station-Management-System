@@ -281,16 +281,26 @@ const ChargingSessionsSimple = () => {
     try {
       console.log("💰 Processing payment for booking:", selectedSession.bookingId);
       
-      // Process payment
-      await staffAPI.processPayment(selectedSession.bookingId, {
+      // Step 1: Get invoice for this booking
+      const invoice = await staffAPI.getInvoiceByBooking(selectedSession.bookingId);
+      console.log("📄 Invoice retrieved:", invoice);
+      
+      if (!invoice || !invoice.invoiceId) {
+        throw new Error("Không tìm thấy hóa đơn cho booking này");
+      }
+      
+      // Step 2: Process payment via Invoice API
+      const paymentAmount = calculateCost(paymentForm.totalEnergyKwh);
+      await staffAPI.processPayment(invoice.invoiceId, {
         method: paymentForm.paymentMethod,
-        amount: calculateCost(paymentForm.totalEnergyKwh)
+        amount: paymentAmount,
+        notes: `Thanh toán tại quầy - Booking #${selectedSession.bookingId}`
       });
       
       setPaymentDialogOpen(false);
       setSnackbar({
         open: true,
-        message: `Thanh toán thành công cho phiên sạc #${selectedSession.bookingId}!`,
+        message: `✅ Thanh toán thành công ${paymentAmount.toLocaleString('vi-VN')}₫ cho phiên sạc #${selectedSession.bookingId}!`,
         severity: 'success'
       });
       
@@ -301,7 +311,7 @@ const ChargingSessionsSimple = () => {
       console.error("❌ Error processing payment:", err);
       setSnackbar({
         open: true,
-        message: err.message || "Không thể xử lý thanh toán",
+        message: err.response?.data?.message || err.message || "Không thể xử lý thanh toán",
         severity: 'error'
       });
     }

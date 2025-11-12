@@ -259,23 +259,59 @@ const staffAPI = {
   // ==================== PAYMENT PROCESSING ====================
 
   /**
-   * Process payment at counter (Staff)
+   * Get invoice for booking (required before payment processing)
    */
-  processPayment: async (bookingId, paymentData) => {
-    // Update booking with payment info
-    const response = await axiosInstance.put(`/bookings/${bookingId}`, {
-      paymentStatus: 'paid',
-      paymentMethod: paymentData.method,
-      paidAt: new Date().toISOString()
+  getInvoiceByBooking: async (bookingId) => {
+    const response = await axiosInstance.get(`/invoices/booking/${bookingId}`);
+    return response.data;
+  },
+
+  /**
+   * Process payment at counter (Staff) - Uses Invoice API
+   * @param {number} invoiceId - Invoice ID (get from getInvoiceByBooking)
+   * @param {Object} paymentData - { method: 'cash'|'card'|'qr', amount: number }
+   */
+  processPayment: async (invoiceId, paymentData) => {
+    const response = await axiosInstance.post(`/invoices/${invoiceId}/process-payment`, {
+      method: paymentData.method || 'cash',
+      amount: paymentData.amount,
+      notes: paymentData.notes || '',
+      transactionReference: paymentData.transactionReference || null
     });
     return response.data;
   },
 
   /**
-   * Get invoice for booking
+   * Get all unpaid invoices (for payment processing view)
    */
-  getInvoice: async (bookingId) => {
-    const response = await axiosInstance.get(`/invoices/booking/${bookingId}`);
+  getUnpaidInvoices: async () => {
+    const response = await axiosInstance.get('/invoices/unpaid');
+    return response.data?.data ?? [];
+  },
+
+  /**
+   * Get invoice details by ID
+   */
+  getInvoiceById: async (invoiceId) => {
+    const response = await axiosInstance.get(`/invoices/${invoiceId}`);
+    return response.data;
+  },
+
+  /**
+   * Get payment history for an invoice
+   */
+  getPaymentHistory: async (invoiceId) => {
+    const response = await axiosInstance.get(`/invoices/${invoiceId}/payment-history`);
+    return response.data?.data ?? [];
+  },
+
+  /**
+   * Download invoice PDF
+   */
+  downloadInvoicePDF: async (invoiceId) => {
+    const response = await axiosInstance.get(`/invoices/${invoiceId}/download`, {
+      responseType: 'blob'
+    });
     return response.data;
   },
 };
