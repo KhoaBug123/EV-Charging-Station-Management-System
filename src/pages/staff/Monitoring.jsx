@@ -97,20 +97,36 @@ const Monitoring = () => {
   }, [location.state]);
 
   const mapSlotStatus = (status = "") => {
-    const normalized = status.toLowerCase();
+    const normalized = (status || "").toString().toLowerCase().trim();
     switch (normalized) {
       case "available":
+      case "rảnh":
+      case "sẵn sàng":
         return { technical: "online", operational: "Sẵn sàng" };
       case "occupied":
       case "charging":
+      case "in_use":
+      case "đang sạc":
+      case "đang hoạt động":
         return { technical: "online", operational: "Đang hoạt động" };
       case "maintenance":
+      case "bảo trì":
+      case "đang bảo trì":
         return { technical: "offline", operational: "Bảo trì" };
       case "faulted":
       case "error":
+      case "offline":
+      case "lỗi":
+      case "lỗi/offline":
         return { technical: "offline", operational: "Lỗi" };
+      case "unavailable":
+      case "không khả dụng":
+        return { technical: "offline", operational: "Không khả dụng" };
+      case "reserved":
+      case "đã giữ chỗ":
+        return { technical: "online", operational: "Đã giữ chỗ" };
       default:
-        return { technical: "unknown", operational: "Không rõ" };
+        return { technical: "unknown", operational: normalized || "Không rõ" };
     }
   };
 
@@ -164,27 +180,43 @@ const Monitoring = () => {
       // Load slots from dashboard connectors (already loaded with active sessions)
       const hasActiveIssue = stationsWithActiveIssues.has(assignedStation.stationId);
       
+      console.log("🔌 Dashboard connectors:", dashboardData.connectors);
+      console.log("🚨 Has active issue:", hasActiveIssue);
+      
       const connectorsData = dashboardData.connectors.map((connector) => {
-        // If station has active issue, override status to maintenance
-        const actualStatus = hasActiveIssue ? 'maintenance' : (connector.technicalStatus || connector.operationalStatus);
+        console.log(`🔍 Processing connector ${connector.connectorCode}:`, {
+          technicalStatus: connector.technicalStatus,
+          operationalStatus: connector.operationalStatus,
+          status: connector.status,
+          statusLabel: connector.statusLabel,
+          activeSession: connector.activeSession
+        });
+        
+        // Use the status from Dashboard directly (already mapped in Dashboard)
+        const rawStatus = connector.status || connector.statusLabel || connector.operationalStatus || "Unknown";
+        
+        // If station has active issue, override to maintenance
+        const actualStatus = hasActiveIssue ? 'maintenance' : rawStatus;
         const status = mapSlotStatus(actualStatus);
         
+        console.log(`  → Mapped status:`, { rawStatus, actualStatus, result: status });
+        
         return {
-          id: connector.connectorCode || `SLOT-${connector.slotId}`,
+          id: connector.connectorCode || connector.id || `SLOT-${connector.slotId}`,
           stationId: assignedStation.stationId,
           stationName: assignedStation.stationName,
           slotId: connector.slotId,
           postId: null,
           postNumber: null,
           slotNumber: null,
-          type: connector.connectorType || "Không rõ",
+          type: connector.type || connector.connectorType || "Không rõ",
           maxPower: connector.maxPower || 0,
           status: status.technical,
           operationalStatus: status.operational,
-          currentPower: connector.activeSession?.energyConsumed ?? null,
-          currentSoc: connector.activeSession?.vehicleSOC ?? null,
-          currentUser: connector.activeSession?.customerName ?? null,
-          bookingStart: connector.activeSession?.startTime ?? null,
+          currentPower: connector.currentSession?.energyConsumed ?? connector.activeSession?.energyConsumed ?? null,
+          currentSoc: connector.currentSession?.vehicleSOC ?? connector.activeSession?.vehicleSOC ?? null,
+          currentUser: connector.currentSession?.customerName ?? connector.activeSession?.customerName ?? null,
+          bookingStart: connector.currentSession?.startTime ?? connector.activeSession?.startTime ?? null,
           hasActiveIssue, // Flag to show maintenance icon
         };
       });
